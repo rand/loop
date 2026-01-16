@@ -19,7 +19,7 @@ python = ["pyo3", "pyo3-async-runtimes"]
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.43", features = ["sync", "time"] }
+tokio = { version = "1.43", features = ["sync", "time", "process", "io-util"] }
 futures = "0.3"
 async-trait = "0.1"
 
@@ -50,6 +50,13 @@ reqwest = { version = "0.12", features = ["json"] }
 
 # Hashing for cache keys
 sha2 = "0.10"
+
+# File globbing for index building
+glob = "0.3"
+
+# Binary/command finding
+which = "7.0"
+shellexpand = "3.1"
 
 # Python bindings (optional)
 pyo3 = { version = "0.23", features = ["extension-module"], optional = true }

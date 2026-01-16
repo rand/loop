@@ -27,12 +27,15 @@
 pub mod complexity;
 pub mod context;
 pub mod error;
+pub mod ffi;
+pub mod lean;
 pub mod llm;
 pub mod memory;
 pub mod orchestrator;
 #[cfg(feature = "python")]
 pub mod pybind;
 pub mod repl;
+pub mod topos;
 pub mod trajectory;
 
 // Re-exports for convenience
@@ -46,4 +49,7 @@ pub use llm::{
 pub use memory::{Node, NodeId, NodeType, SqliteMemoryStore, Tier};
 pub use orchestrator::Orchestrator;
 pub use repl::{ExecuteResult, ReplConfig, ReplHandle, ReplPool};
+pub use topos::{
+    IndexBuilder, LeanRef, Link, LinkIndex, LinkType, ToposClient, ToposClientConfig, ToposRef,
+};
 pub use trajectory::{TrajectoryEvent, TrajectoryEventType};
