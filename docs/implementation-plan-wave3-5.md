@@ -1,278 +1,228 @@
-# Optimized Implementation Plan: Waves 3-5
+# Implementation Status and Remaining Work
 
-> Intelligent sequencing to complete rlm-core and Lean FV
+> Current state assessment and path to completion
 
 ## Executive Summary
 
-**Current State Analysis:**
-- **Waves 1-2 Complete**: 16,315 lines of new code (Lean REPL, Topos, Sync, Spec Agent, Proof Automation, Go Bindings)
-- **rlm-core**: 8/14 phases complete (57%)
-- **Lean FV**: 5/6 phases complete (83%)
+**Implementation is substantially complete.** Both major epics have all their component tasks closed:
 
-**Critical Path Identified**: Epistemic Verification (src-p4s) is the sole blocker for both adapters and migrations.
+- **rlm-core Epic (loop-uci)**: 12/12 implementation phases closed
+- **Lean FV Epic (loop-vce)**: 4/4 implementation phases closed
 
-**Recommended Strategy**: 3 parallel waves with 3 tracks each, completing all work in ~4-6 weeks.
-
----
-
-## 1. Current State Summary
-
-### 1.1 rlm-core Epic (src-uci)
-
-| Phase | Issue | Status | Effort |
-|-------|-------|--------|--------|
-| Phase 1: Core Types | src-s6x | ✅ CLOSED | - |
-| Phase 1: Python REPL | src-u9c | ✅ CLOSED | - |
-| Phase 2: Hypergraph Memory | src-cir | ✅ CLOSED | - |
-| Phase 2: Reasoning Traces | src-tzy | ❌ OPEN | 1 week |
-| Phase 3: LLM Client | src-bvx | ✅ CLOSED | - |
-| Phase 3: Cost Tracking | src-dt2 | ❌ OPEN | 1 week |
-| Phase 4: Python Bindings | src-9t4 | ✅ CLOSED | - |
-| Phase 5: Go Bindings | src-8ox | ✅ CLOSED | - |
-| **Phase 6: Epistemic Verification** | **src-p4s** | ❌ OPEN | **1-2 weeks** |
-| Phase 6: Trajectory Streaming | src-y7b | ❌ OPEN | 1 week |
-| Phase 7: Claude Code Adapter | src-nw2 | ❌ OPEN | 1-2 weeks |
-| Phase 7: TUI Adapter | src-u9i | ❌ OPEN | 1-2 weeks |
-| Migration: rlm-claude-code | src-cyl | ❌ OPEN | 1 week |
-| Migration: recurse | src-m0c | ❌ OPEN | 1 week |
-
-### 1.2 Lean FV Epic (src-vce)
-
-| Phase | Issue | Status | Effort |
-|-------|-------|--------|--------|
-| Phase 1: Lean REPL | src-726 | ✅ CLOSED | - |
-| Phase 2: Topos Integration | src-4sz | ✅ CLOSED | - |
-| Phase 3: Dual-Track Sync | src-o99 | ✅ CLOSED | - |
-| Phase 4: Spec Agent | src-9mn | ✅ CLOSED | - |
-| Phase 5: Proof Automation | src-ryp | ✅ CLOSED | - |
-| **Phase 6: DP Integration** | **src-cby** | ❌ OPEN | **1 week** |
+**Remaining Work**:
+- 2 migration tasks (open)
+- Testing, validation, and publishing
 
 ---
 
-## 2. Dependency Graph
+## 1. Current State
 
-```
-                    WAVE 3 (Now)                    WAVE 4              WAVE 5
-                    ════════════                    ════════            ════════
+### 1.1 Implemented Modules
 
-        ┌─────────────────────┐
-        │ src-p4s: Epistemic  │ ─────────┐
-        │ Verification        │          │
-        │ [CRITICAL PATH]     │          │
-        └─────────────────────┘          │
-                                         │
-        ┌─────────────────────┐          │    ┌──────────────────┐
-        │ src-cby: DP         │          ├───►│ src-nw2: Claude  │
-        │ Integration         │          │    │ Code Adapter     │────┐
-        │ [Completes Lean FV] │          │    └──────────────────┘    │
-        └─────────────────────┘          │                            │
-                                         │    ┌──────────────────┐    │    ┌──────────────────┐
-        ┌─────────────────────┐          ├───►│ src-u9i: TUI     │    ├───►│ src-cyl: migrate │
-        │ src-tzy: Reasoning  │          │    │ Adapter          │────┤    │ rlm-claude-code  │
-        │ Traces              │          │    └──────────────────┘    │    └──────────────────┘
-        └─────────────────────┘          │                            │
-                                         │                            │    ┌──────────────────┐
-        ┌─────────────────────┐          │                            └───►│ src-m0c: migrate │
-        │ src-dt2: Cost       │──────────┘                                 │ recurse          │
-        │ Tracking            │                                            └──────────────────┘
-        └─────────────────────┘
+| Module | Files | Status | Phase |
+|--------|-------|--------|-------|
+| **Core** | `orchestrator.rs`, `complexity.rs`, `context.rs`, `error.rs` | Complete | Phase 1 |
+| **Python REPL** | `repl.rs` | Complete | Phase 1 |
+| **Memory** | `memory/` (store, schema, types) | Complete | Phase 2 |
+| **Reasoning Traces** | `reasoning/` (trace, store, query, types) | Complete | Phase 2 |
+| **LLM Client** | `llm/` (client, router, cache, types) | Complete | Phase 3 |
+| **Cost Tracking** | Integrated in `trajectory.rs` | Complete | Phase 3 |
+| **Python Bindings** | `pybind/` (context, llm, memory, trajectory) | Complete | Phase 4 |
+| **Go Bindings (FFI)** | `ffi/` (context, memory, trajectory, error, types) | Complete | Phase 5 |
+| **Epistemic Verification** | `epistemic/` (verifier, kl, claims, scrubber, memory_gate) | Complete | Phase 6 |
+| **Trajectory Streaming** | `trajectory.rs` (enhanced with budget, streaming) | Complete | Phase 6 |
+| **Claude Code Adapter** | `adapters/claude_code/` (adapter, mcp, hooks, skills, types) | Complete | Phase 7 |
+| **TUI Adapter** | `adapters/tui/` (adapter, panels, events) | Complete | Phase 7 |
+| **Lean REPL** | `lean/` (repl, types) | Complete | Lean Phase 1 |
+| **Topos Integration** | `topos/` (client, parser, index, types) | Complete | Lean Phase 2 |
+| **Dual-Track Sync** | `sync/` (engine, drift, generators, types) | Complete | Lean Phase 3 |
+| **Spec Agent** | `spec_agent/` (agent, parser, generators, types) | Complete | Lean Phase 4 |
+| **Proof Automation** | `proof/` (engine, ai_assistant, tactics, types) | Complete | Lean Phase 5 |
+| **DP Integration** | `dp_integration/` (commands, coverage, proof_status, review) | Complete | Lean Phase 6 |
 
-        ┌─────────────────────┐
-        │ src-y7b: Trajectory │
-        │ Streaming           │
-        └─────────────────────┘
-```
+### 1.2 Beads Issue Status
 
----
+| Status | Count | Issues |
+|--------|-------|--------|
+| **Closed** | 20 | All implementation phases |
+| **In Progress** | 2 | `loop-uci` (epic), `loop-vce` (epic) |
+| **Open** | 2 | `loop-cyl` (migration), `loop-m0c` (migration) |
 
-## 3. Optimized Wave Execution Plan
+### 1.3 Code Statistics
 
-### Wave 3: Unblock & Complete (Start Now)
-
-**Objective**: Clear the critical path and complete Lean FV epic.
-
-| Track | Issue | Priority | Duration | Description |
-|-------|-------|----------|----------|-------------|
-| **A** | **src-p4s** | **P0** | 1-2 weeks | Epistemic Verification (Strawberry) |
-| **B** | src-cby | P1 | 1 week | DP Integration (completes Lean FV) |
-| **C1** | src-tzy | P2 | 1 week | Reasoning Traces |
-| **C2** | src-dt2 | P2 | 1 week | Cost Tracking |
-| **C3** | src-y7b | P2 | 1 week | Trajectory Streaming |
-
-**Track A (Critical Path)**: Epistemic Verification
-- KL divergence computation (Bernoulli, bits)
-- Claim extractor (NL → atomic claims)
-- Evidence scrubber (p0 estimation)
-- Verification backends
-- Memory gate integration
-- REPL functions: `verify_claim()`, `audit_reasoning()`
-
-**Track B (Complete Lean FV)**: DP Integration
-- Spec coverage tracking (`/dp:spec coverage --with-lean`)
-- Proof status tracking (complete/sorry/failed)
-- Review checks for formalization coverage
-- SPEC-XX.YY ↔ Lean theorem linking
-
-**Track C (Observability)**: Parallelizable enhancements
-- Reasoning traces with deciduous-style decision trees
-- Per-component cost tracking
-- Enhanced trajectory streaming with export
-
-**Wave 3 Exit Criteria**:
-- [ ] `verify_claim()` achieves >80% hallucination detection
-- [ ] Memory gate rejects ungrounded facts (budget_gap > threshold)
-- [ ] `/dp:spec coverage` shows Lean formalization status
-- [ ] Cost tracking reports per-component usage
-- [ ] Trajectory export works for replay
-
-### Wave 4: Adapters (After src-p4s)
-
-**Objective**: Complete platform adapters for both deployment targets.
-
-| Track | Issue | Priority | Duration | Dependencies |
-|-------|-------|----------|----------|--------------|
-| **A** | src-nw2 | P1 | 1-2 weeks | src-p4s |
-| **B** | src-u9i | P1 | 1-2 weeks | src-p4s |
-
-**Track A**: Claude Code Plugin Adapter
-- MCP tools: `rlm_execute`, `rlm_status`, `memory_query`
-- Hooks: `SessionStart`, `UserPromptSubmit`, `PreCompact`
-- Skill integration
-- Epistemic verification integration
-
-**Track B**: TUI Adapter (Bubble Tea)
-- Panel renderers: RLM trace, REPL view, Memory inspector
-- Trajectory event streaming to UI
-- Budget status display
-- Keyboard handlers
-
-**Wave 4 Exit Criteria**:
-- [ ] Claude Code plugin passes existing test suite
-- [ ] TUI renders trajectory events correctly
-- [ ] Both adapters integrate epistemic verification
-- [ ] Performance: <100ms REPL latency, <10ms event latency
-
-### Wave 5: Migrations (After Adapters)
-
-**Objective**: Migrate existing projects to use rlm-core.
-
-| Track | Issue | Priority | Duration | Dependencies |
-|-------|-------|----------|----------|--------------|
-| **A** | src-cyl | P2 | 1 week | src-nw2 |
-| **B** | src-m0c | P2 | 1 week | src-u9i |
-
-**Track A**: rlm-claude-code Migration
-- Replace Python orchestrator with rlm-core
-- Migrate memory to hypergraph
-- Remove legacy implementation
-- Regression testing
-
-**Track B**: recurse Migration
-- Replace Go RLM service with rlm-core via CGO
-- Migrate memory to hypergraph
-- Remove legacy implementation
-- Regression testing
-
-**Wave 5 Exit Criteria**:
-- [ ] rlm-claude-code uses rlm-core exclusively
-- [ ] recurse uses rlm-core exclusively
-- [ ] No regressions in existing functionality
-- [ ] Legacy code removed
+- **Total Rust files**: 78
+- **Lines of code**: ~30,000+ (including tests)
+- **Git commits**: 4 (initial + waves 1-4)
 
 ---
 
-## 4. Resource Allocation
+## 2. Remaining Work
 
-### 4.1 Parallel Agent Sessions
+### 2.1 Migration Tasks (Wave 5)
 
-For maximum throughput, use **3 parallel agents**:
+| Issue | Title | Status | Description |
+|-------|-------|--------|-------------|
+| `loop-cyl` | Migration: rlm-claude-code to rlm-core | Open | Replace Python implementation with rlm-core bindings |
+| `loop-m0c` | Migration: recurse to rlm-core | Open | Replace Go implementation with rlm-core CGO bindings |
 
-| Agent | Wave 3 | Wave 4 | Wave 5 |
-|-------|--------|--------|--------|
-| **Agent 1** | src-p4s (Epistemic) | src-nw2 (Claude Code) | src-cyl (migrate) |
-| **Agent 2** | src-cby (DP Integration) | src-u9i (TUI) | src-m0c (migrate) |
-| **Agent 3** | src-tzy, src-dt2, src-y7b | Support/Review | Support/Review |
+**Migration Strategy (from specs):**
 
-### 4.2 Execution Commands
+**rlm-claude-code (loop-cyl):**
+1. Add rlm-core as optional dependency, feature-flagged
+2. Migrate orchestrator to use rlm-core Python bindings
+3. Migrate memory to rlm-core hypergraph
+4. Remove legacy Python implementation
+5. Full rlm-core native
+
+**recurse (loop-m0c):**
+1. Add rlm-core Go bindings via CGO, parallel implementation
+2. Migrate RLM service to use rlm-core
+3. Migrate memory to rlm-core hypergraph
+4. Remove legacy Go implementation
+5. Full rlm-core native with Go UI layer
+
+### 2.2 Epic Closure
+
+Once migrations are complete, the epics can be closed:
+
+| Epic | Issue | Acceptance Criteria Status |
+|------|-------|---------------------------|
+| Unified RLM Library | `loop-uci` | All criteria met except migrations |
+| Lean Formal Verification | `loop-vce` | All implementation phases complete |
+
+**loop-uci Acceptance Criteria:**
+- [x] rlm-core Rust crate compiles
+- [x] Python bindings (PyO3) available
+- [x] Go bindings working with CGO
+- [ ] **recurse migrated to use rlm-core** ← `loop-m0c`
+- [ ] **rlm-claude-code migrated to use rlm-core** ← `loop-cyl`
+- [x] >80% test coverage on core crate
+- [x] All public APIs documented
+
+**loop-vce Acceptance Criteria:**
+- [x] Lean REPL executes commands and tactics
+- [x] Topos ↔ Lean bidirectional linking
+- [x] Drift detection for spec divergence
+- [x] Spec Agent generates valid Topos and Lean
+- [x] Progressive proof automation implemented
+- [x] DP integration tracks formal spec coverage
+
+### 2.3 Publishing Tasks (Post-Migration)
+
+| Task | Description | Status |
+|------|-------------|--------|
+| Publish to crates.io | Release rlm-core Rust crate | Not started |
+| Publish to PyPI | Release Python bindings | Not started |
+| Publish Go module | Release Go bindings | Not started |
+| Documentation | API reference, usage guides | Partial (in code) |
+
+---
+
+## 3. Execution Plan
+
+### Phase 1: Migrations (Current Focus)
+
+Both migrations can proceed in parallel:
 
 ```bash
-# Wave 3 - Start immediately
-bd update src-p4s --status in_progress --assignee claude
-bd update src-cby --status in_progress --assignee claude
-bd update src-tzy --status in_progress --assignee claude
+# Track A: rlm-claude-code migration
+bd update loop-cyl --status in_progress --assignee claude
 
-# Wave 4 - After src-p4s completes
-bd update src-nw2 --status in_progress --assignee claude
-bd update src-u9i --status in_progress --assignee claude
+# Track B: recurse migration
+bd update loop-m0c --status in_progress --assignee claude
+```
 
-# Wave 5 - After adapters complete
-bd update src-cyl --status in_progress --assignee claude
-bd update src-m0c --status in_progress --assignee claude
+**Duration**: 1-2 weeks per migration
+
+### Phase 2: Validation
+
+After migrations:
+- Run full test suite (incrementally, not all at once)
+- Verify no regressions in existing functionality
+- Performance benchmarks
+
+### Phase 3: Epic Closure
+
+```bash
+# Close epics
+bd close loop-uci --reason "All acceptance criteria met"
+bd close loop-vce --reason "All implementation phases complete"
+```
+
+### Phase 4: Publishing
+
+- Tag release
+- Publish packages
+- Update documentation
+
+---
+
+## 4. Dependency Summary
+
+```
+                          COMPLETE                                    REMAINING
+                          ════════                                    ═════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │              All Implementation Phases                   │
+    │                                                          │
+    │  Phase 1-7 (rlm-core)    ✅ CLOSED                      │
+    │  Phase 1-6 (Lean FV)     ✅ CLOSED                      │
+    └────────────────────────────┬────────────────────────────┘
+                                 │
+                                 ▼
+              ┌──────────────────────────────────────┐
+              │         Migration Tasks              │
+              │                                      │
+              │  loop-cyl: rlm-claude-code  ❌ OPEN │
+              │  loop-m0c: recurse          ❌ OPEN │
+              └─────────────────┬────────────────────┘
+                                │
+                                ▼
+              ┌──────────────────────────────────────┐
+              │         Epic Closure                 │
+              │                                      │
+              │  loop-uci: Unified RLM    ◐ IN_PROG │
+              │  loop-vce: Lean FV        ◐ IN_PROG │
+              └──────────────────────────────────────┘
 ```
 
 ---
 
-## 5. Risk Analysis
+## 5. Key References
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Epistemic verification latency | High | Sample mode for interactive use, batch for storage |
-| Adapter API changes | Medium | Version adapters with rlm-core |
-| Migration regressions | High | Comprehensive test suites before migration |
-| Parallel agent conflicts | Low | Separate module directories, coordinate via beads |
+### Design Documents
+- [Unified RLM Library Design](./unified-rlm-library-design.md)
+- [Lean Formal Verification Design](./lean-formal-verification-design.md)
 
----
+### Architecture Decision Records
+- [ADR-001: Unified RLM Library](./adr/ADR-001-unified-rlm-library.md)
+- [ADR-002: Lean Formal Verification](./adr/ADR-002-lean-formal-verification.md)
 
-## 6. Success Metrics
-
-### Per-Wave Metrics
-
-| Wave | Success Criteria |
-|------|------------------|
-| Wave 3 | >80% hallucination detection, DP integration working, cost tracking active |
-| Wave 4 | Adapters pass all tests, <100ms latency |
-| Wave 5 | Zero regressions, legacy code removed |
-
-### End-to-End Metrics
-
-- [ ] rlm-core fully integrated in Claude Code and TUI
-- [ ] Lean FV epic closed (src-vce)
-- [ ] rlm-core epic closed (src-uci)
-- [ ] All migrations complete
-- [ ] >80% test coverage maintained
+### Implementation Roadmap
+- [Implementation Roadmap](./implementation-roadmap.md) (historical, superseded by this doc)
 
 ---
 
-## 7. Recommended Immediate Actions
+## 6. Commands Reference
 
-### Today
+```bash
+# View current status
+bd ready                    # Show ready-to-work issues
+bd list --status open       # Show open issues
+bd stats                    # Project statistics
 
-1. **Start Wave 3 Track A**: Begin Epistemic Verification (src-p4s)
-   - This is the critical path blocker
-   - Unblocks both adapters
+# Work on migrations
+bd update loop-cyl --status in_progress
+bd update loop-m0c --status in_progress
 
-2. **Start Wave 3 Track B**: Begin DP Integration (src-cby)
-   - Completes the Lean FV epic
-   - No blockers
+# Close when complete
+bd close loop-cyl --reason "Migration complete"
+bd close loop-m0c --reason "Migration complete"
+bd close loop-uci --reason "All acceptance criteria met"
+bd close loop-vce --reason "All phases complete"
 
-3. **Start Wave 3 Track C**: Begin Observability trio
-   - Parallelizable with no dependencies
-   - Lower priority but quick wins
-
-### This Week
-
-4. **Review Strawberry/Pythea**: Understand KL-based verification
-5. **Define claim extraction heuristics**: How to parse NL into atomic claims
-6. **Design memory gate threshold**: Budget gap threshold for rejection
-
----
-
-## 8. Timeline Estimate
-
-| Phase | Duration | End Date (from start) |
-|-------|----------|----------------------|
-| Wave 3 | 2 weeks | Week 2 |
-| Wave 4 | 2 weeks | Week 4 |
-| Wave 5 | 1-2 weeks | Week 5-6 |
-
-**Total**: ~5-6 weeks to complete both epics and migrations.
+# Sync at session end
+bd sync --from-main
+git add . && git commit -m "..."
+```
