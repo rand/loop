@@ -1,0 +1,565 @@
+//! Memory system types for the hypergraph store.
+//!
+//! The memory system organizes knowledge in a hypergraph structure with:
+//! - **Nodes**: Individual pieces of knowledge (facts, entities, experiences)
+//! - **HyperEdges**: N-ary relationships connecting multiple nodes
+//! - **Tiers**: Lifecycle stages for memory evolution
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
+use uuid::Uuid;
+
+/// Unique identifier for a memory node.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NodeId(pub Uuid);
+
+impl NodeId {
+    /// Generate a new random node ID.
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    /// Create from a UUID.
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
+    /// Parse from string.
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Ok(Self(Uuid::parse_str(s)?))
+    }
+}
+
+impl Default for NodeId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Display for NodeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Unique identifier for a hyperedge.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct EdgeId(pub Uuid);
+
+impl EdgeId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Ok(Self(Uuid::parse_str(s)?))
+    }
+}
+
+impl Default for EdgeId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Display for EdgeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Type of memory node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NodeType {
+    /// Code elements (files, functions, types, modules)
+    Entity,
+    /// Extracted knowledge claims
+    Fact,
+    /// Interaction patterns and learned behaviors
+    Experience,
+    /// Reasoning trace nodes (goals, decisions, outcomes)
+    Decision,
+    /// Verbatim content with provenance
+    Snippet,
+}
+
+impl std::fmt::Display for NodeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Entity => write!(f, "entity"),
+            Self::Fact => write!(f, "fact"),
+            Self::Experience => write!(f, "experience"),
+            Self::Decision => write!(f, "decision"),
+            Self::Snippet => write!(f, "snippet"),
+        }
+    }
+}
+
+/// Memory tier representing lifecycle stage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Tier {
+    /// Working memory for current task
+    Task = 0,
+    /// Session-accumulated knowledge
+    Session = 1,
+    /// Persistent cross-session memory
+    LongTerm = 2,
+    /// Decayed but preserved memory
+    Archive = 3,
+}
+
+impl Tier {
+    /// Get the next tier (for promotion).
+    pub fn next(&self) -> Option<Tier> {
+        match self {
+            Tier::Task => Some(Tier::Session),
+            Tier::Session => Some(Tier::LongTerm),
+            Tier::LongTerm => Some(Tier::Archive),
+            Tier::Archive => None,
+        }
+    }
+
+    /// Get the previous tier (for demotion).
+    pub fn previous(&self) -> Option<Tier> {
+        match self {
+            Tier::Task => None,
+            Tier::Session => Some(Tier::Task),
+            Tier::LongTerm => Some(Tier::Session),
+            Tier::Archive => Some(Tier::LongTerm),
+        }
+    }
+}
+
+impl std::fmt::Display for Tier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Task => write!(f, "task"),
+            Self::Session => write!(f, "session"),
+            Self::LongTerm => write!(f, "longterm"),
+            Self::Archive => write!(f, "archive"),
+        }
+    }
+}
+
+/// Source/origin tracking for a node.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Provenance {
+    /// How the node was created
+    pub source_type: ProvenanceSource,
+    /// Reference to source (file path, message ID, etc.)
+    pub source_ref: Option<String>,
+    /// When the source was observed
+    pub observed_at: DateTime<Utc>,
+    /// Additional context
+    pub context: Option<HashMap<String, Value>>,
+}
+
+/// Type of provenance source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProvenanceSource {
+    /// Extracted from user message
+    UserMessage,
+    /// Extracted from assistant response
+    AssistantResponse,
+    /// Extracted from tool output
+    ToolOutput,
+    /// Extracted from file content
+    FileContent,
+    /// Generated by consolidation
+    Consolidation,
+    /// Inferred from other nodes
+    Inference,
+    /// External import
+    Import,
+}
+
+/// A memory node in the hypergraph.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Node {
+    /// Unique identifier
+    pub id: NodeId,
+    /// Type of node
+    pub node_type: NodeType,
+    /// Optional subtype for finer categorization
+    pub subtype: Option<String>,
+    /// Main content
+    pub content: String,
+    /// Embedding vector for semantic search
+    pub embedding: Option<Vec<f32>>,
+    /// Current tier
+    pub tier: Tier,
+    /// Confidence score (0.0 - 1.0)
+    pub confidence: f64,
+    /// Source tracking
+    pub provenance: Option<Provenance>,
+    /// When the node was created
+    pub created_at: DateTime<Utc>,
+    /// When the node was last modified
+    pub updated_at: DateTime<Utc>,
+    /// When the node was last accessed
+    pub last_accessed: DateTime<Utc>,
+    /// Number of times accessed
+    pub access_count: u64,
+    /// Additional metadata
+    pub metadata: Option<HashMap<String, Value>>,
+}
+
+impl Node {
+    /// Create a new node with minimal required fields.
+    pub fn new(node_type: NodeType, content: impl Into<String>) -> Self {
+        let now = Utc::now();
+        Self {
+            id: NodeId::new(),
+            node_type,
+            subtype: None,
+            content: content.into(),
+            embedding: None,
+            tier: Tier::Task,
+            confidence: 1.0,
+            provenance: None,
+            created_at: now,
+            updated_at: now,
+            last_accessed: now,
+            access_count: 0,
+            metadata: None,
+        }
+    }
+
+    /// Set the subtype.
+    pub fn with_subtype(mut self, subtype: impl Into<String>) -> Self {
+        self.subtype = Some(subtype.into());
+        self
+    }
+
+    /// Set the tier.
+    pub fn with_tier(mut self, tier: Tier) -> Self {
+        self.tier = tier;
+        self
+    }
+
+    /// Set the confidence.
+    pub fn with_confidence(mut self, confidence: f64) -> Self {
+        self.confidence = confidence.clamp(0.0, 1.0);
+        self
+    }
+
+    /// Set the provenance.
+    pub fn with_provenance(mut self, provenance: Provenance) -> Self {
+        self.provenance = Some(provenance);
+        self
+    }
+
+    /// Set the embedding.
+    pub fn with_embedding(mut self, embedding: Vec<f32>) -> Self {
+        self.embedding = Some(embedding);
+        self
+    }
+
+    /// Add metadata.
+    pub fn with_metadata(mut self, key: impl Into<String>, value: impl Into<Value>) -> Self {
+        self.metadata
+            .get_or_insert_with(HashMap::new)
+            .insert(key.into(), value.into());
+        self
+    }
+
+    /// Record an access.
+    pub fn record_access(&mut self) {
+        self.access_count += 1;
+        self.last_accessed = Utc::now();
+    }
+
+    /// Check if the node has decayed below a threshold.
+    pub fn is_decayed(&self, min_confidence: f64) -> bool {
+        self.confidence < min_confidence
+    }
+
+    /// Approximate age in hours.
+    pub fn age_hours(&self) -> i64 {
+        (Utc::now() - self.created_at).num_hours()
+    }
+}
+
+/// Type of hyperedge relationship.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EdgeType {
+    /// Semantic relationship (relates_to, similar_to)
+    Semantic,
+    /// Structural relationship (contains, part_of)
+    Structural,
+    /// Causal relationship (causes, enables)
+    Causal,
+    /// Temporal relationship (before, after, during)
+    Temporal,
+    /// Reference relationship (cites, depends_on)
+    Reference,
+    /// Reasoning relationship (supports, contradicts)
+    Reasoning,
+}
+
+impl std::fmt::Display for EdgeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Semantic => write!(f, "semantic"),
+            Self::Structural => write!(f, "structural"),
+            Self::Causal => write!(f, "causal"),
+            Self::Temporal => write!(f, "temporal"),
+            Self::Reference => write!(f, "reference"),
+            Self::Reasoning => write!(f, "reasoning"),
+        }
+    }
+}
+
+/// A member of a hyperedge with role information.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EdgeMember {
+    /// The node in this membership
+    pub node_id: NodeId,
+    /// Role of the node in this edge (e.g., "subject", "object", "context")
+    pub role: String,
+    /// Position for ordered relationships
+    pub position: u32,
+}
+
+impl EdgeMember {
+    pub fn new(node_id: NodeId, role: impl Into<String>, position: u32) -> Self {
+        Self {
+            node_id,
+            role: role.into(),
+            position,
+        }
+    }
+}
+
+/// A hyperedge connecting multiple nodes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HyperEdge {
+    /// Unique identifier
+    pub id: EdgeId,
+    /// Type of relationship
+    pub edge_type: EdgeType,
+    /// Human-readable label
+    pub label: Option<String>,
+    /// Strength/weight of the relationship (0.0 - 1.0)
+    pub weight: f64,
+    /// Member nodes with roles
+    pub members: Vec<EdgeMember>,
+    /// When the edge was created
+    pub created_at: DateTime<Utc>,
+    /// Additional metadata
+    pub metadata: Option<HashMap<String, Value>>,
+}
+
+impl HyperEdge {
+    /// Create a new hyperedge.
+    pub fn new(edge_type: EdgeType) -> Self {
+        Self {
+            id: EdgeId::new(),
+            edge_type,
+            label: None,
+            weight: 1.0,
+            members: Vec::new(),
+            created_at: Utc::now(),
+            metadata: None,
+        }
+    }
+
+    /// Set the label.
+    pub fn with_label(mut self, label: impl Into<String>) -> Self {
+        self.label = Some(label.into());
+        self
+    }
+
+    /// Set the weight.
+    pub fn with_weight(mut self, weight: f64) -> Self {
+        self.weight = weight.clamp(0.0, 1.0);
+        self
+    }
+
+    /// Add a member.
+    pub fn with_member(mut self, node_id: NodeId, role: impl Into<String>) -> Self {
+        let position = self.members.len() as u32;
+        self.members.push(EdgeMember::new(node_id, role, position));
+        self
+    }
+
+    /// Create a binary edge (subject-object).
+    pub fn binary(
+        edge_type: EdgeType,
+        subject: NodeId,
+        object: NodeId,
+        label: impl Into<String>,
+    ) -> Self {
+        Self::new(edge_type)
+            .with_label(label)
+            .with_member(subject, "subject")
+            .with_member(object, "object")
+    }
+
+    /// Get all node IDs in this edge.
+    pub fn node_ids(&self) -> Vec<&NodeId> {
+        self.members.iter().map(|m| &m.node_id).collect()
+    }
+
+    /// Check if a node is a member.
+    pub fn contains(&self, node_id: &NodeId) -> bool {
+        self.members.iter().any(|m| &m.node_id == node_id)
+    }
+}
+
+/// Result of a consolidation operation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsolidationResult {
+    /// Nodes that were consolidated
+    pub source_nodes: Vec<NodeId>,
+    /// New consolidated node (if created)
+    pub consolidated_node: Option<NodeId>,
+    /// Nodes that were promoted
+    pub promoted_nodes: Vec<NodeId>,
+    /// Nodes that were archived
+    pub archived_nodes: Vec<NodeId>,
+    /// Summary of what happened
+    pub summary: String,
+}
+
+/// Query for searching nodes.
+#[derive(Debug, Clone, Default)]
+pub struct NodeQuery {
+    /// Text query for content search
+    pub text: Option<String>,
+    /// Filter by node types
+    pub node_types: Option<Vec<NodeType>>,
+    /// Filter by tiers
+    pub tiers: Option<Vec<Tier>>,
+    /// Minimum confidence
+    pub min_confidence: Option<f64>,
+    /// Maximum age in hours
+    pub max_age_hours: Option<i64>,
+    /// Embedding for semantic search
+    pub embedding: Option<Vec<f32>>,
+    /// Maximum results
+    pub limit: Option<usize>,
+    /// Offset for pagination
+    pub offset: Option<usize>,
+}
+
+impl NodeQuery {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn text(mut self, text: impl Into<String>) -> Self {
+        self.text = Some(text.into());
+        self
+    }
+
+    pub fn node_types(mut self, types: Vec<NodeType>) -> Self {
+        self.node_types = Some(types);
+        self
+    }
+
+    pub fn tiers(mut self, tiers: Vec<Tier>) -> Self {
+        self.tiers = Some(tiers);
+        self
+    }
+
+    pub fn min_confidence(mut self, confidence: f64) -> Self {
+        self.min_confidence = Some(confidence);
+        self
+    }
+
+    pub fn limit(mut self, limit: usize) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    pub fn with_embedding(mut self, embedding: Vec<f32>) -> Self {
+        self.embedding = Some(embedding);
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_node_creation() {
+        let node = Node::new(NodeType::Fact, "The sky is blue");
+        assert_eq!(node.node_type, NodeType::Fact);
+        assert_eq!(node.content, "The sky is blue");
+        assert_eq!(node.tier, Tier::Task);
+        assert_eq!(node.confidence, 1.0);
+    }
+
+    #[test]
+    fn test_node_builder() {
+        let node = Node::new(NodeType::Entity, "User struct")
+            .with_subtype("struct")
+            .with_tier(Tier::Session)
+            .with_confidence(0.9);
+
+        assert_eq!(node.subtype, Some("struct".to_string()));
+        assert_eq!(node.tier, Tier::Session);
+        assert_eq!(node.confidence, 0.9);
+    }
+
+    #[test]
+    fn test_tier_ordering() {
+        assert!(Tier::Task < Tier::Session);
+        assert!(Tier::Session < Tier::LongTerm);
+        assert!(Tier::LongTerm < Tier::Archive);
+    }
+
+    #[test]
+    fn test_tier_transitions() {
+        assert_eq!(Tier::Task.next(), Some(Tier::Session));
+        assert_eq!(Tier::Archive.next(), None);
+        assert_eq!(Tier::Session.previous(), Some(Tier::Task));
+        assert_eq!(Tier::Task.previous(), None);
+    }
+
+    #[test]
+    fn test_hyperedge_binary() {
+        let node1 = NodeId::new();
+        let node2 = NodeId::new();
+
+        let edge = HyperEdge::binary(EdgeType::Reference, node1.clone(), node2.clone(), "depends_on");
+
+        assert_eq!(edge.members.len(), 2);
+        assert!(edge.contains(&node1));
+        assert!(edge.contains(&node2));
+        assert_eq!(edge.label, Some("depends_on".to_string()));
+    }
+
+    #[test]
+    fn test_node_id_parse() {
+        let id = NodeId::new();
+        let parsed = NodeId::parse(&id.to_string()).unwrap();
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn test_node_query_builder() {
+        let query = NodeQuery::new()
+            .text("auth")
+            .node_types(vec![NodeType::Entity, NodeType::Fact])
+            .min_confidence(0.5)
+            .limit(10);
+
+        assert_eq!(query.text, Some("auth".to_string()));
+        assert_eq!(query.node_types, Some(vec![NodeType::Entity, NodeType::Fact]));
+        assert_eq!(query.min_confidence, Some(0.5));
+        assert_eq!(query.limit, Some(10));
+    }
+}

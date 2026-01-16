@@ -1,0 +1,48 @@
+[project]
+name = "rlm-repl"
+version = "0.1.0"
+description = "Python REPL subprocess for rlm-core"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Rand", email = "rand@loop.dev" }
+]
+keywords = ["rlm", "repl", "sandbox"]
+
+dependencies = [
+    "pydantic>=2.0",
+    "RestrictedPython>=7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "hypothesis>=6.100",
+]
+full = [
+    "cpmpy>=0.9",
+    "numpy>=1.26",
+]
+
+[project.scripts]
+rlm-repl = "rlm_repl.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rlm_repl"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

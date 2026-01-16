@@ -1,0 +1,60 @@
+[package]
+name = "rlm-core"
+version = "0.1.0"
+edition = "2021"
+description = "Unified RLM (Recursive Language Model) orchestration library"
+license = "MIT"
+repository = "https://github.com/rand/loop"
+keywords = ["rlm", "llm", "orchestration", "ai"]
+categories = ["development-tools", "asynchronous"]
+
+[lib]
+name = "rlm_core"
+crate-type = ["lib", "cdylib"]
+
+[features]
+default = ["tokio-runtime"]
+tokio-runtime = ["tokio/rt-multi-thread", "tokio/macros"]
+python = ["pyo3", "pyo3-async-runtimes"]
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.43", features = ["sync", "time"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+
+# Regex for complexity classification
+regex = "1.11"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled", "blob"] }
+
+# UUID generation
+uuid = { version = "1.11", features = ["v4", "serde"] }
+
+# HTTP client for LLM APIs
+reqwest = { version = "0.12", features = ["json"] }
+
+# Hashing for cache keys
+sha2 = "0.10"
+
+# Python bindings (optional)
+pyo3 = { version = "0.23", features = ["extension-module"], optional = true }
+pyo3-async-runtimes = { version = "0.23", features = ["tokio-runtime"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "test-util"] }
+pretty_assertions = "1.4"
