@@ -32,9 +32,12 @@ pub mod lean;
 pub mod llm;
 pub mod memory;
 pub mod orchestrator;
+pub mod proof;
 #[cfg(feature = "python")]
 pub mod pybind;
 pub mod repl;
+pub mod spec_agent;
+pub mod sync;
 pub mod topos;
 pub mod trajectory;
 
@@ -51,5 +54,12 @@ pub use orchestrator::Orchestrator;
 pub use repl::{ExecuteResult, ReplConfig, ReplHandle, ReplPool};
 pub use topos::{
     IndexBuilder, LeanRef, Link, LinkIndex, LinkType, ToposClient, ToposClientConfig, ToposRef,
+};
+pub use proof::{
+    AIAssistantConfig, AIProofAssistant, AutomationTier, ProofAttempt, ProofAutomation,
+    ProofAutomationBuilder, ProofContext, ProofStats, ProofStrategy, SpecDomain, TacticResult,
+};
+pub use sync::{
+    DriftReport, DriftType, DualTrackSync, FormalizationLevel, SyncDirection, SyncResult,
 };
 pub use trajectory::{TrajectoryEvent, TrajectoryEventType};
