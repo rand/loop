@@ -24,8 +24,11 @@
 //! }
 //! ```
 
+pub mod adapters;
 pub mod complexity;
 pub mod context;
+pub mod dp_integration;
+pub mod epistemic;
 pub mod error;
 pub mod ffi;
 pub mod lean;
@@ -35,6 +38,7 @@ pub mod orchestrator;
 pub mod proof;
 #[cfg(feature = "python")]
 pub mod pybind;
+pub mod reasoning;
 pub mod repl;
 pub mod spec_agent;
 pub mod sync;
@@ -63,3 +67,25 @@ pub use sync::{
     DriftReport, DriftType, DualTrackSync, FormalizationLevel, SyncDirection, SyncResult,
 };
 pub use trajectory::{TrajectoryEvent, TrajectoryEventType};
+pub use reasoning::{
+    DecisionNode, DecisionNodeId, DecisionNodeType, DecisionPath, DecisionPoint, DecisionTree,
+    OptionStatus, ReasoningTrace, ReasoningTraceStore, TraceAnalyzer, TraceComparison,
+    TraceEdge, TraceEdgeLabel, TraceId, TraceQuery, TraceStats, TraceStoreStats,
+};
+pub use dp_integration::{
+    CoverageReport, CoverageSummary, DPCommand, DPCommandHandler, DPCommandResult,
+    FormalizationReview, LeanProofScanner, ProofEvidence, ProofStatus, ReviewCheck,
+    ReviewResult, SpecCoverage, SpecCoverageTracker, SpecId, TheoremInfo,
+};
+pub use epistemic::{
+    audit_reasoning, evidence_dependence, quick_hallucination_check, verify_claim,
+    BatchVerifier, BudgetResult, Claim, ClaimCategory, ClaimExtractor, EpistemicVerifier,
+    EvidenceScrubber, GateDecision, GroundingStatus, HaikuVerifier, MemoryGate,
+    MemoryGateConfig, Probability, SelfVerifier, ThresholdGate, VerificationConfig,
+    VerificationResult, VerificationStats, VerificationVerdict,
+};
+pub use adapters::{
+    AdapterConfig, AdapterStatus, ClaudeCodeAdapter, CompactData, HookContext, HookHandler,
+    HookResult, HookTrigger, McpTool, McpToolRegistry, PromptEnhancement, RlmRequest, RlmResponse,
+    RlmSkill, AdapterSessionContext,
+};

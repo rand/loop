@@ -5,11 +5,19 @@
 //! - Claude Code: Streaming text output
 //! - TUI: Bubble Tea panel updates
 //! - Analysis: JSON export for replay
+//!
+//! ## Features
+//! - Event streaming with verbosity levels
+//! - Cost tracking with budget management
+//! - Model pricing (Jan 2026)
+//! - Burn rate tracking and alerts
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use tokio::sync::broadcast;
 
 /// Types of trajectory events emitted during RLM execution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -362,6 +370,528 @@ fn events_to_markdown(events: &[TrajectoryEvent]) -> String {
     md
 }
 
+// =============================================================================
+// Model Pricing (Jan 2026)
+// =============================================================================
+
+/// Model pricing per 1M tokens (USD).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct ModelPricing {
+    /// Cost per 1M input tokens
+    pub input_per_million: f64,
+    /// Cost per 1M output tokens
+    pub output_per_million: f64,
+    /// Cost per 1M cache creation tokens (if applicable)
+    pub cache_creation_per_million: f64,
+    /// Cost per 1M cache read tokens (if applicable)
+    pub cache_read_per_million: f64,
+}
+
+impl ModelPricing {
+    /// Create new pricing.
+    pub const fn new(input: f64, output: f64) -> Self {
+        Self {
+            input_per_million: input,
+            output_per_million: output,
+            cache_creation_per_million: input * 1.25, // 25% premium for cache creation
+            cache_read_per_million: input * 0.1,     // 90% discount for cache reads
+        }
+    }
+
+    /// Calculate cost for token usage.
+    pub fn calculate(&self, usage: &TokenUsage) -> f64 {
+        let input_cost = (usage.input_tokens as f64 / 1_000_000.0) * self.input_per_million;
+        let output_cost = (usage.output_tokens as f64 / 1_000_000.0) * self.output_per_million;
+        let cache_create_cost =
+            (usage.cache_creation_tokens as f64 / 1_000_000.0) * self.cache_creation_per_million;
+        let cache_read_cost =
+            (usage.cache_read_tokens as f64 / 1_000_000.0) * self.cache_read_per_million;
+
+        input_cost + output_cost + cache_create_cost + cache_read_cost
+    }
+}
+
+/// Known model pricing table (Jan 2026).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Model {
+    ClaudeOpus4,
+    ClaudeSonnet4,
+    ClaudeHaiku35,
+    Gpt4o,
+    Gpt4oMini,
+    O1,
+    O1Mini,
+    DeepseekV3,
+}
+
+impl Model {
+    /// Get pricing for this model.
+    pub fn pricing(&self) -> ModelPricing {
+        match self {
+            // Anthropic (Jan 2026 pricing)
+            Self::ClaudeOpus4 => ModelPricing::new(15.0, 75.0),
+            Self::ClaudeSonnet4 => ModelPricing::new(3.0, 15.0),
+            Self::ClaudeHaiku35 => ModelPricing::new(0.80, 4.0),
+            // OpenAI
+            Self::Gpt4o => ModelPricing::new(2.50, 10.0),
+            Self::Gpt4oMini => ModelPricing::new(0.15, 0.60),
+            Self::O1 => ModelPricing::new(15.0, 60.0),
+            Self::O1Mini => ModelPricing::new(3.0, 12.0),
+            // Open source
+            Self::DeepseekV3 => ModelPricing::new(0.27, 1.10),
+        }
+    }
+
+    /// Calculate cost for this model.
+    pub fn calculate_cost(&self, usage: &TokenUsage) -> f64 {
+        self.pricing().calculate(usage)
+    }
+}
+
+// =============================================================================
+// Budget Management
+// =============================================================================
+
+/// Budget alert threshold.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BudgetAlert {
+    /// 80% of budget consumed
+    Warning,
+    /// 100% of budget consumed
+    Exceeded,
+    /// Custom threshold percentage
+    Custom(u8),
+}
+
+impl BudgetAlert {
+    /// Get threshold as percentage (0-100).
+    pub fn threshold_percent(&self) -> u8 {
+        match self {
+            Self::Warning => 80,
+            Self::Exceeded => 100,
+            Self::Custom(p) => *p,
+        }
+    }
+}
+
+/// Budget configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BudgetConfig {
+    /// Maximum cost in USD (None = unlimited)
+    pub max_cost_usd: Option<f64>,
+    /// Maximum tokens (None = unlimited)
+    pub max_tokens: Option<u64>,
+    /// Maximum recursion depth (None = unlimited)
+    pub max_depth: Option<u32>,
+    /// Alert thresholds to trigger
+    pub alert_thresholds: Vec<u8>,
+    /// Whether to hard-stop on budget exceeded
+    pub hard_limit: bool,
+}
+
+impl Default for BudgetConfig {
+    fn default() -> Self {
+        Self {
+            max_cost_usd: Some(1.0),  // $1 default
+            max_tokens: Some(100_000), // 100k tokens
+            max_depth: Some(5),        // 5 recursion levels
+            alert_thresholds: vec![80, 100],
+            hard_limit: true,
+        }
+    }
+}
+
+impl BudgetConfig {
+    /// Unlimited budget (useful for testing).
+    pub fn unlimited() -> Self {
+        Self {
+            max_cost_usd: None,
+            max_tokens: None,
+            max_depth: None,
+            alert_thresholds: vec![],
+            hard_limit: false,
+        }
+    }
+
+    /// Create budget with specific cost limit.
+    pub fn with_cost_limit(max_usd: f64) -> Self {
+        Self {
+            max_cost_usd: Some(max_usd),
+            ..Self::default()
+        }
+    }
+}
+
+/// Budget tracking state.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BudgetState {
+    /// Current accumulated cost
+    pub current_cost_usd: f64,
+    /// Current accumulated tokens
+    pub current_tokens: u64,
+    /// Current recursion depth
+    pub current_depth: u32,
+    /// Alerts that have been triggered
+    pub triggered_alerts: Vec<BudgetAlert>,
+    /// Start time for burn rate calculation
+    pub started_at: DateTime<Utc>,
+    /// Last update time
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Default for BudgetState {
+    fn default() -> Self {
+        let now = Utc::now();
+        Self {
+            current_cost_usd: 0.0,
+            current_tokens: 0,
+            current_depth: 0,
+            triggered_alerts: vec![],
+            started_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+impl BudgetState {
+    /// Calculate burn rate in USD per minute.
+    pub fn burn_rate_per_minute(&self) -> f64 {
+        let elapsed = self.updated_at - self.started_at;
+        let minutes = elapsed.num_milliseconds() as f64 / 60_000.0;
+        if minutes > 0.0 {
+            self.current_cost_usd / minutes
+        } else {
+            0.0
+        }
+    }
+
+    /// Estimate time to budget exhaustion.
+    pub fn estimated_exhaustion(&self, config: &BudgetConfig) -> Option<Duration> {
+        let rate = self.burn_rate_per_minute();
+        if rate <= 0.0 {
+            return None;
+        }
+
+        let remaining = config.max_cost_usd? - self.current_cost_usd;
+        if remaining <= 0.0 {
+            return Some(Duration::zero());
+        }
+
+        let minutes_remaining = remaining / rate;
+        Some(Duration::milliseconds((minutes_remaining * 60_000.0) as i64))
+    }
+
+    /// Check budget utilization percentage.
+    pub fn utilization_percent(&self, config: &BudgetConfig) -> Option<f64> {
+        config
+            .max_cost_usd
+            .map(|max| (self.current_cost_usd / max) * 100.0)
+    }
+}
+
+/// Budget manager for tracking and enforcing limits.
+#[derive(Debug)]
+pub struct BudgetManager {
+    config: BudgetConfig,
+    state: Arc<RwLock<BudgetState>>,
+}
+
+impl BudgetManager {
+    /// Create new budget manager.
+    pub fn new(config: BudgetConfig) -> Self {
+        Self {
+            config,
+            state: Arc::new(RwLock::new(BudgetState::default())),
+        }
+    }
+
+    /// Record cost and check for alerts.
+    pub fn record_cost(&self, cost_usd: f64, tokens: u64) -> Vec<BudgetAlert> {
+        let mut state = self.state.write().unwrap();
+        state.current_cost_usd += cost_usd;
+        state.current_tokens += tokens;
+        state.updated_at = Utc::now();
+
+        // Check for new alerts
+        let mut new_alerts = vec![];
+
+        if let Some(max) = self.config.max_cost_usd {
+            let utilization = (state.current_cost_usd / max) * 100.0;
+
+            for threshold in &self.config.alert_thresholds {
+                let alert = if *threshold == 80 {
+                    BudgetAlert::Warning
+                } else if *threshold >= 100 {
+                    BudgetAlert::Exceeded
+                } else {
+                    BudgetAlert::Custom(*threshold)
+                };
+
+                if utilization >= *threshold as f64 && !state.triggered_alerts.contains(&alert) {
+                    state.triggered_alerts.push(alert);
+                    new_alerts.push(alert);
+                }
+            }
+        }
+
+        new_alerts
+    }
+
+    /// Check if budget is exceeded.
+    pub fn is_exceeded(&self) -> bool {
+        let state = self.state.read().unwrap();
+
+        if let Some(max) = self.config.max_cost_usd {
+            if state.current_cost_usd >= max {
+                return true;
+            }
+        }
+
+        if let Some(max) = self.config.max_tokens {
+            if state.current_tokens >= max {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// Check if hard limit should stop execution.
+    pub fn should_stop(&self) -> bool {
+        self.config.hard_limit && self.is_exceeded()
+    }
+
+    /// Get current state snapshot.
+    pub fn state(&self) -> BudgetState {
+        self.state.read().unwrap().clone()
+    }
+
+    /// Get burn rate.
+    pub fn burn_rate(&self) -> f64 {
+        self.state.read().unwrap().burn_rate_per_minute()
+    }
+
+    /// Set recursion depth.
+    pub fn set_depth(&self, depth: u32) {
+        self.state.write().unwrap().current_depth = depth;
+    }
+
+    /// Check depth limit.
+    pub fn depth_exceeded(&self) -> bool {
+        let state = self.state.read().unwrap();
+        self.config
+            .max_depth
+            .map(|max| state.current_depth >= max)
+            .unwrap_or(false)
+    }
+}
+
+// =============================================================================
+// Trajectory Streaming
+// =============================================================================
+
+/// Verbosity level for trajectory output.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Verbosity {
+    /// Only errors and final results
+    Minimal,
+    /// Normal operation events
+    Normal,
+    /// Include reasoning and intermediate steps
+    Verbose,
+    /// Full debug output
+    Debug,
+}
+
+impl Default for Verbosity {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
+impl TrajectoryEventType {
+    /// Get minimum verbosity level for this event type.
+    pub fn min_verbosity(&self) -> Verbosity {
+        match self {
+            // Always show
+            Self::Error | Self::Final | Self::CostReport => Verbosity::Minimal,
+            // Normal operation
+            Self::RlmStart
+            | Self::Analyze
+            | Self::RecurseStart
+            | Self::RecurseEnd
+            | Self::HallucinationFlag => Verbosity::Normal,
+            // Verbose details
+            Self::ReplExec
+            | Self::ReplResult
+            | Self::Reason
+            | Self::ToolUse
+            | Self::VerifyStart
+            | Self::VerifyComplete
+            | Self::Decompose
+            | Self::Synthesize => Verbosity::Verbose,
+            // Debug only
+            Self::ClaimExtracted
+            | Self::EvidenceChecked
+            | Self::BudgetComputed
+            | Self::Memory
+            | Self::Externalize => Verbosity::Debug,
+        }
+    }
+
+    /// Check if event should be emitted at given verbosity.
+    pub fn should_emit(&self, verbosity: Verbosity) -> bool {
+        self.min_verbosity() <= verbosity
+    }
+}
+
+/// Trait for trajectory event emitters.
+pub trait TrajectoryEmitter: Send + Sync {
+    /// Emit a trajectory event.
+    fn emit(&self, event: TrajectoryEvent);
+
+    /// Emit a budget alert.
+    fn emit_alert(&self, alert: BudgetAlert, state: &BudgetState);
+
+    /// Get current verbosity level.
+    fn verbosity(&self) -> Verbosity;
+
+    /// Set verbosity level.
+    fn set_verbosity(&mut self, verbosity: Verbosity);
+}
+
+/// Broadcast-based trajectory emitter.
+pub struct BroadcastEmitter {
+    sender: broadcast::Sender<TrajectoryEvent>,
+    verbosity: Verbosity,
+}
+
+impl BroadcastEmitter {
+    /// Create new broadcast emitter with channel capacity.
+    pub fn new(capacity: usize) -> Self {
+        let (sender, _) = broadcast::channel(capacity);
+        Self {
+            sender,
+            verbosity: Verbosity::default(),
+        }
+    }
+
+    /// Subscribe to trajectory events.
+    pub fn subscribe(&self) -> broadcast::Receiver<TrajectoryEvent> {
+        self.sender.subscribe()
+    }
+
+    /// Get number of active subscribers.
+    pub fn subscriber_count(&self) -> usize {
+        self.sender.receiver_count()
+    }
+}
+
+impl TrajectoryEmitter for BroadcastEmitter {
+    fn emit(&self, event: TrajectoryEvent) {
+        if event.event_type.should_emit(self.verbosity) {
+            let _ = self.sender.send(event);
+        }
+    }
+
+    fn emit_alert(&self, alert: BudgetAlert, state: &BudgetState) {
+        let content = match alert {
+            BudgetAlert::Warning => format!(
+                "Budget warning: ${:.4} spent ({:.1}% of limit)",
+                state.current_cost_usd,
+                state.utilization_percent(&BudgetConfig::default()).unwrap_or(0.0)
+            ),
+            BudgetAlert::Exceeded => format!(
+                "Budget exceeded: ${:.4} spent",
+                state.current_cost_usd
+            ),
+            BudgetAlert::Custom(p) => format!(
+                "Budget alert ({}%): ${:.4} spent",
+                p, state.current_cost_usd
+            ),
+        };
+
+        let event = TrajectoryEvent::new(TrajectoryEventType::CostReport, 0, content)
+            .with_metadata("alert", format!("{:?}", alert))
+            .with_metadata("burn_rate", state.burn_rate_per_minute());
+
+        let _ = self.sender.send(event);
+    }
+
+    fn verbosity(&self) -> Verbosity {
+        self.verbosity
+    }
+
+    fn set_verbosity(&mut self, verbosity: Verbosity) {
+        self.verbosity = verbosity;
+    }
+}
+
+/// Collecting emitter that stores events in a Vec.
+#[derive(Debug, Default)]
+pub struct CollectingEmitter {
+    events: Arc<RwLock<Vec<TrajectoryEvent>>>,
+    verbosity: Verbosity,
+}
+
+impl CollectingEmitter {
+    /// Create new collecting emitter.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Get collected events.
+    pub fn events(&self) -> Vec<TrajectoryEvent> {
+        self.events.read().unwrap().clone()
+    }
+
+    /// Clear collected events.
+    pub fn clear(&self) {
+        self.events.write().unwrap().clear();
+    }
+}
+
+impl TrajectoryEmitter for CollectingEmitter {
+    fn emit(&self, event: TrajectoryEvent) {
+        if event.event_type.should_emit(self.verbosity) {
+            self.events.write().unwrap().push(event);
+        }
+    }
+
+    fn emit_alert(&self, alert: BudgetAlert, state: &BudgetState) {
+        let event = TrajectoryEvent::new(
+            TrajectoryEventType::CostReport,
+            0,
+            format!("Budget {:?}: ${:.4}", alert, state.current_cost_usd),
+        );
+        self.events.write().unwrap().push(event);
+    }
+
+    fn verbosity(&self) -> Verbosity {
+        self.verbosity
+    }
+
+    fn set_verbosity(&mut self, verbosity: Verbosity) {
+        self.verbosity = verbosity;
+    }
+}
+
+/// Null emitter that discards all events.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct NullEmitter;
+
+impl TrajectoryEmitter for NullEmitter {
+    fn emit(&self, _event: TrajectoryEvent) {}
+    fn emit_alert(&self, _alert: BudgetAlert, _state: &BudgetState) {}
+    fn verbosity(&self) -> Verbosity {
+        Verbosity::Minimal
+    }
+    fn set_verbosity(&mut self, _verbosity: Verbosity) {}
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -416,5 +946,178 @@ mod tests {
         let exported = export_events(&events, ExportFormat::JsonLines);
         let lines: Vec<_> = exported.lines().collect();
         assert_eq!(lines.len(), 2);
+    }
+
+    // =========================================================================
+    // Model Pricing Tests
+    // =========================================================================
+
+    #[test]
+    fn test_model_pricing() {
+        let usage = TokenUsage {
+            input_tokens: 1_000_000,
+            output_tokens: 500_000,
+            cache_creation_tokens: 0,
+            cache_read_tokens: 0,
+        };
+
+        let cost = Model::ClaudeSonnet4.calculate_cost(&usage);
+        // 1M * $3/1M + 0.5M * $15/1M = $3 + $7.50 = $10.50
+        assert!((cost - 10.5).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_pricing_with_cache() {
+        let usage = TokenUsage {
+            input_tokens: 100_000,
+            output_tokens: 50_000,
+            cache_creation_tokens: 200_000,
+            cache_read_tokens: 500_000,
+        };
+
+        let pricing = Model::ClaudeHaiku35.pricing();
+        let cost = pricing.calculate(&usage);
+        assert!(cost > 0.0);
+    }
+
+    // =========================================================================
+    // Budget Management Tests
+    // =========================================================================
+
+    #[test]
+    fn test_budget_config_default() {
+        let config = BudgetConfig::default();
+        assert_eq!(config.max_cost_usd, Some(1.0));
+        assert_eq!(config.max_tokens, Some(100_000));
+        assert!(config.hard_limit);
+    }
+
+    #[test]
+    fn test_budget_manager_alerts() {
+        let config = BudgetConfig::with_cost_limit(1.0);
+        let manager = BudgetManager::new(config);
+
+        // No alerts initially
+        let alerts = manager.record_cost(0.5, 50_000);
+        assert!(alerts.is_empty());
+
+        // Warning at 80%
+        let alerts = manager.record_cost(0.35, 25_000);
+        assert!(alerts.contains(&BudgetAlert::Warning));
+
+        // Exceeded at 100%
+        let alerts = manager.record_cost(0.20, 10_000);
+        assert!(alerts.contains(&BudgetAlert::Exceeded));
+    }
+
+    #[test]
+    fn test_budget_should_stop() {
+        let config = BudgetConfig::with_cost_limit(0.50);
+        let manager = BudgetManager::new(config);
+
+        assert!(!manager.should_stop());
+
+        manager.record_cost(0.60, 50_000);
+        assert!(manager.should_stop());
+    }
+
+    #[test]
+    fn test_budget_unlimited() {
+        let config = BudgetConfig::unlimited();
+        let manager = BudgetManager::new(config);
+
+        manager.record_cost(100.0, 10_000_000);
+        assert!(!manager.is_exceeded());
+        assert!(!manager.should_stop());
+    }
+
+    #[test]
+    fn test_budget_depth_limit() {
+        let config = BudgetConfig::default();
+        let manager = BudgetManager::new(config);
+
+        manager.set_depth(3);
+        assert!(!manager.depth_exceeded());
+
+        manager.set_depth(5);
+        assert!(manager.depth_exceeded());
+    }
+
+    // =========================================================================
+    // Verbosity Tests
+    // =========================================================================
+
+    #[test]
+    fn test_verbosity_ordering() {
+        assert!(Verbosity::Minimal < Verbosity::Normal);
+        assert!(Verbosity::Normal < Verbosity::Verbose);
+        assert!(Verbosity::Verbose < Verbosity::Debug);
+    }
+
+    #[test]
+    fn test_event_verbosity_levels() {
+        // Minimal events always show
+        assert!(TrajectoryEventType::Error.should_emit(Verbosity::Minimal));
+        assert!(TrajectoryEventType::Final.should_emit(Verbosity::Minimal));
+
+        // Normal events don't show at minimal
+        assert!(!TrajectoryEventType::Analyze.should_emit(Verbosity::Minimal));
+        assert!(TrajectoryEventType::Analyze.should_emit(Verbosity::Normal));
+
+        // Debug events only at debug
+        assert!(!TrajectoryEventType::Memory.should_emit(Verbosity::Verbose));
+        assert!(TrajectoryEventType::Memory.should_emit(Verbosity::Debug));
+    }
+
+    // =========================================================================
+    // Emitter Tests
+    // =========================================================================
+
+    #[test]
+    fn test_collecting_emitter() {
+        let mut emitter = CollectingEmitter::new();
+        emitter.set_verbosity(Verbosity::Debug);
+
+        emitter.emit(TrajectoryEvent::rlm_start("Test"));
+        emitter.emit(TrajectoryEvent::error(0, "Error"));
+        emitter.emit(TrajectoryEvent::final_answer(0, "Done"));
+
+        let events = emitter.events();
+        assert_eq!(events.len(), 3);
+
+        emitter.clear();
+        assert!(emitter.events().is_empty());
+    }
+
+    #[test]
+    fn test_collecting_emitter_filters_by_verbosity() {
+        let mut emitter = CollectingEmitter::new();
+        emitter.set_verbosity(Verbosity::Minimal);
+
+        // Error should pass (minimal)
+        emitter.emit(TrajectoryEvent::error(0, "Error"));
+        // Memory should be filtered (debug)
+        emitter.emit(TrajectoryEvent::new(TrajectoryEventType::Memory, 0, "Store"));
+
+        let events = emitter.events();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, TrajectoryEventType::Error);
+    }
+
+    #[test]
+    fn test_null_emitter() {
+        let mut emitter = NullEmitter;
+        emitter.emit(TrajectoryEvent::rlm_start("Test"));
+        emitter.set_verbosity(Verbosity::Debug);
+        assert_eq!(emitter.verbosity(), Verbosity::Minimal);
+    }
+
+    #[test]
+    fn test_broadcast_emitter_creation() {
+        let emitter = BroadcastEmitter::new(100);
+        assert_eq!(emitter.subscriber_count(), 0);
+
+        let _rx = emitter.subscribe();
+        assert_eq!(emitter.subscriber_count(), 1);
     }
 }
