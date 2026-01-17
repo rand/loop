@@ -234,7 +234,6 @@ char* rlm_trajectory_event_type_name(RlmTrajectoryEventType event_type);
 import "C"
 
 import (
-	"encoding/json"
 	"errors"
 	"runtime"
 	"sync"

@@ -1,7 +1,11 @@
 package rlmcore
 
 /*
+#cgo LDFLAGS: -L${SRCDIR}/../../target/release -lrlm_core
+#cgo darwin LDFLAGS: -framework Security -framework CoreFoundation
+
 #include <stdlib.h>
+#include "../../include/rlm_core.h"
 */
 import "C"
 

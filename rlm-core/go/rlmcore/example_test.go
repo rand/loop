@@ -123,8 +123,8 @@ func ExampleTrajectoryEvent() {
 	}
 }
 
-// ExampleBubbleTeaIntegration shows how to integrate with Bubble Tea TUI.
-func ExampleBubbleTeaIntegration() {
+// Example_bubbleTeaIntegration shows how to integrate with Bubble Tea TUI.
+func Example_bubbleTeaIntegration() {
 	// This example shows the pattern for Bubble Tea integration.
 	// In a real app, you would use these in your Model's Update method.
 
