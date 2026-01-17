@@ -3,7 +3,7 @@
 use pyo3::prelude::*;
 use std::path::PathBuf;
 
-use crate::memory::{EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, SqliteMemoryStore, Tier};
+use crate::memory::{EdgeId, EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, SqliteMemoryStore, Tier};
 
 /// Python enum for NodeType.
 #[pyclass(name = "NodeType", eq, eq_int)]
@@ -221,27 +221,46 @@ pub struct PyHyperEdge {
     pub(crate) inner: HyperEdge,
 }
 
+impl PyHyperEdge {
+    /// Parse edge type string to EdgeType enum.
+    fn parse_edge_type(edge_type: &str) -> PyResult<EdgeType> {
+        match edge_type.to_lowercase().as_str() {
+            "semantic" => Ok(EdgeType::Semantic),
+            "structural" => Ok(EdgeType::Structural),
+            "causal" => Ok(EdgeType::Causal),
+            "temporal" => Ok(EdgeType::Temporal),
+            "reference" => Ok(EdgeType::Reference),
+            "reasoning" => Ok(EdgeType::Reasoning),
+            _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Invalid edge type: {}. Valid types: semantic, structural, causal, temporal, reference, reasoning",
+                edge_type
+            ))),
+        }
+    }
+}
+
 #[pymethods]
 impl PyHyperEdge {
     #[new]
-    #[pyo3(signature = (edge_type, label=None, weight=None))]
-    fn new(edge_type: &str, label: Option<String>, weight: Option<f64>) -> PyResult<Self> {
-        let et = match edge_type.to_lowercase().as_str() {
-            "semantic" => EdgeType::Semantic,
-            "structural" => EdgeType::Structural,
-            "causal" => EdgeType::Causal,
-            "temporal" => EdgeType::Temporal,
-            "reference" => EdgeType::Reference,
-            "reasoning" => EdgeType::Reasoning,
-            _ => {
-                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                    "Invalid edge type: {}",
-                    edge_type
-                )))
-            }
-        };
-
+    #[pyo3(signature = (edge_type, node_ids=None, label=None, weight=None))]
+    fn new(
+        edge_type: &str,
+        node_ids: Option<Vec<String>>,
+        label: Option<String>,
+        weight: Option<f64>,
+    ) -> PyResult<Self> {
+        let et = Self::parse_edge_type(edge_type)?;
         let mut edge = HyperEdge::new(et);
+
+        // Add node members if provided
+        if let Some(ids) = node_ids {
+            for (i, id_str) in ids.iter().enumerate() {
+                let node_id = NodeId::parse(id_str)
+                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+                edge = edge.with_member(node_id, format!("member_{}", i));
+            }
+        }
+
         if let Some(l) = label {
             edge = edge.with_label(l);
         }
@@ -286,6 +305,28 @@ impl PyHyperEdge {
         let id = NodeId::parse(node_id)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
         Ok(self.inner.contains(&id))
+    }
+
+    /// Add a member node with a role. Returns a new HyperEdge with the member added.
+    fn with_member(&self, node_id: &str, role: &str) -> PyResult<Self> {
+        let id = NodeId::parse(node_id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+        Ok(Self {
+            inner: self.inner.clone().with_member(id, role),
+        })
+    }
+
+    /// Create a binary edge (subject-object relationship).
+    #[staticmethod]
+    fn binary(edge_type: &str, subject_id: &str, object_id: &str, label: &str) -> PyResult<Self> {
+        let et = Self::parse_edge_type(edge_type)?;
+        let subject = NodeId::parse(subject_id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+        let object = NodeId::parse(object_id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+        Ok(Self {
+            inner: HyperEdge::binary(et, subject, object, label),
+        })
     }
 
     fn __repr__(&self) -> String {
@@ -418,6 +459,35 @@ impl PyMemoryStore {
             .stats()
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
         Ok(PyMemoryStats { inner: stats })
+    }
+
+    /// Add an edge to the store. Returns the edge's ID.
+    fn add_edge(&self, edge: &PyHyperEdge) -> PyResult<String> {
+        let id = edge.inner.id.to_string();
+        self.inner
+            .add_edge(&edge.inner)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(id)
+    }
+
+    /// Get all edges for a node.
+    fn get_edges_for_node(&self, node_id: &str) -> PyResult<Vec<PyHyperEdge>> {
+        let id = NodeId::parse(node_id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+        let edges = self
+            .inner
+            .get_edges_for_node(&id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(edges.into_iter().map(|e| PyHyperEdge { inner: e }).collect())
+    }
+
+    /// Delete an edge by ID.
+    fn delete_edge(&self, edge_id: &str) -> PyResult<bool> {
+        let id = EdgeId::parse(edge_id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+        self.inner
+            .delete_edge(&id)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
     }
 
     fn __repr__(&self) -> String {
