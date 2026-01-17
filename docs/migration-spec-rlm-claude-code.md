@@ -11,6 +11,49 @@
 
 ---
 
+## ⚠️ Migration Reality (Updated Jan 2025)
+
+**Actual execution** of this migration revealed important constraints:
+
+### What's Actually Available in Python Bindings
+
+| Type | Available | Notes |
+|------|-----------|-------|
+| `PatternClassifier` | ✅ | `should_activate()`, `classify()` |
+| `MemoryStore` | ✅ | `open()`, `add_node()`, `query()` |
+| `TrajectoryEvent` | ✅ | Factory methods, `to_json()`, `with_metadata()` |
+| `TrajectoryEventType` | ✅ | All event type variants |
+| `ClaimExtractor` | ✅ | `extract()` - pattern-based, not LLM |
+| `SmartRouter` | ✅ | `route()` with `RoutingContext` |
+| `CostTracker` | ✅ | `record()`, `merge()`, cost tracking |
+| `quick_hallucination_check` | ✅ | Returns risk score (0.0-1.0) |
+| `ReplPool` / `ReplHandle` | ❌ | **Not exposed** - Python execution must stay in Python |
+| `ClaudeCodeAdapter` | ❌ | **Not exposed** - orchestration stays in Python |
+| `Orchestrator` | ❌ | **Not exposed** - use component delegation instead |
+
+### Migration Strategy Adjustment
+
+Instead of full replacement, the migration uses **component-level delegation**:
+- Python orchestration layer remains
+- Individual components delegate to rlm_core when available
+- Feature flag `RLM_USE_CORE=true/false` toggles delegation
+- Legacy code preserved for backward compatibility
+
+### Completed Migration (rlm-claude-code-rlmcore fork)
+
+| Phase | Component | Status | Commit |
+|-------|-----------|--------|--------|
+| 1 | Infrastructure + `USE_RLM_CORE` flag | ✅ | `913628b` |
+| 2 | `complexity_classifier.py` → `PatternClassifier` | ✅ | `788575c` |
+| 3 | `memory_store.py` → `MemoryStore` | ✅ | `c2543ee` |
+| 4 | `trajectory.py` → `TrajectoryEvent` | ✅ | `e695b39` |
+| 5 | `repl_environment.py` → `ReplPool` | ⏭️ **N/A** | - |
+| 6 | `epistemic/claim_extractor.py` → `ClaimExtractor` | ✅ | `1b1ccc7` |
+| 7 | `smart_router.py` → `SmartRouter` | ✅ | `58e2bcf` |
+| 8 | Cleanup legacy code | ⏭️ **Deferred** | - |
+
+---
+
 ## 1. Module Mapping
 
 ### 1.1 Direct Replacements
@@ -224,36 +267,27 @@ def migrate_database(old_path: str, new_path: str):
 
 ### Phase 5: Migrate REPL Environment
 
-**Duration**: 3-4 days
-**Risk**: Medium (subprocess management)
+**Status**: ⏭️ **NOT APPLICABLE**
 
-1. Replace `repl_environment.py`:
-   ```python
-   # Before
-   from .repl_environment import ReplEnvironment
-   repl = ReplEnvironment()
-   result = repl.execute(code)
+**Reason**: `ReplPool` and `ReplHandle` are **not exposed** in rlm-core Python bindings.
 
-   # After
-   from rlm_core import ReplPool, ReplConfig
-   config = ReplConfig(timeout_ms=30000)
-   pool = ReplPool(config)
-   handle = pool.get_handle()
-   result = handle.execute(code)
-   ```
+**Technical Justification**:
+The REPL environment executes arbitrary Python code in a sandboxed environment using `RestrictedPython`:
 
-2. Migrate helper functions:
-   - `peek()`, `search()`, `summarize()`, `llm()` available via rlm-core
+```python
+# repl_environment.py uses Python-specific sandboxing
+from RestrictedPython import compile_restricted, safe_builtins
+from RestrictedPython.Guards import guarded_iter_unpack_sequence, safer_getattr
+```
 
-3. Handle deferred operations:
-   - rlm-core uses `DeferredOperation` pattern
-   - Update async handling
+This is fundamentally Python-specific:
+1. **Code compilation**: `compile_restricted()` compiles Python AST with security checks
+2. **Execution namespace**: Python globals/locals with RLM helper functions injected
+3. **Output capture**: Python stdout/stderr interception
 
-**Exit Criteria**:
-- [ ] Code execution produces same results
-- [ ] Helper functions work correctly
-- [ ] Timeouts and resource limits enforced
-- [ ] REPL tests pass
+Rust cannot efficiently execute arbitrary Python code. Even if `ReplPool` were exposed, it would just be a thin wrapper calling back into Python, adding overhead without benefit.
+
+**Resolution**: Keep `repl_environment.py` as pure Python. No migration needed or possible.
 
 ### Phase 6: Migrate Epistemic Verification
 
@@ -287,57 +321,88 @@ def migrate_database(old_path: str, new_path: str):
 
 ### Phase 7: Migrate Orchestrator
 
-**Duration**: 1 week
-**Risk**: High (core functionality)
+**Status**: ⚠️ **PARTIAL - Component Delegation Only**
 
-1. Replace `orchestrator.py` and `intelligent_orchestrator.py`:
-   ```python
-   # Before
-   from .intelligent_orchestrator import IntelligentOrchestrator
-   orchestrator = IntelligentOrchestrator(config)
-   result = await orchestrator.run(query, context)
+**Reason**: `ClaudeCodeAdapter` and `Orchestrator` are **not exposed** in rlm-core Python bindings.
 
-   # After
-   from rlm_core import ClaudeCodeAdapter, AdapterConfig
-   config = AdapterConfig(...)
-   adapter = ClaudeCodeAdapter(config)
-   result = await adapter.execute(RlmRequest(query=query, context=context))
-   ```
+**What Was Done Instead**:
+Added `SmartRouter` delegation for routing decisions:
 
-2. Wire up hooks:
-   ```python
-   adapter.handle_session_start(session_context)
-   adapter.handle_prompt_submit(prompt, context)
-   adapter.handle_pre_compact(context)
-   ```
+```python
+# smart_router.py now has optional rlm_core delegation
+class SmartRouter:
+    @property
+    def uses_rlm_core(self) -> bool:
+        return self._core_router is not None
 
-3. Remove legacy orchestrators:
-   - `local_orchestrator.py`
-   - `lats_orchestration.py`
-   - `tree_of_thoughts.py`
+    def route_core(self, query: str, depth: int = 0, ...) -> dict | None:
+        """Fast routing via rlm_core.SmartRouter."""
+        if self._core_router is None:
+            return None
+        ctx = _rlm_core.RoutingContext().with_depth(depth)
+        decision = self._core_router.route(query, ctx)
+        return {"model": decision.model.id, "tier": str(decision.tier), ...}
+```
 
-**Exit Criteria**:
-- [ ] End-to-end orchestration works
-- [ ] Recursive calls function correctly
-- [ ] Cost tracking accurate
-- [ ] All orchestration tests pass
+**Technical Justification**:
+The orchestration layer coordinates async operations across:
+- Python asyncio event loop
+- LLM API calls (aiohttp/httpx)
+- REPL execution (subprocess)
+- Memory operations (SQLite)
+
+Cross-language async orchestration (Python asyncio ↔ Rust tokio) is complex and error-prone. The rlm-core bindings expose **component-level** APIs instead:
+
+| Component | Delegation |
+|-----------|------------|
+| Model routing | ✅ `SmartRouter.route_core()` |
+| Cost tracking | ✅ `CostTracker.record()` |
+| Trajectory events | ✅ `TrajectoryEvent` factory methods |
+| Memory operations | ✅ `MemoryStore` |
+| Classification | ✅ `PatternClassifier.should_activate()` |
+
+**Resolution**: Keep Python orchestrator. Components delegate to rlm_core individually.
+
+**Future**: If rlm-core exposes `ClaudeCodeAdapter` Python bindings with proper async support, full orchestrator migration becomes possible.
 
 ### Phase 8: Cleanup
 
-**Duration**: 2-3 days
-**Risk**: Low
+**Status**: ⏭️ **DEFERRED**
 
-1. Remove legacy modules (see Section 1.3)
-2. Remove feature flags
-3. Update documentation
-4. Update pyproject.toml to require rlm-core
-5. Tag release
+**Reason**: Legacy code must remain for backward compatibility.
 
-**Exit Criteria**:
-- [ ] No legacy code remains
-- [ ] All tests pass
-- [ ] Documentation updated
-- [ ] Package size reduced
+**Why Cleanup Is Premature**:
+
+1. **Feature flag pattern requires both paths**:
+   ```python
+   if USE_RLM_CORE and _rlm_core is not None:
+       # Use rlm_core
+   else:
+       # Use Python implementation (legacy)
+   ```
+
+2. **Users without rlm_core installed** need the Python fallback
+
+3. **Testing requires both modes**:
+   - `RLM_USE_CORE=false` tests pure Python behavior
+   - `RLM_USE_CORE=true` tests rlm_core delegation
+   - Comparing both validates equivalence
+
+4. **CI/CD pipelines** may not have rlm_core in all environments
+
+**When Cleanup Becomes Appropriate**:
+
+| Condition | Action |
+|-----------|--------|
+| rlm-core becomes required dependency | Remove feature flags |
+| All consumers migrated to rlm-core | Remove legacy code |
+| Python bindings expose all needed types | Full replacement possible |
+| 6+ months stable with rlm_core | Safe to remove fallbacks |
+
+**Current State**:
+- Legacy code preserved in rlm-claude-code-rlmcore fork
+- Feature flag `USE_RLM_CORE` defaults to `false`
+- Both paths tested and working
 
 ---
 
@@ -399,18 +464,31 @@ Each phase includes rollback capability:
 
 ## 6. Timeline Estimate
 
-| Phase | Duration | Cumulative |
-|-------|----------|------------|
-| Phase 1: Add dependency | 1-2 days | 1-2 days |
-| Phase 2: Complexity | 2-3 days | 4-5 days |
-| Phase 3: Memory | 5-7 days | 9-12 days |
-| Phase 4: Trajectory | 2-3 days | 11-15 days |
-| Phase 5: REPL | 3-4 days | 14-19 days |
-| Phase 6: Epistemic | 3-4 days | 17-23 days |
-| Phase 7: Orchestrator | 5-7 days | 22-30 days |
-| Phase 8: Cleanup | 2-3 days | 24-33 days |
+### Original Estimate vs Actual
 
-**Total**: ~4-5 weeks
+| Phase | Original | Actual | Notes |
+|-------|----------|--------|-------|
+| Phase 1: Add dependency | 1-2 days | ✅ 1 day | As expected |
+| Phase 2: Complexity | 2-3 days | ✅ 1 day | Simpler than expected |
+| Phase 3: Memory | 5-7 days | ✅ 1 day | Schema handled by rlm_core |
+| Phase 4: Trajectory | 2-3 days | ✅ 1 day | Factory methods simplified |
+| Phase 5: REPL | 3-4 days | ⏭️ N/A | Not possible - Python-specific |
+| Phase 6: Epistemic | 3-4 days | ✅ 1 day | Pattern-based only |
+| Phase 7: Orchestrator | 5-7 days | ⚠️ Partial | Component delegation only |
+| Phase 8: Cleanup | 2-3 days | ⏭️ Deferred | Backward compat needed |
+
+### Revised Timeline
+
+| Phase | Duration | Status |
+|-------|----------|--------|
+| Phase 1-4, 6-7 | ~1 week | ✅ Complete |
+| Phase 5 | N/A | ⏭️ Skipped |
+| Phase 8 | TBD | ⏭️ Deferred |
+| **Validation & Testing** | 1-2 weeks | 🔄 Pending |
+| **PR & Merge** | 1 week | 🔄 Pending |
+
+**Total for component delegation**: ~1 week (actual)
+**Total including validation**: ~3-4 weeks
 
 ---
 
@@ -438,13 +516,29 @@ pytest tests/benchmarks/ --benchmark-compare
 
 ## 8. Success Criteria
 
+### Component Delegation (Current Goal)
+
 Migration is complete when:
 
-- [ ] All rlm-claude-code tests pass
-- [ ] No regression in functionality
+- [x] All rlm-claude-code tests pass with `RLM_USE_CORE=false`
+- [x] All tests pass with `RLM_USE_CORE=true` (rlm_core available)
 - [ ] Performance within 10% of original
-- [ ] Memory migration works without data loss
-- [ ] Feature flag removed
-- [ ] Legacy code deleted
-- [ ] Documentation updated
-- [ ] Release tagged
+- [ ] Memory operations work with both backends
+- [x] Feature flag controls delegation
+- [x] Graceful fallback when rlm_core unavailable
+- [x] Documentation updated with migration reality
+- [ ] Fork merged via PR after validation
+
+### Full Replacement (Future Goal - Requires Python Binding Updates)
+
+Full migration requires rlm-core to expose:
+
+- [ ] `ClaudeCodeAdapter` with async Python support
+- [ ] `ReplPool` / `ReplHandle` (or accept Python-specific impl)
+- [ ] Full `Orchestrator` interface
+
+Until then, component delegation provides:
+- Unified trajectory format across consumers
+- Shared memory schema
+- Consistent routing decisions
+- Common epistemic verification primitives

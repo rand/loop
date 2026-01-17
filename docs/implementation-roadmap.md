@@ -26,15 +26,35 @@ The plan maximizes parallelization while respecting dependencies, targeting effi
 | Phase 3: Cost Tracking | src-dt2 | Open | - |
 | Phase 4: Python Bindings | src-9t4 | **CLOSED** | - |
 | Phase 5: Go Bindings | src-8ox | Open | - |
-| Phase 6: Epistemic Verification | src-p4s | Open | - |
-| Phase 6: Trajectory Streaming | src-y7b | Open | - |
-| Phase 7: Claude Code Adapter | src-nw2 | Open | src-p4s |
-| Phase 7: TUI Adapter | src-u9i | Open | src-8ox, src-p4s |
+| Phase 6: Epistemic Verification | src-p4s | **CLOSED** | - |
+| Phase 6: Trajectory Streaming | src-y7b | **CLOSED** | - |
+| Phase 7: Claude Code Adapter | src-nw2 | ⚠️ **PARTIAL** | See note |
+| Phase 7: TUI Adapter | src-u9i | Open | src-8ox |
 
-**Completed**: Core types, REPL, memory, LLM client, Python bindings
-**Remaining**: Go bindings, epistemic verification, trajectory streaming, adapters, migrations
+**Completed**: Core types, REPL, memory, LLM client, Python bindings, epistemic, trajectory
+**Remaining**: Go bindings, TUI adapter, migrations
 
-### 1.2 Lean Formal Verification Status
+### 1.2 Migration Status (Updated Jan 2025)
+
+| Migration | Issue | Status | Notes |
+|-----------|-------|--------|-------|
+| rlm-claude-code → rlm-core | loop-ziu | **CLOSED** | Component delegation complete |
+| recurse → rlm-core | loop-p95 | Open | Awaits Go bindings |
+
+**Key Finding**: Python bindings don't expose `ClaudeCodeAdapter` or `ReplPool`. Migration uses **component-level delegation** instead of full replacement:
+
+| Component | Python Binding | Delegation Status |
+|-----------|---------------|-------------------|
+| PatternClassifier | ✅ Available | ✅ Implemented |
+| MemoryStore | ✅ Available | ✅ Implemented |
+| TrajectoryEvent | ✅ Available | ✅ Implemented |
+| ClaimExtractor | ✅ Available | ✅ Implemented |
+| SmartRouter | ✅ Available | ✅ Implemented |
+| CostTracker | ✅ Available | 🔄 Pending |
+| ReplPool | ❌ Not exposed | N/A - Python-specific |
+| ClaudeCodeAdapter | ❌ Not exposed | N/A - Keep Python orchestrator |
+
+### 1.3 Lean Formal Verification Status
 
 | Phase | Issue | Status | Blocker |
 |-------|-------|--------|---------|
@@ -47,7 +67,7 @@ The plan maximizes parallelization while respecting dependencies, targeting effi
 
 **Key Insight**: Lean REPL and Topos Integration can start in parallel once the epic is approved.
 
-### 1.3 Dependency Graph
+### 1.4 Dependency Graph
 
 ```
                     ┌─────────────────────────────────────────────────────────────────┐
