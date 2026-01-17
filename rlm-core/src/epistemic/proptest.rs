@@ -278,10 +278,6 @@ mod tests {
     // =========================================================================
     // KL Interval Properties
     // =========================================================================
-    // NOTE: kl_interval has a bug where lower > upper for certain inputs.
-    // See issue: kl_interval bound computation is incorrect for overlapping
-    // confidence intervals. The proptest revealed this - a win for property testing!
-    // TODO: Fix kl_interval to properly compute conservative/aggressive bounds.
 
     proptest! {
         /// KL interval point estimate matches direct computation.
@@ -300,6 +296,30 @@ mod tests {
                 (interval.estimate - direct).abs() < 1e-10,
                 "Interval estimate {} should match direct computation {}",
                 interval.estimate, direct
+            );
+        }
+
+        /// KL interval bounds are valid: lower <= estimate <= upper.
+        #[test]
+        fn kl_interval_bounds_are_valid(
+            p_agreeing in 1u32..10u32,
+            q_agreeing in 1u32..10u32,
+        ) {
+            let p = Probability::from_samples(p_agreeing, 10);
+            let q = Probability::from_samples(q_agreeing, 10);
+
+            let interval = kl_interval(&p, &q);
+
+            prop_assert!(
+                interval.lower <= interval.upper,
+                "Bounds invalid: lower {} > upper {} for p={:?}, q={:?}",
+                interval.lower, interval.upper, p, q
+            );
+
+            prop_assert!(
+                interval.lower >= 0.0,
+                "Lower bound {} should be non-negative (KL >= 0)",
+                interval.lower
             );
         }
     }

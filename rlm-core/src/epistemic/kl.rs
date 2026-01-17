@@ -41,19 +41,29 @@ pub fn bernoulli_kl_nats(p: f64, q: f64) -> f64 {
 /// When probabilities have uncertainty bounds (from sampling), we need to
 /// propagate that uncertainty through the KL computation.
 ///
+/// KL divergence is NOT monotonic in a simple way - it can increase or decrease
+/// as either p or q changes, depending on their relationship. Therefore, we
+/// must evaluate all four corners of the probability rectangle to find the
+/// true minimum and maximum.
+///
 /// # Arguments
 /// * `p_posterior` - Posterior probability with bounds
 /// * `q_prior` - Prior probability with bounds
 ///
 /// # Returns
-/// (lower_bound, upper_bound) for the KL divergence in bits
+/// KLInterval with conservative (min) and aggressive (max) bounds in bits
 pub fn kl_interval(p_posterior: &Probability, q_prior: &Probability) -> KLInterval {
-    // For KL(P||Q) = sum_x P(x) log(P(x)/Q(x))
-    // The minimum occurs when P is small and Q is large (closer distributions)
-    // The maximum occurs when P is large and Q is small (more divergent)
+    // KL(p||q) = p*log(p/q) + (1-p)*log((1-p)/(1-q)) is NOT monotonic in p or q.
+    // We must evaluate all 4 corners to find the true min/max bounds.
+    let corners = [
+        bernoulli_kl_bits(p_posterior.lower, q_prior.lower),
+        bernoulli_kl_bits(p_posterior.lower, q_prior.upper),
+        bernoulli_kl_bits(p_posterior.upper, q_prior.lower),
+        bernoulli_kl_bits(p_posterior.upper, q_prior.upper),
+    ];
 
-    let lower = bernoulli_kl_bits(p_posterior.lower, q_prior.upper);
-    let upper = bernoulli_kl_bits(p_posterior.upper, q_prior.lower);
+    let lower = corners.iter().cloned().fold(f64::INFINITY, f64::min);
+    let upper = corners.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
 
     // Point estimate using central values
     let estimate = bernoulli_kl_bits(p_posterior.estimate, q_prior.estimate);
@@ -317,6 +327,66 @@ mod tests {
         assert!(interval.lower <= interval.estimate + EPSILON);
         // Upper should be greater than or equal to estimate
         assert!(interval.upper >= interval.estimate - EPSILON);
+    }
+
+    #[test]
+    fn test_kl_interval_bounds_valid() {
+        // Case that originally revealed the bug: p_agreeing=2, q_agreeing=3 out of 10
+        let p = Probability::from_samples(2, 10);
+        let q = Probability::from_samples(3, 10);
+
+        let interval = kl_interval(&p, &q);
+
+        // The interval bounds must satisfy lower <= estimate <= upper
+        assert!(
+            interval.lower <= interval.estimate,
+            "lower ({}) > estimate ({})",
+            interval.lower,
+            interval.estimate
+        );
+        assert!(
+            interval.estimate <= interval.upper,
+            "estimate ({}) > upper ({})",
+            interval.estimate,
+            interval.upper
+        );
+        assert!(
+            interval.lower <= interval.upper,
+            "lower ({}) > upper ({})",
+            interval.lower,
+            interval.upper
+        );
+
+        // All bounds should be non-negative (KL divergence is always >= 0)
+        assert!(interval.lower >= 0.0);
+        assert!(interval.upper >= 0.0);
+    }
+
+    #[test]
+    fn test_kl_interval_contains_estimate() {
+        // Test multiple cases to ensure bounds always contain the estimate
+        let test_cases = [
+            (2, 3),
+            (5, 5),
+            (8, 2),
+            (1, 9),
+            (9, 1),
+        ];
+
+        for (p_agree, q_agree) in test_cases {
+            let p = Probability::from_samples(p_agree, 10);
+            let q = Probability::from_samples(q_agree, 10);
+            let interval = kl_interval(&p, &q);
+
+            assert!(
+                interval.lower <= interval.upper,
+                "Case ({}, {}): lower {} > upper {}",
+                p_agree,
+                q_agree,
+                interval.lower,
+                interval.upper
+            );
+        }
     }
 
     #[test]
