@@ -140,10 +140,15 @@ pub fn mutual_information_bits(p_prior: f64, p_posterior: f64) -> f64 {
     (h_prior - h_posterior).max(0.0)
 }
 
+/// Binary entropy H(p) in nats (natural log).
+pub fn binary_entropy_nats(p: f64) -> f64 {
+    let p = p.clamp(1e-10, 1.0 - 1e-10);
+    -p * p.ln() - (1.0 - p) * (1.0 - p).ln()
+}
+
 /// Binary entropy H(p) in bits.
 pub fn binary_entropy_bits(p: f64) -> f64 {
-    let p = p.clamp(1e-10, 1.0 - 1e-10);
-    -p * p.log2() - (1.0 - p) * (1.0 - p).log2()
+    binary_entropy_nats(p) / std::f64::consts::LN_2
 }
 
 /// Cross entropy H(P, Q) = -sum_x P(x) log Q(x) in bits.

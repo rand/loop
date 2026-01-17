@@ -85,12 +85,15 @@ pub mod scrubber;
 pub mod types;
 pub mod verifier;
 
+#[cfg(test)]
+mod proptest;
+
 // Re-exports for convenience
 pub use claims::{extract_doc_claims, extract_numerical_claims, ClaimExtractor};
 pub use kl::{
     aggregate_evidence_bits, aggregate_evidence_bits_with_correlation, bernoulli_kl_bits,
-    binary_entropy_bits, jensen_shannon_bits, kl_interval, mutual_information_bits,
-    required_bits_for_specificity, surprise_bits, KLInterval,
+    bernoulli_kl_nats, binary_entropy_bits, binary_entropy_nats, jensen_shannon_bits, kl_interval,
+    mutual_information_bits, required_bits_for_specificity, surprise_bits, KLInterval,
 };
 pub use memory_gate::{
     GateDecision, GateRecommendation, GateStats, MemoryGate, MemoryGateConfig, ThresholdGate,

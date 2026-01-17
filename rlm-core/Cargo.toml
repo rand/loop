@@ -66,3 +66,4 @@ pyo3-async-runtimes = { version = "0.23", features = ["tokio-runtime"], optional
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "test-util"] }
 pretty_assertions = "1.4"
 tempfile = "3.14"
+proptest = "1.5"
