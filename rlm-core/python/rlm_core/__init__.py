@@ -54,6 +54,20 @@ try:
         # Complexity types
         ActivationDecision,
         PatternClassifier,
+        # Epistemic verification types
+        ClaimCategory,
+        GroundingStatus,
+        EvidenceType,
+        VerificationVerdict,
+        Probability,
+        EvidenceRef,
+        Claim,
+        BudgetResult,
+        VerificationConfig,
+        VerificationStats,
+        ClaimExtractor,
+        KL,
+        quick_hallucination_check,
     )
 except ImportError:
     # Provide stubs for IDE support when extension not built
@@ -92,4 +106,18 @@ __all__ = [
     # Complexity
     "ActivationDecision",
     "PatternClassifier",
+    # Epistemic verification
+    "ClaimCategory",
+    "GroundingStatus",
+    "EvidenceType",
+    "VerificationVerdict",
+    "Probability",
+    "EvidenceRef",
+    "Claim",
+    "BudgetResult",
+    "VerificationConfig",
+    "VerificationStats",
+    "ClaimExtractor",
+    "KL",
+    "quick_hallucination_check",
 ]

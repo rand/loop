@@ -6,6 +6,8 @@
 #[cfg(feature = "python")]
 mod context;
 #[cfg(feature = "python")]
+mod epistemic;
+#[cfg(feature = "python")]
 mod llm;
 #[cfg(feature = "python")]
 mod memory;
@@ -54,6 +56,21 @@ fn rlm_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Complexity types
     m.add_class::<PyActivationDecision>()?;
     m.add_class::<PyPatternClassifier>()?;
+
+    // Epistemic verification types
+    m.add_class::<epistemic::PyClaimCategory>()?;
+    m.add_class::<epistemic::PyGroundingStatus>()?;
+    m.add_class::<epistemic::PyEvidenceType>()?;
+    m.add_class::<epistemic::PyVerificationVerdict>()?;
+    m.add_class::<epistemic::PyProbability>()?;
+    m.add_class::<epistemic::PyEvidenceRef>()?;
+    m.add_class::<epistemic::PyClaim>()?;
+    m.add_class::<epistemic::PyBudgetResult>()?;
+    m.add_class::<epistemic::PyVerificationConfig>()?;
+    m.add_class::<epistemic::PyVerificationStats>()?;
+    m.add_class::<epistemic::PyClaimExtractor>()?;
+    m.add_class::<epistemic::PyKL>()?;
+    m.add_function(wrap_pyfunction!(epistemic::quick_hallucination_check, m)?)?;
 
     Ok(())
 }
