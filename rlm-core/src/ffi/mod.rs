@@ -94,3 +94,264 @@ pub extern "C" fn rlm_init() -> i32 {
 pub extern "C" fn rlm_shutdown() {
     // Cleanup if needed
 }
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::CStr;
+
+    #[test]
+    fn test_version() {
+        let version = rlm_version();
+        assert!(!version.is_null());
+        let version_str = unsafe { CStr::from_ptr(version).to_str().unwrap() };
+        assert!(!version_str.is_empty());
+        assert!(version_str.contains('.'), "version should contain dots");
+        unsafe { rlm_string_free(version) };
+    }
+
+    #[test]
+    fn test_init_shutdown() {
+        assert_eq!(rlm_init(), 0);
+        rlm_shutdown();
+    }
+
+    #[test]
+    fn test_error_handling() {
+        // Initially no error
+        rlm_clear_error();
+        assert_eq!(rlm_has_error(), 0);
+
+        // After setting an error
+        set_last_error("test error");
+        assert_eq!(rlm_has_error(), 1);
+
+        let err = rlm_last_error();
+        assert!(!err.is_null());
+        let err_str = unsafe { CStr::from_ptr(err).to_str().unwrap() };
+        assert_eq!(err_str, "test error");
+
+        // Clear and verify
+        rlm_clear_error();
+        assert_eq!(rlm_has_error(), 0);
+    }
+
+    #[test]
+    fn test_string_free_null_safe() {
+        // Should not panic on null
+        unsafe { rlm_string_free(std::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn test_session_context_lifecycle() {
+        let ctx = rlm_session_context_new();
+        assert!(!ctx.is_null());
+
+        let count = unsafe { rlm_session_context_message_count(ctx) };
+        assert_eq!(count, 0);
+
+        unsafe { rlm_session_context_free(ctx) };
+    }
+
+    #[test]
+    fn test_session_context_messages() {
+        let ctx = rlm_session_context_new();
+        assert!(!ctx.is_null());
+
+        // Add user message
+        let content = std::ffi::CString::new("Hello").unwrap();
+        let result = unsafe { rlm_session_context_add_user_message(ctx, content.as_ptr()) };
+        assert_eq!(result, 0);
+
+        let count = unsafe { rlm_session_context_message_count(ctx) };
+        assert_eq!(count, 1);
+
+        // Add assistant message
+        let content = std::ffi::CString::new("Hi there").unwrap();
+        let result = unsafe { rlm_session_context_add_assistant_message(ctx, content.as_ptr()) };
+        assert_eq!(result, 0);
+
+        let count = unsafe { rlm_session_context_message_count(ctx) };
+        assert_eq!(count, 2);
+
+        unsafe { rlm_session_context_free(ctx) };
+    }
+
+    #[test]
+    fn test_message_lifecycle() {
+        let content = std::ffi::CString::new("Test message").unwrap();
+        let msg = unsafe { rlm_message_user(content.as_ptr()) };
+        assert!(!msg.is_null());
+
+        let role = unsafe { rlm_message_role(msg) };
+        assert_eq!(role, RlmRole::User);
+
+        let msg_content = unsafe { rlm_message_content(msg) };
+        assert!(!msg_content.is_null());
+        let content_str = unsafe { CStr::from_ptr(msg_content).to_str().unwrap() };
+        assert_eq!(content_str, "Test message");
+        unsafe { rlm_string_free(msg_content) };
+
+        unsafe { rlm_message_free(msg) };
+    }
+
+    #[test]
+    fn test_memory_store_lifecycle() {
+        let store = rlm_memory_store_in_memory();
+        assert!(!store.is_null());
+
+        let stats = unsafe { rlm_memory_store_stats(store) };
+        assert!(!stats.is_null());
+        unsafe { rlm_string_free(stats) };
+
+        unsafe { rlm_memory_store_free(store) };
+    }
+
+    #[test]
+    fn test_node_lifecycle() {
+        let content = std::ffi::CString::new("Test fact").unwrap();
+        let node = unsafe { rlm_node_new(RlmNodeType::Fact, content.as_ptr()) };
+        assert!(!node.is_null());
+
+        let node_type = unsafe { rlm_node_type(node) };
+        assert_eq!(node_type, RlmNodeType::Fact);
+
+        let node_content = unsafe { rlm_node_content(node) };
+        assert!(!node_content.is_null());
+        let content_str = unsafe { CStr::from_ptr(node_content).to_str().unwrap() };
+        assert_eq!(content_str, "Test fact");
+        unsafe { rlm_string_free(node_content) };
+
+        unsafe { rlm_node_free(node) };
+    }
+
+    #[test]
+    fn test_trajectory_event_lifecycle() {
+        let content = std::ffi::CString::new("test query").unwrap();
+        let event = unsafe { rlm_trajectory_event_rlm_start(content.as_ptr()) };
+        assert!(!event.is_null());
+
+        let event_type = unsafe { rlm_trajectory_event_type(event) };
+        assert_eq!(event_type, RlmTrajectoryEventType::RlmStart);
+
+        let is_final = unsafe { rlm_trajectory_event_is_final(event) };
+        assert_eq!(is_final, 0);
+
+        unsafe { rlm_trajectory_event_free(event) };
+    }
+
+    #[test]
+    fn test_pattern_classifier() {
+        let classifier = rlm_pattern_classifier_new();
+        assert!(!classifier.is_null());
+
+        let ctx = rlm_session_context_new();
+        let query = std::ffi::CString::new("simple question").unwrap();
+
+        let decision = unsafe { rlm_pattern_classifier_should_activate(classifier, query.as_ptr(), ctx) };
+        assert!(!decision.is_null());
+
+        let _should_activate = unsafe { rlm_activation_decision_should_activate(decision) };
+        let _score = unsafe { rlm_activation_decision_score(decision) };
+
+        unsafe { rlm_activation_decision_free(decision) };
+        unsafe { rlm_session_context_free(ctx) };
+        unsafe { rlm_pattern_classifier_free(classifier) };
+    }
+
+    #[test]
+    fn test_cost_tracker_lifecycle() {
+        let tracker = rlm_cost_tracker_new();
+        assert!(!tracker.is_null());
+
+        // Record some usage
+        let model = std::ffi::CString::new("claude-sonnet").unwrap();
+        let result = unsafe {
+            rlm_cost_tracker_record(tracker, model.as_ptr(), 1000, 500, 0, 0, 0.01)
+        };
+        assert_eq!(result, 0);
+
+        let input = unsafe { rlm_cost_tracker_total_input_tokens(tracker) };
+        assert_eq!(input, 1000);
+
+        let output = unsafe { rlm_cost_tracker_total_output_tokens(tracker) };
+        assert_eq!(output, 500);
+
+        unsafe { rlm_cost_tracker_free(tracker) };
+    }
+
+    #[test]
+    fn test_orchestrator_mode() {
+        let budget = rlm_execution_mode_budget_usd(RlmExecutionMode::Micro);
+        assert!(budget > 0.0 && budget < 0.1);
+
+        let budget = rlm_execution_mode_budget_usd(RlmExecutionMode::Thorough);
+        assert!(budget >= 1.0);
+
+        let name = rlm_execution_mode_name(RlmExecutionMode::Balanced);
+        assert!(!name.is_null());
+        unsafe { rlm_string_free(name) };
+    }
+
+    #[test]
+    fn test_orchestrator_config() {
+        let config = rlm_orchestrator_config_default();
+        assert!(!config.is_null());
+
+        let depth = unsafe { rlm_orchestrator_config_max_depth(config) };
+        assert!(depth > 0);
+
+        unsafe { rlm_orchestrator_config_free(config) };
+    }
+
+    #[test]
+    fn test_kl_divergence_functions() {
+        // Binary entropy of fair coin
+        let entropy = rlm_binary_entropy_bits(0.5);
+        assert!((entropy - 1.0).abs() < 0.001);
+
+        // Surprise of certain event
+        let surprise = rlm_surprise_bits(1.0);
+        assert!(surprise.abs() < 0.001);
+
+        // KL divergence of identical distributions
+        let kl = rlm_kl_bernoulli_bits(0.5, 0.5);
+        assert!(kl.abs() < 0.001);
+    }
+
+    #[test]
+    fn test_claim_extractor() {
+        let extractor = rlm_claim_extractor_new();
+        assert!(!extractor.is_null());
+
+        let text = std::ffi::CString::new("The sky is blue. Water is wet.").unwrap();
+        let claims = unsafe { rlm_claim_extractor_extract(extractor, text.as_ptr()) };
+        assert!(!claims.is_null());
+        unsafe { rlm_string_free(claims) };
+
+        unsafe { rlm_claim_extractor_free(extractor) };
+    }
+
+    #[test]
+    fn test_reasoning_trace() {
+        let goal = std::ffi::CString::new("test goal").unwrap();
+        let session = std::ffi::CString::new("test-session").unwrap();
+
+        let trace = unsafe { rlm_reasoning_trace_new(goal.as_ptr(), session.as_ptr()) };
+        assert!(!trace.is_null());
+
+        let trace_id = unsafe { rlm_reasoning_trace_id(trace) };
+        assert!(!trace_id.is_null());
+        unsafe { rlm_string_free(trace_id) };
+
+        let json = unsafe { rlm_reasoning_trace_to_json(trace) };
+        assert!(!json.is_null());
+        unsafe { rlm_string_free(json) };
+
+        unsafe { rlm_reasoning_trace_free(trace) };
+    }
+}
