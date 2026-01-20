@@ -3,7 +3,7 @@ package rlmcore_test
 import (
 	"fmt"
 
-	"github.com/rand/loop/rlm-core/go/rlmcore"
+	"github.com/rand/rlm-core/go/rlmcore"
 )
 
 // Example shows basic usage of the rlmcore package.

@@ -25,21 +25,21 @@ The plan maximizes parallelization while respecting dependencies, targeting effi
 | Phase 3: LLM Client | src-bvx | **CLOSED** | - |
 | Phase 3: Cost Tracking | src-dt2 | Open | - |
 | Phase 4: Python Bindings | src-9t4 | **CLOSED** | - |
-| Phase 5: Go Bindings | src-8ox | Open | - |
+| Phase 5: Go Bindings | src-8ox | **CLOSED** | - |
 | Phase 6: Epistemic Verification | src-p4s | **CLOSED** | - |
 | Phase 6: Trajectory Streaming | src-y7b | **CLOSED** | - |
 | Phase 7: Claude Code Adapter | src-nw2 | ⚠️ **PARTIAL** | See note |
 | Phase 7: TUI Adapter | src-u9i | Open | src-8ox |
 
-**Completed**: Core types, REPL, memory, LLM client, Python bindings, epistemic, trajectory
-**Remaining**: Go bindings, TUI adapter, migrations
+**Completed**: Core types, REPL, memory, LLM client, Python bindings, epistemic, trajectory, Go bindings
+**Remaining**: TUI adapter, recurse migration
 
 ### 1.2 Migration Status (Updated Jan 2025)
 
 | Migration | Issue | Status | Notes |
 |-----------|-------|--------|-------|
 | rlm-claude-code → rlm-core | loop-ziu | **CLOSED** | Component delegation complete |
-| recurse → rlm-core | loop-p95 | Open | Awaits Go bindings |
+| recurse → rlm-core | loop-p95 | Open | Go bindings ready, can start |
 
 **Key Finding**: Python bindings don't expose `ClaudeCodeAdapter` or `ReplPool`. Migration uses **component-level delegation** instead of full replacement:
 
@@ -53,6 +53,19 @@ The plan maximizes parallelization while respecting dependencies, targeting effi
 | CostTracker | ✅ Available | 🔄 Pending |
 | ReplPool | ❌ Not exposed | N/A - Python-specific |
 | ClaudeCodeAdapter | ❌ Not exposed | N/A - Keep Python orchestrator |
+
+**Go Bindings** (for recurse/TUI migration):
+
+| Component | Go Binding | Status |
+|-----------|-----------|--------|
+| SessionContext | ✅ Available | Ready |
+| PatternClassifier | ✅ Available | Ready |
+| MemoryStore | ✅ Available | Ready |
+| Node/HyperEdge | ✅ Available | Ready |
+| TrajectoryEvent | ✅ Available | Ready |
+| TrajectoryCollector | ✅ Available | Ready |
+
+All Go binding tests pass (21/21). Library: `librlm_core.dylib`
 
 ### 1.3 Lean Formal Verification Status
 
