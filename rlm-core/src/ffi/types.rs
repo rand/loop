@@ -31,6 +31,12 @@ pub struct RlmPatternClassifier(pub(crate) crate::complexity::PatternClassifier)
 /// Opaque handle for ActivationDecision.
 pub struct RlmActivationDecision(pub(crate) crate::complexity::ActivationDecision);
 
+/// Opaque handle for ReplHandle.
+pub struct RlmReplHandle(pub(crate) crate::repl::ReplHandle);
+
+/// Opaque handle for ReplPool.
+pub struct RlmReplPool(pub(crate) crate::repl::ReplPool);
+
 // ============================================================================
 // Enum representations for FFI
 // ============================================================================

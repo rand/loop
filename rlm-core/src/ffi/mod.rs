@@ -25,12 +25,14 @@
 mod context;
 mod error;
 mod memory;
+mod repl;
 mod trajectory;
 mod types;
 
 pub use context::*;
 pub use error::*;
 pub use memory::*;
+pub use repl::*;
 pub use trajectory::*;
 pub use types::*;
 

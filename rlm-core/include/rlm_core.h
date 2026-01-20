@@ -45,6 +45,8 @@ typedef struct RlmHyperEdge RlmHyperEdge;
 typedef struct RlmTrajectoryEvent RlmTrajectoryEvent;
 typedef struct RlmPatternClassifier RlmPatternClassifier;
 typedef struct RlmActivationDecision RlmActivationDecision;
+typedef struct RlmReplHandle RlmReplHandle;
+typedef struct RlmReplPool RlmReplPool;
 
 /* ============================================================================
  * Enumerations
@@ -298,6 +300,147 @@ int rlm_trajectory_event_is_final(const RlmTrajectoryEvent* event);
 char* rlm_trajectory_event_to_json(const RlmTrajectoryEvent* event);
 RlmTrajectoryEvent* rlm_trajectory_event_from_json(const char* json);
 char* rlm_trajectory_event_type_name(RlmTrajectoryEventType event_type);
+
+/* ============================================================================
+ * REPL Configuration
+ * ============================================================================ */
+
+/**
+ * Get default REPL configuration as JSON.
+ * @return JSON string with configuration (must be freed with rlm_string_free)
+ */
+char* rlm_repl_config_default(void);
+
+/* ============================================================================
+ * ReplHandle - Single REPL subprocess
+ * ============================================================================ */
+
+/**
+ * Spawn a new REPL subprocess with default configuration.
+ * @return Handle pointer (must be freed with rlm_repl_handle_free), or NULL on error
+ */
+RlmReplHandle* rlm_repl_handle_spawn_default(void);
+
+/**
+ * Spawn a new REPL subprocess with custom configuration.
+ * @param config_json JSON string with configuration options
+ * @return Handle pointer (must be freed with rlm_repl_handle_free), or NULL on error
+ */
+RlmReplHandle* rlm_repl_handle_spawn(const char* config_json);
+
+/**
+ * Free a REPL handle.
+ * @param handle Handle to free (may be NULL)
+ */
+void rlm_repl_handle_free(RlmReplHandle* handle);
+
+/**
+ * Execute Python code in the REPL.
+ * @param handle REPL handle
+ * @param code Python code to execute
+ * @return JSON string with execution result (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_repl_handle_execute(RlmReplHandle* handle, const char* code);
+
+/**
+ * Get a variable from the REPL namespace.
+ * @param handle REPL handle
+ * @param name Variable name
+ * @return JSON string with variable value (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_repl_handle_get_variable(RlmReplHandle* handle, const char* name);
+
+/**
+ * Set a variable in the REPL namespace.
+ * @param handle REPL handle
+ * @param name Variable name
+ * @param value_json JSON string with variable value
+ * @return 0 on success, -1 on failure
+ */
+int rlm_repl_handle_set_variable(RlmReplHandle* handle, const char* name, const char* value_json);
+
+/**
+ * Resolve a deferred operation.
+ * @param handle REPL handle
+ * @param operation_id Operation ID
+ * @param result_json JSON string with result value
+ * @return 0 on success, -1 on failure
+ */
+int rlm_repl_handle_resolve_operation(RlmReplHandle* handle, const char* operation_id, const char* result_json);
+
+/**
+ * List all variables in the REPL namespace.
+ * @param handle REPL handle
+ * @return JSON object mapping names to types (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_repl_handle_list_variables(RlmReplHandle* handle);
+
+/**
+ * Get REPL status.
+ * @param handle REPL handle
+ * @return JSON string with status info (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_repl_handle_status(RlmReplHandle* handle);
+
+/**
+ * Reset the REPL state.
+ * @param handle REPL handle
+ * @return 0 on success, -1 on failure
+ */
+int rlm_repl_handle_reset(RlmReplHandle* handle);
+
+/**
+ * Shutdown the REPL subprocess.
+ * @param handle REPL handle
+ * @return 0 on success, -1 on failure
+ */
+int rlm_repl_handle_shutdown(RlmReplHandle* handle);
+
+/**
+ * Check if the REPL subprocess is still running.
+ * @param handle REPL handle
+ * @return 1 if alive, 0 if not, -1 on error
+ */
+int rlm_repl_handle_is_alive(RlmReplHandle* handle);
+
+/* ============================================================================
+ * ReplPool - Pool of REPL subprocesses
+ * ============================================================================ */
+
+/**
+ * Create a new REPL pool with default configuration.
+ * @param max_size Maximum number of REPL handles to keep in the pool
+ * @return Pool pointer (must be freed with rlm_repl_pool_free)
+ */
+RlmReplPool* rlm_repl_pool_new_default(size_t max_size);
+
+/**
+ * Create a new REPL pool with custom configuration.
+ * @param config_json JSON string with configuration options
+ * @param max_size Maximum number of REPL handles to keep in the pool
+ * @return Pool pointer (must be freed with rlm_repl_pool_free), or NULL on error
+ */
+RlmReplPool* rlm_repl_pool_new(const char* config_json, size_t max_size);
+
+/**
+ * Free a REPL pool.
+ * @param pool Pool to free (may be NULL)
+ */
+void rlm_repl_pool_free(RlmReplPool* pool);
+
+/**
+ * Acquire a REPL handle from the pool.
+ * @param pool REPL pool
+ * @return Handle pointer (must be freed with rlm_repl_handle_free or returned with rlm_repl_pool_release), or NULL on error
+ */
+RlmReplHandle* rlm_repl_pool_acquire(const RlmReplPool* pool);
+
+/**
+ * Release a REPL handle back to the pool.
+ * @param pool REPL pool
+ * @param handle Handle to release (will be invalid after this call)
+ */
+void rlm_repl_pool_release(const RlmReplPool* pool, RlmReplHandle* handle);
 
 #ifdef __cplusplus
 }
