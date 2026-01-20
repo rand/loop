@@ -108,6 +108,19 @@ pub unsafe extern "C" fn rlm_reasoning_trace_set_git_commit(
     0
 }
 
+/// Link the trace to a git commit (alias for rlm_reasoning_trace_set_git_commit).
+///
+/// # Safety
+/// - `trace` must be a valid pointer.
+/// - `commit_sha` must be a valid null-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn rlm_reasoning_trace_link_commit(
+    trace: *mut RlmReasoningTrace,
+    commit_sha: *const c_char,
+) -> i32 {
+    rlm_reasoning_trace_set_git_commit(trace, commit_sha)
+}
+
 /// Link the trace to a git branch.
 ///
 /// # Safety
@@ -293,6 +306,39 @@ pub unsafe extern "C" fn rlm_reasoning_trace_to_mermaid(
 // ============================================================================
 // TraceAnalyzer
 // ============================================================================
+
+/// Get trace statistics as JSON.
+///
+/// Returns JSON with: decision_count, option_count, chosen_count, rejected_count,
+/// total_nodes, total_edges, max_depth.
+///
+/// # Safety
+/// - `trace` must be a valid pointer.
+/// - The returned string must be freed with `rlm_string_free()`.
+#[no_mangle]
+pub unsafe extern "C" fn rlm_reasoning_trace_stats(
+    trace: *const RlmReasoningTrace,
+) -> *mut c_char {
+    if trace.is_null() {
+        set_last_error("null trace pointer");
+        return std::ptr::null_mut();
+    }
+
+    let stats = (*trace).0.stats();
+
+    let result = serde_json::json!({
+        "decision_count": stats.decision_count,
+        "option_count": stats.option_count,
+        "chosen_count": stats.chosen_count,
+        "rejected_count": stats.rejected_count,
+        "total_nodes": stats.total_nodes,
+        "total_edges": stats.total_edges,
+        "max_depth": stats.max_depth,
+    });
+
+    let json = ffi_try!(serde_json::to_string(&result));
+    str_to_cstring(&json)
+}
 
 /// Analyze a trace and return analysis results as JSON.
 ///

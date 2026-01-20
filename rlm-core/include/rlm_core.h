@@ -944,6 +944,143 @@ int rlm_complexity_signals_score(const char* json);
  */
 int rlm_complexity_signals_has_strong_signal(const char* json);
 
+/* ============================================================================
+ * CostTracker - Token usage and cost tracking
+ * ============================================================================ */
+
+typedef struct RlmCostTracker RlmCostTracker;
+
+/**
+ * Create a new cost tracker.
+ * @return Tracker pointer (must be freed with rlm_cost_tracker_free)
+ */
+RlmCostTracker* rlm_cost_tracker_new(void);
+
+/**
+ * Free a cost tracker.
+ * @param tracker Tracker to free (may be NULL)
+ */
+void rlm_cost_tracker_free(RlmCostTracker* tracker);
+
+/**
+ * Record token usage from a completion.
+ * @param tracker Cost tracker
+ * @param model Model name
+ * @param input_tokens Input token count
+ * @param output_tokens Output token count
+ * @param cache_read_tokens Cache read tokens (0 if none)
+ * @param cache_creation_tokens Cache creation tokens (0 if none)
+ * @param cost Cost in USD (negative if unknown)
+ * @return 0 on success, -1 on failure
+ */
+int rlm_cost_tracker_record(
+    RlmCostTracker* tracker,
+    const char* model,
+    uint64_t input_tokens,
+    uint64_t output_tokens,
+    uint64_t cache_read_tokens,
+    uint64_t cache_creation_tokens,
+    double cost);
+
+/**
+ * Merge another tracker into this one.
+ * @param tracker Destination tracker
+ * @param other Source tracker to merge from
+ * @return 0 on success, -1 on failure
+ */
+int rlm_cost_tracker_merge(RlmCostTracker* tracker, const RlmCostTracker* other);
+
+/**
+ * Get total input tokens.
+ */
+uint64_t rlm_cost_tracker_total_input_tokens(const RlmCostTracker* tracker);
+
+/**
+ * Get total output tokens.
+ */
+uint64_t rlm_cost_tracker_total_output_tokens(const RlmCostTracker* tracker);
+
+/**
+ * Get total cache read tokens.
+ */
+uint64_t rlm_cost_tracker_total_cache_read_tokens(const RlmCostTracker* tracker);
+
+/**
+ * Get total cache creation tokens.
+ */
+uint64_t rlm_cost_tracker_total_cache_creation_tokens(const RlmCostTracker* tracker);
+
+/**
+ * Get total cost in USD.
+ */
+double rlm_cost_tracker_total_cost(const RlmCostTracker* tracker);
+
+/**
+ * Get request count.
+ */
+uint64_t rlm_cost_tracker_request_count(const RlmCostTracker* tracker);
+
+/**
+ * Get per-model cost breakdown as JSON.
+ * @param tracker Cost tracker
+ * @return JSON string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_cost_tracker_by_model_json(const RlmCostTracker* tracker);
+
+/**
+ * Serialize tracker to JSON.
+ * @param tracker Cost tracker
+ * @return JSON string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_cost_tracker_to_json(const RlmCostTracker* tracker);
+
+/**
+ * Deserialize tracker from JSON.
+ * @param json JSON string
+ * @return Tracker pointer (must be freed with rlm_cost_tracker_free), or NULL on error
+ */
+RlmCostTracker* rlm_cost_tracker_from_json(const char* json);
+
+/* ============================================================================
+ * Cost Calculation Helpers
+ * ============================================================================ */
+
+/**
+ * Calculate cost for given token usage with a model spec.
+ * @param model_json JSON string describing a ModelSpec
+ * @param input_tokens Input token count
+ * @param output_tokens Output token count
+ * @return Cost in USD, or -1.0 on error
+ */
+double rlm_calculate_cost(const char* model_json, uint64_t input_tokens, uint64_t output_tokens);
+
+/**
+ * Calculate cost using well-known model names.
+ * Supported: "claude-opus", "claude-sonnet", "claude-haiku", "gpt-4o", "gpt-4o-mini"
+ * @param model_name Model name
+ * @param input_tokens Input token count
+ * @param output_tokens Output token count
+ * @return Cost in USD, or -1.0 on error (unknown model)
+ */
+double rlm_calculate_cost_by_name(const char* model_name, uint64_t input_tokens, uint64_t output_tokens);
+
+/**
+ * Get default model spec JSON for a well-known model.
+ * Supported: "claude-opus", "claude-sonnet", "claude-haiku", "gpt-4o", "gpt-4o-mini"
+ * @param model_name Model name
+ * @return JSON string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_model_spec_json(const char* model_name);
+
+/**
+ * Calculate effective input tokens accounting for cache reads.
+ * Cache reads are typically 90% cheaper, so we count them at 10%.
+ * @param input_tokens Input token count
+ * @param cache_read_tokens Cache read token count
+ * @return Effective input tokens
+ */
+uint64_t rlm_effective_input_tokens(uint64_t input_tokens, uint64_t cache_read_tokens);
+
 #ifdef __cplusplus
 }
 #endif
