@@ -763,6 +763,187 @@ char* rlm_reasoning_trace_store_find_by_commit(RlmReasoningTraceStore* store, co
  */
 char* rlm_reasoning_trace_store_stats(RlmReasoningTraceStore* store);
 
+/* ============================================================================
+ * Orchestrator - Execution mode and configuration
+ * ============================================================================ */
+
+/** Execution mode for orchestration */
+typedef enum {
+    RLM_EXECUTION_MODE_MICRO = 0,
+    RLM_EXECUTION_MODE_FAST = 1,
+    RLM_EXECUTION_MODE_BALANCED = 2,
+    RLM_EXECUTION_MODE_THOROUGH = 3
+} RlmExecutionMode;
+
+typedef struct RlmOrchestratorConfig RlmOrchestratorConfig;
+typedef struct RlmOrchestratorBuilder RlmOrchestratorBuilder;
+
+/* ExecutionMode functions */
+
+/**
+ * Get the typical cost budget in USD for an execution mode.
+ * @param mode Execution mode
+ * @return Budget in USD
+ */
+double rlm_execution_mode_budget_usd(RlmExecutionMode mode);
+
+/**
+ * Get the maximum recursion depth for an execution mode.
+ * @param mode Execution mode
+ * @return Max depth
+ */
+uint32_t rlm_execution_mode_max_depth(RlmExecutionMode mode);
+
+/**
+ * Get the display name for an execution mode.
+ * @param mode Execution mode
+ * @return Mode name (must be freed with rlm_string_free)
+ */
+char* rlm_execution_mode_name(RlmExecutionMode mode);
+
+/**
+ * Select execution mode based on complexity signals.
+ * @param signals_json JSON string with complexity signals (may be NULL)
+ * @return Selected execution mode
+ */
+RlmExecutionMode rlm_execution_mode_from_signals(const char* signals_json);
+
+/* OrchestratorConfig functions */
+
+/**
+ * Create a new orchestrator config with default values.
+ * @return Config pointer (must be freed with rlm_orchestrator_config_free)
+ */
+RlmOrchestratorConfig* rlm_orchestrator_config_default(void);
+
+/**
+ * Free an orchestrator config.
+ * @param config Config to free (may be NULL)
+ */
+void rlm_orchestrator_config_free(RlmOrchestratorConfig* config);
+
+/**
+ * Get the max depth from config.
+ */
+uint32_t rlm_orchestrator_config_max_depth(const RlmOrchestratorConfig* config);
+
+/**
+ * Get whether REPL spawning is enabled by default.
+ */
+int rlm_orchestrator_config_default_spawn_repl(const RlmOrchestratorConfig* config);
+
+/**
+ * Get the REPL timeout in milliseconds.
+ */
+uint64_t rlm_orchestrator_config_repl_timeout_ms(const RlmOrchestratorConfig* config);
+
+/**
+ * Get the max tokens per call.
+ */
+uint64_t rlm_orchestrator_config_max_tokens_per_call(const RlmOrchestratorConfig* config);
+
+/**
+ * Get the total token budget.
+ */
+uint64_t rlm_orchestrator_config_total_token_budget(const RlmOrchestratorConfig* config);
+
+/**
+ * Get the cost budget in USD.
+ */
+double rlm_orchestrator_config_cost_budget_usd(const RlmOrchestratorConfig* config);
+
+/**
+ * Serialize config to JSON.
+ * @param config Config to serialize
+ * @return JSON string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_orchestrator_config_to_json(const RlmOrchestratorConfig* config);
+
+/**
+ * Deserialize config from JSON.
+ * @param json JSON string
+ * @return Config pointer (must be freed with rlm_orchestrator_config_free), or NULL on error
+ */
+RlmOrchestratorConfig* rlm_orchestrator_config_from_json(const char* json);
+
+/* OrchestratorBuilder functions */
+
+/**
+ * Create a new orchestrator builder with default values.
+ * @return Builder pointer (must be freed with rlm_orchestrator_builder_free)
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_new(void);
+
+/**
+ * Free an orchestrator builder.
+ * @param builder Builder to free (may be NULL)
+ */
+void rlm_orchestrator_builder_free(RlmOrchestratorBuilder* builder);
+
+/**
+ * Set the maximum recursion depth. Consumes and returns new builder.
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_max_depth(RlmOrchestratorBuilder* builder, uint32_t depth);
+
+/**
+ * Set whether to spawn REPL by default. Consumes and returns new builder.
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_default_spawn_repl(RlmOrchestratorBuilder* builder, int spawn);
+
+/**
+ * Set the REPL timeout in milliseconds. Consumes and returns new builder.
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_repl_timeout_ms(RlmOrchestratorBuilder* builder, uint64_t timeout);
+
+/**
+ * Set the total token budget. Consumes and returns new builder.
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_total_token_budget(RlmOrchestratorBuilder* builder, uint64_t budget);
+
+/**
+ * Set the cost budget in USD. Consumes and returns new builder.
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_cost_budget_usd(RlmOrchestratorBuilder* builder, double budget);
+
+/**
+ * Set the execution mode. Consumes and returns new builder.
+ */
+RlmOrchestratorBuilder* rlm_orchestrator_builder_execution_mode(RlmOrchestratorBuilder* builder, RlmExecutionMode mode);
+
+/**
+ * Build the config from the builder. Consumes the builder.
+ * @return Config pointer (must be freed with rlm_orchestrator_config_free)
+ */
+RlmOrchestratorConfig* rlm_orchestrator_builder_build(RlmOrchestratorBuilder* builder);
+
+/**
+ * Get the execution mode from the builder.
+ */
+RlmExecutionMode rlm_orchestrator_builder_get_mode(const RlmOrchestratorBuilder* builder);
+
+/* Complexity signals functions */
+
+/**
+ * Parse and validate complexity signals JSON.
+ * @param json JSON string with complexity signals
+ * @return Validated JSON string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_complexity_signals_parse(const char* json);
+
+/**
+ * Get the complexity score from signals JSON.
+ * @param json JSON string with complexity signals
+ * @return Score value, or 0 on error
+ */
+int rlm_complexity_signals_score(const char* json);
+
+/**
+ * Check if signals have a strong signal (above threshold).
+ * @param json JSON string with complexity signals
+ * @return 1 if strong signal present, 0 otherwise
+ */
+int rlm_complexity_signals_has_strong_signal(const char* json);
+
 #ifdef __cplusplus
 }
 #endif
