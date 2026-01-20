@@ -442,6 +442,171 @@ RlmReplHandle* rlm_repl_pool_acquire(const RlmReplPool* pool);
  */
 void rlm_repl_pool_release(const RlmReplPool* pool, RlmReplHandle* handle);
 
+/* ============================================================================
+ * Epistemic Verification - ClaimExtractor
+ * ============================================================================ */
+
+typedef struct RlmClaimExtractor RlmClaimExtractor;
+
+/**
+ * Create a new claim extractor with default settings.
+ * @return Extractor pointer (must be freed with rlm_claim_extractor_free)
+ */
+RlmClaimExtractor* rlm_claim_extractor_new(void);
+
+/**
+ * Free a claim extractor.
+ * @param extractor Extractor to free (may be NULL)
+ */
+void rlm_claim_extractor_free(RlmClaimExtractor* extractor);
+
+/**
+ * Extract claims from a response.
+ * @param extractor Claim extractor
+ * @param response Response text to extract claims from
+ * @return JSON array of claims (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_claim_extractor_extract(RlmClaimExtractor* extractor, const char* response);
+
+/**
+ * Extract high-specificity claims above a threshold.
+ * @param extractor Claim extractor
+ * @param response Response text to extract claims from
+ * @param threshold Minimum specificity threshold (0.0 to 1.0)
+ * @return JSON array of claims (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_claim_extractor_extract_high_specificity(RlmClaimExtractor* extractor, const char* response, double threshold);
+
+/* ============================================================================
+ * Epistemic Verification - EvidenceScrubber
+ * ============================================================================ */
+
+typedef struct RlmEvidenceScrubber RlmEvidenceScrubber;
+
+/**
+ * Create a new evidence scrubber with default settings.
+ * @return Scrubber pointer (must be freed with rlm_evidence_scrubber_free)
+ */
+RlmEvidenceScrubber* rlm_evidence_scrubber_new(void);
+
+/**
+ * Create a new evidence scrubber with aggressive settings.
+ * @return Scrubber pointer (must be freed with rlm_evidence_scrubber_free)
+ */
+RlmEvidenceScrubber* rlm_evidence_scrubber_new_aggressive(void);
+
+/**
+ * Free an evidence scrubber.
+ * @param scrubber Scrubber to free (may be NULL)
+ */
+void rlm_evidence_scrubber_free(RlmEvidenceScrubber* scrubber);
+
+/**
+ * Scrub evidence from text.
+ * @param scrubber Evidence scrubber
+ * @param text Text to scrub
+ * @return JSON object with scrubbed_text and metadata (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_evidence_scrubber_scrub(RlmEvidenceScrubber* scrubber, const char* text);
+
+/* ============================================================================
+ * Epistemic Verification - KL Divergence Functions
+ * ============================================================================ */
+
+/**
+ * Calculate Bernoulli KL divergence in bits.
+ * @param p First probability (0.0 to 1.0)
+ * @param q Second probability (0.0 to 1.0)
+ * @return KL(p||q) in bits, or -1.0 on error
+ */
+double rlm_kl_bernoulli_bits(double p, double q);
+
+/**
+ * Calculate binary entropy in bits.
+ * @param p Probability (0.0 to 1.0)
+ * @return H(p) in bits, or -1.0 on error
+ */
+double rlm_binary_entropy_bits(double p);
+
+/**
+ * Calculate surprise in bits.
+ * @param p Probability (must be > 0.0 and <= 1.0)
+ * @return -log2(p) bits, or -1.0 on error
+ */
+double rlm_surprise_bits(double p);
+
+/**
+ * Calculate mutual information in bits.
+ * @param p_prior Prior probability (0.0 to 1.0)
+ * @param p_posterior Posterior probability (0.0 to 1.0)
+ * @return I(prior; posterior) in bits, or -1.0 on error
+ */
+double rlm_mutual_information_bits(double p_prior, double p_posterior);
+
+/**
+ * Calculate required bits for a given specificity level.
+ * @param specificity Specificity level (0.0 to 1.0)
+ * @return Required information bits, or -1.0 on error
+ */
+double rlm_required_bits_for_specificity(double specificity);
+
+/**
+ * Aggregate evidence bits from multiple sources.
+ * @param kl_values Array of KL divergence values
+ * @param len Number of elements in the array
+ * @return Aggregated evidence bits, or -1.0 on error
+ */
+double rlm_aggregate_evidence_bits(const double* kl_values, size_t len);
+
+/* ============================================================================
+ * Epistemic Verification - ThresholdGate
+ * ============================================================================ */
+
+typedef struct RlmThresholdGate RlmThresholdGate;
+
+/**
+ * Create a new threshold gate with default settings.
+ * @return Gate pointer (must be freed with rlm_threshold_gate_free)
+ */
+RlmThresholdGate* rlm_threshold_gate_new(void);
+
+/**
+ * Create a new threshold gate with strict settings.
+ * @return Gate pointer (must be freed with rlm_threshold_gate_free)
+ */
+RlmThresholdGate* rlm_threshold_gate_new_strict(void);
+
+/**
+ * Create a new threshold gate with permissive settings.
+ * @return Gate pointer (must be freed with rlm_threshold_gate_free)
+ */
+RlmThresholdGate* rlm_threshold_gate_new_permissive(void);
+
+/**
+ * Free a threshold gate.
+ * @param gate Gate to free (may be NULL)
+ */
+void rlm_threshold_gate_free(RlmThresholdGate* gate);
+
+/**
+ * Evaluate a node against the threshold gate.
+ * @param gate Threshold gate
+ * @param node_json JSON object describing the node (type, content, tier, confidence)
+ * @return JSON object with gate decision (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_threshold_gate_evaluate(RlmThresholdGate* gate, const char* node_json);
+
+/* ============================================================================
+ * Epistemic Verification - Quick Checks
+ * ============================================================================ */
+
+/**
+ * Perform a quick heuristic check for potential hallucinations.
+ * @param response Response text to check
+ * @return Risk score from 0.0 (low risk) to 1.0 (high risk), or -1.0 on error
+ */
+double rlm_quick_hallucination_check(const char* response);
+
 #ifdef __cplusplus
 }
 #endif

@@ -23,6 +23,7 @@
 //! - Each thread has its own last error state
 
 mod context;
+mod epistemic;
 mod error;
 mod memory;
 mod repl;
@@ -30,6 +31,7 @@ mod trajectory;
 mod types;
 
 pub use context::*;
+pub use epistemic::*;
 pub use error::*;
 pub use memory::*;
 pub use repl::*;
