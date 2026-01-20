@@ -607,6 +607,162 @@ char* rlm_threshold_gate_evaluate(RlmThresholdGate* gate, const char* node_json)
  */
 double rlm_quick_hallucination_check(const char* response);
 
+/* ============================================================================
+ * Reasoning Traces - Deciduous-style provenance tracking
+ * ============================================================================ */
+
+typedef struct RlmReasoningTrace RlmReasoningTrace;
+typedef struct RlmReasoningTraceStore RlmReasoningTraceStore;
+
+/**
+ * Create a new reasoning trace.
+ * @param goal The goal being reasoned about
+ * @param session_id Optional session identifier (may be NULL)
+ * @return Trace pointer (must be freed with rlm_reasoning_trace_free)
+ */
+RlmReasoningTrace* rlm_reasoning_trace_new(const char* goal, const char* session_id);
+
+/**
+ * Free a reasoning trace.
+ * @param trace Trace to free (may be NULL)
+ */
+void rlm_reasoning_trace_free(RlmReasoningTrace* trace);
+
+/**
+ * Get the trace ID.
+ * @param trace Reasoning trace
+ * @return JSON string with trace_id (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_id(const RlmReasoningTrace* trace);
+
+/**
+ * Log a decision point with options.
+ * @param trace Reasoning trace
+ * @param question The decision question
+ * @param options_json JSON array of option strings
+ * @param chosen_index Index of the chosen option (0-based)
+ * @param rationale Explanation for the choice
+ * @return JSON object with chosen_id (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_log_decision(
+    RlmReasoningTrace* trace,
+    const char* question,
+    const char* options_json,
+    size_t chosen_index,
+    const char* rationale);
+
+/**
+ * Log an action with optional parent decision.
+ * @param trace Reasoning trace
+ * @param action_description Description of the action taken
+ * @param outcome_description Description of the outcome
+ * @param parent_id Optional parent decision node ID (may be NULL)
+ * @return JSON object with action_id and outcome_id (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_log_action(
+    RlmReasoningTrace* trace,
+    const char* action_description,
+    const char* outcome_description,
+    const char* parent_id);
+
+/**
+ * Link the trace to a git commit.
+ * @param trace Reasoning trace
+ * @param commit_sha Git commit SHA
+ * @return 0 on success, -1 on failure
+ */
+int rlm_reasoning_trace_link_commit(RlmReasoningTrace* trace, const char* commit_sha);
+
+/**
+ * Get trace statistics.
+ * @param trace Reasoning trace
+ * @return JSON object with stats (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_stats(const RlmReasoningTrace* trace);
+
+/**
+ * Export trace to JSON format.
+ * @param trace Reasoning trace
+ * @return JSON string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_to_json(const RlmReasoningTrace* trace);
+
+/**
+ * Export trace to Mermaid flowchart format.
+ * @param trace Reasoning trace
+ * @return Mermaid diagram string (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_to_mermaid(const RlmReasoningTrace* trace);
+
+/**
+ * Analyze the trace and get insights.
+ * @param trace Reasoning trace
+ * @return JSON object with analysis (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_analyze(const RlmReasoningTrace* trace);
+
+/* ============================================================================
+ * ReasoningTraceStore - Persistence for reasoning traces
+ * ============================================================================ */
+
+/**
+ * Create an in-memory trace store.
+ * @return Store pointer (must be freed with rlm_reasoning_trace_store_free)
+ */
+RlmReasoningTraceStore* rlm_reasoning_trace_store_in_memory(void);
+
+/**
+ * Open a file-backed trace store.
+ * @param path Path to the database file
+ * @return Store pointer (must be freed with rlm_reasoning_trace_store_free), or NULL on error
+ */
+RlmReasoningTraceStore* rlm_reasoning_trace_store_open(const char* path);
+
+/**
+ * Free a trace store.
+ * @param store Store to free (may be NULL)
+ */
+void rlm_reasoning_trace_store_free(RlmReasoningTraceStore* store);
+
+/**
+ * Save a trace to the store.
+ * @param store Trace store
+ * @param trace Trace to save
+ * @return 0 on success, -1 on failure
+ */
+int rlm_reasoning_trace_store_save(RlmReasoningTraceStore* store, const RlmReasoningTrace* trace);
+
+/**
+ * Load a trace from the store.
+ * @param store Trace store
+ * @param trace_id Trace ID to load
+ * @return Trace pointer (must be freed with rlm_reasoning_trace_free), or NULL on error
+ */
+RlmReasoningTrace* rlm_reasoning_trace_store_load(RlmReasoningTraceStore* store, const char* trace_id);
+
+/**
+ * Find traces by session ID.
+ * @param store Trace store
+ * @param session_id Session ID to search for
+ * @return JSON array of trace IDs (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_store_find_by_session(RlmReasoningTraceStore* store, const char* session_id);
+
+/**
+ * Find traces by linked commit.
+ * @param store Trace store
+ * @param commit Git commit SHA to search for
+ * @return JSON array of trace IDs (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_store_find_by_commit(RlmReasoningTraceStore* store, const char* commit);
+
+/**
+ * Get store statistics.
+ * @param store Trace store
+ * @return JSON object with stats (must be freed with rlm_string_free), or NULL on error
+ */
+char* rlm_reasoning_trace_store_stats(RlmReasoningTraceStore* store);
+
 #ifdef __cplusplus
 }
 #endif
