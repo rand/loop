@@ -65,15 +65,20 @@
 //! - SPEC-20.02: Field Specification
 //! - SPEC-20.03: Signature Validation
 
+pub mod fallback;
 pub mod submit;
 pub mod types;
 pub mod validation;
 
+pub use fallback::{
+    ExecutionLimits, ExecutionResult, FallbackConfig, FallbackExtractor, FallbackTrigger,
+    HistoryEntry, HistoryEntryType, ReplHistory,
+};
+pub use submit::{SignatureRegistration, SubmitError, SubmitMetrics, SubmitResult};
 pub use types::{FieldSpec, FieldType};
 pub use validation::{
     apply_defaults, validate_fields, validate_value, ValidationError, ValidationResult,
 };
-pub use submit::{SignatureRegistration, SubmitError, SubmitMetrics, SubmitResult};
 
 // Re-export derive macro
 pub use rlm_core_derive::Signature;

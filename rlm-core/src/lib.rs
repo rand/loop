@@ -107,6 +107,7 @@ pub use adapters::{
     RlmSkill, AdapterSessionContext,
 };
 pub use signature::{
-    apply_defaults, validate_fields, validate_value, FieldSpec, FieldType, ParseError, Signature,
-    ValidationError, ValidationResult,
+    apply_defaults, validate_fields, validate_value, ExecutionLimits, ExecutionResult,
+    FallbackConfig, FallbackExtractor, FallbackTrigger, FieldSpec, FieldType, HistoryEntry,
+    HistoryEntryType, ParseError, ReplHistory, Signature, ValidationError, ValidationResult,
 };
