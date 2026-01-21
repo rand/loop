@@ -260,6 +260,7 @@ impl SkillRegistry {
     }
 
     /// Get all skills.
+    #[allow(dead_code)] // Public API for external consumers
     pub fn all(&self) -> Vec<&RlmSkill> {
         self.skills.values().collect()
     }
@@ -280,6 +281,7 @@ impl SkillRegistry {
     }
 
     /// Get skills by category.
+    #[allow(dead_code)] // Public API for external consumers
     pub fn by_category(&self, category: &str) -> Vec<&RlmSkill> {
         self.skills
             .values()

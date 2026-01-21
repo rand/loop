@@ -489,6 +489,7 @@ impl DualTrackSync {
     }
 
     /// Find a theorem by name.
+    #[allow(dead_code)] // Public API for external consumers
     fn find_theorem(&self, name: &str) -> Option<&LeanTheorem> {
         self.lean_theorems.iter().find(|t| t.name == name)
     }

@@ -419,6 +419,7 @@ pub struct BatchVerifier {
     client: Arc<dyn LLMClient>,
     config: VerificationConfig,
     claim_extractor: ClaimExtractor,
+    #[allow(dead_code)] // Reserved for evidence scrubbing in verification pipeline
     scrubber: EvidenceScrubber,
     events: Arc<RwLock<Vec<TrajectoryEvent>>>,
 }

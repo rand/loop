@@ -3,7 +3,7 @@
 //! These structures represent the data needed to render each panel
 //! in the Bubble Tea TUI. All types are serializable for FFI transport.
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::memory::{Node, Tier};

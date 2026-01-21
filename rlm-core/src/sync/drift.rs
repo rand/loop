@@ -688,7 +688,7 @@ pub fn parse_topos_behaviors(content: &str, file: &Path) -> Vec<ToposBehavior> {
                 let mut returns = None;
                 let mut preconditions = Vec::new();
                 let mut postconditions = Vec::new();
-                let mut doc = None;
+                let doc = None;
 
                 i += 1;
                 while i < lines.len() {

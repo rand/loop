@@ -8,7 +8,7 @@
 //! These integrate with the Go budget package to provide
 //! shared cost calculation and tracking logic.
 
-use crate::llm::{CostTracker, ModelCosts, ModelSpec, Provider, TokenUsage};
+use crate::llm::{CostTracker, ModelSpec, TokenUsage};
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::os::raw::c_char;

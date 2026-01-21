@@ -292,11 +292,13 @@ impl HookRegistry {
     }
 
     /// Check if any handlers are registered for a trigger.
+    #[allow(dead_code)] // Public API for external consumers
     pub fn has_handlers(&self, trigger: HookTrigger) -> bool {
         self.handlers.iter().any(|h| h.trigger() == trigger)
     }
 
     /// Get count of registered handlers.
+    #[allow(dead_code)] // Public API for external consumers
     pub fn handler_count(&self) -> usize {
         self.handlers.len()
     }

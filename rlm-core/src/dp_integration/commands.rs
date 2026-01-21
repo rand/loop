@@ -133,6 +133,7 @@ impl DPCommandResult {
 /// Handler for DP commands.
 pub struct DPCommandHandler {
     /// Project root directory.
+    #[allow(dead_code)] // Reserved for future path resolution
     project_root: PathBuf,
     /// Coverage scanner.
     scanner: CoverageScanner,

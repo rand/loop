@@ -5,7 +5,6 @@
 //! - Lean (.lean) specifications for formal verification
 //! - Cross-references between the two formats
 
-use std::collections::HashMap;
 
 use super::types::{
     CrossReference, ExtractedRequirement, FormalizationLevel, FormalizationResult,

@@ -15,9 +15,9 @@ use crate::trajectory::{
     Verbosity,
 };
 
-use super::events::{EventBridge, ExecutionStatus, StatusUpdate, TUIEvent};
+use super::events::{EventBridge, ExecutionStatus, TUIEvent};
 use super::panels::{
-    BudgetPanelData, MemoryNodeView, MemoryPanelData, ReplEntry, ReplPanelData, ReplStatus,
+    BudgetPanelData, MemoryNodeView, MemoryPanelData, ReplEntry, ReplPanelData,
     TierCounts, TracePanelData, TraceEventView,
 };
 

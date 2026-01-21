@@ -81,6 +81,7 @@ pub struct LeanProofScanner {
     /// Whether to verify proofs with REPL.
     verify_proofs: bool,
     /// Common tactics to detect.
+    #[allow(dead_code)] // Reserved for future tactic analysis
     known_tactics: Vec<String>,
 }
 

@@ -34,7 +34,8 @@ pub struct ClaudeCodeAdapter {
     memory: Arc<SqliteMemoryStore>,
     /// Budget manager
     budget: Arc<BudgetManager>,
-    /// Trajectory emitter
+    /// Trajectory emitter (reserved for future event streaming)
+    #[allow(dead_code)]
     emitter: Arc<RwLock<CollectingEmitter>>,
     /// Hook registry
     hooks: Arc<RwLock<HookRegistry>>,

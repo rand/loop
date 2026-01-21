@@ -18,7 +18,7 @@
 //! - SPEC-25.03: Variable access helpers for REPL
 //! - SPEC-25.04: Size tracking and limits
 
-use super::types::{Message, SessionContext, ToolOutput};
+use super::types::SessionContext;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

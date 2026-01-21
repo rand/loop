@@ -144,7 +144,7 @@ impl LeanRepl {
             Ok(cmd)
         } else {
             // Try to find repl in PATH
-            let mut cmd = Command::new("repl");
+            let cmd = Command::new("repl");
             Ok(cmd)
         }
     }
@@ -493,7 +493,7 @@ impl ReplEnvironment for LeanRepl {
         })
     }
 
-    fn get_variable(&self, name: &str) -> Result<Option<Value>> {
+    fn get_variable(&self, _name: &str) -> Result<Option<Value>> {
         // Lean doesn't have mutable variables like Python
         // We can try to #check the name to see if it exists
         // But this requires a mutable borrow, so we return None here
