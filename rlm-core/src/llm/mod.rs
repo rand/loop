@@ -42,9 +42,12 @@ pub use cache::{
 pub use client::{
     AnthropicClient, ClientConfig, LLMClient, MultiProviderClient, OpenAIClient, TrackedClient,
 };
-pub use router::{QueryType, RoutingContext, RoutingDecision, SmartRouter, TierDefaults};
+pub use router::{
+    DualModelConfig, QueryType, RoutingContext, RoutingDecision, SmartRouter, SwitchStrategy,
+    TierDefaults,
+};
 pub use types::{
     CacheControl, ChatMessage, ChatRole, CompletionRequest, CompletionResponse, CostTracker,
     EmbeddingRequest, EmbeddingResponse, ModelCosts, ModelSpec, ModelTier, Provider, StopReason,
-    TokenUsage,
+    TierBreakdown, TierCosts, TokenUsage,
 };

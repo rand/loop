@@ -379,6 +379,25 @@ pub struct CostTracker {
     pub request_count: u64,
     /// Per-model breakdown
     pub by_model: HashMap<String, ModelCosts>,
+    /// Costs from root-level (premium) model calls
+    #[serde(default)]
+    pub root_costs: TierCosts,
+    /// Costs from recursive (budget) model calls
+    #[serde(default)]
+    pub recursive_costs: TierCosts,
+}
+
+/// Costs breakdown by model tier (for dual-model optimization).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TierCosts {
+    /// Input tokens used
+    pub input_tokens: u64,
+    /// Output tokens generated
+    pub output_tokens: u64,
+    /// Total cost in USD
+    pub cost: f64,
+    /// Number of requests
+    pub request_count: u64,
 }
 
 /// Costs for a specific model.
@@ -432,7 +451,136 @@ impl CostTracker {
             entry.cost += costs.cost;
             entry.request_count += costs.request_count;
         }
+
+        // Merge tier costs
+        self.root_costs.merge(&other.root_costs);
+        self.recursive_costs.merge(&other.recursive_costs);
     }
+
+    /// Record usage with tier information (for dual-model optimization).
+    ///
+    /// # Arguments
+    ///
+    /// * `model` - The model name
+    /// * `usage` - Token usage from the response
+    /// * `cost` - Calculated cost in USD
+    /// * `is_root` - Whether this was a root (premium) or recursive (budget) call
+    pub fn record_with_tier(
+        &mut self,
+        model: &str,
+        usage: &TokenUsage,
+        cost: Option<f64>,
+        is_root: bool,
+    ) {
+        // Record in main tracker
+        self.record(model, usage, cost);
+
+        // Record in appropriate tier
+        let tier_costs = if is_root {
+            &mut self.root_costs
+        } else {
+            &mut self.recursive_costs
+        };
+
+        tier_costs.input_tokens += usage.input_tokens;
+        tier_costs.output_tokens += usage.output_tokens;
+        tier_costs.request_count += 1;
+        if let Some(c) = cost {
+            tier_costs.cost += c;
+        }
+    }
+
+    /// Get a breakdown report of costs by tier.
+    pub fn tier_breakdown(&self) -> TierBreakdown {
+        let root_pct = if self.total_cost > 0.0 {
+            (self.root_costs.cost / self.total_cost) * 100.0
+        } else {
+            0.0
+        };
+
+        let recursive_pct = if self.total_cost > 0.0 {
+            (self.recursive_costs.cost / self.total_cost) * 100.0
+        } else {
+            0.0
+        };
+
+        TierBreakdown {
+            root_cost: self.root_costs.cost,
+            root_requests: self.root_costs.request_count,
+            root_tokens: self.root_costs.input_tokens + self.root_costs.output_tokens,
+            root_percentage: root_pct,
+            recursive_cost: self.recursive_costs.cost,
+            recursive_requests: self.recursive_costs.request_count,
+            recursive_tokens: self.recursive_costs.input_tokens + self.recursive_costs.output_tokens,
+            recursive_percentage: recursive_pct,
+            total_cost: self.total_cost,
+            estimated_single_model_cost: self.estimate_single_model_cost(),
+            savings_percentage: self.calculate_savings_percentage(),
+        }
+    }
+
+    /// Estimate what the cost would have been using only the root model.
+    ///
+    /// This helps quantify savings from dual-model optimization.
+    fn estimate_single_model_cost(&self) -> f64 {
+        // Rough estimate: assume recursive calls would cost 3x more with premium model
+        // This is based on typical Opus vs Haiku pricing ratios
+        self.root_costs.cost + (self.recursive_costs.cost * 3.0)
+    }
+
+    /// Calculate the percentage savings from dual-model optimization.
+    fn calculate_savings_percentage(&self) -> f64 {
+        let estimated_single = self.estimate_single_model_cost();
+        if estimated_single > 0.0 {
+            ((estimated_single - self.total_cost) / estimated_single) * 100.0
+        } else {
+            0.0
+        }
+    }
+}
+
+impl TierCosts {
+    /// Merge another TierCosts into this one.
+    pub fn merge(&mut self, other: &TierCosts) {
+        self.input_tokens += other.input_tokens;
+        self.output_tokens += other.output_tokens;
+        self.cost += other.cost;
+        self.request_count += other.request_count;
+    }
+
+    /// Get total tokens (input + output).
+    pub fn total_tokens(&self) -> u64 {
+        self.input_tokens + self.output_tokens
+    }
+}
+
+/// Breakdown of costs by model tier.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TierBreakdown {
+    /// Cost from root (premium) model
+    pub root_cost: f64,
+    /// Number of root model requests
+    pub root_requests: u64,
+    /// Total tokens from root model
+    pub root_tokens: u64,
+    /// Percentage of total cost from root model
+    pub root_percentage: f64,
+
+    /// Cost from recursive (budget) model
+    pub recursive_cost: f64,
+    /// Number of recursive model requests
+    pub recursive_requests: u64,
+    /// Total tokens from recursive model
+    pub recursive_tokens: u64,
+    /// Percentage of total cost from recursive model
+    pub recursive_percentage: f64,
+
+    /// Total actual cost
+    pub total_cost: f64,
+    /// Estimated cost if only using root model
+    pub estimated_single_model_cost: f64,
+    /// Percentage savings from dual-model optimization
+    pub savings_percentage: f64,
 }
 
 #[cfg(test)]

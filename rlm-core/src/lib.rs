@@ -55,8 +55,9 @@ pub use complexity::{ActivationDecision, PatternClassifier, TaskComplexitySignal
 pub use context::{Message, Role, SessionContext, ToolOutput};
 pub use error::{Error, Result};
 pub use llm::{
-    AnthropicClient, ClientConfig, CompletionRequest, CompletionResponse, LLMClient, ModelSpec,
-    ModelTier, Provider, QueryType, RoutingContext, SmartRouter,
+    AnthropicClient, ClientConfig, CompletionRequest, CompletionResponse, CostTracker,
+    DualModelConfig, LLMClient, ModelSpec, ModelTier, Provider, QueryType, RoutingContext,
+    SmartRouter, SwitchStrategy, TierBreakdown,
 };
 pub use memory::{Node, NodeId, NodeType, SqliteMemoryStore, Tier};
 pub use module::{
