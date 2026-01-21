@@ -31,11 +31,16 @@
 //! let response = client.complete(request).await?;
 //! ```
 
+mod batch;
 mod cache;
 mod client;
 mod router;
 mod types;
 
+pub use batch::{
+    BatchConfig, BatchExecutor, BatchQueryResult, BatchedLLMQuery, BatchedQueryResults,
+    DEFAULT_MAX_PARALLEL,
+};
 pub use cache::{
     apply_cache_markers, find_cache_breakpoints, CacheEntry, CacheKey, CacheStats, PromptCache,
 };

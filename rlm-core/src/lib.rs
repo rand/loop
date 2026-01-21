@@ -58,7 +58,8 @@ pub use context::{
 };
 pub use error::{Error, Result};
 pub use llm::{
-    AnthropicClient, ClientConfig, CompletionRequest, CompletionResponse, CostTracker,
+    AnthropicClient, BatchConfig, BatchExecutor, BatchQueryResult, BatchedLLMQuery,
+    BatchedQueryResults, ClientConfig, CompletionRequest, CompletionResponse, CostTracker,
     DualModelConfig, LLMClient, ModelSpec, ModelTier, Provider, QueryType, RoutingContext,
     SmartRouter, SwitchStrategy, TierBreakdown,
 };
