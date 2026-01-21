@@ -1,7 +1,4 @@
-//! Session context types for RLM orchestration.
-//!
-//! The context module provides the core types for representing conversation state,
-//! messages, and tool outputs that flow through the RLM orchestration loop.
+//! Core context types: Message, ToolOutput, SessionContext.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

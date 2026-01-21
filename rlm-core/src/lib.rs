@@ -52,7 +52,10 @@ pub mod trajectory;
 
 // Re-exports for convenience
 pub use complexity::{ActivationDecision, PatternClassifier, TaskComplexitySignals};
-pub use context::{Message, Role, SessionContext, ToolOutput};
+pub use context::{
+    ContextSizeTracker, ContextVarType, ContextVariable, ExternalizedContext,
+    ExternalizationConfig, Message, Role, SessionContext, ToolOutput, VariableAccessHelper,
+};
 pub use error::{Error, Result};
 pub use llm::{
     AnthropicClient, ClientConfig, CompletionRequest, CompletionResponse, CostTracker,
