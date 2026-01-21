@@ -103,7 +103,7 @@ impl FieldSpec {
 /// - Type hints in generated prompts
 /// - Schema generation for LLM responses
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "type", content = "value", rename_all = "snake_case")]
 pub enum FieldType {
     /// String value
     String,

@@ -604,6 +604,7 @@ fn extract_json_block(response: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::types::{FieldSpec, FieldType};
     use serde::{Deserialize, Serialize};
 
     // Test signature
@@ -628,7 +629,6 @@ mod tests {
         }
 
         fn output_fields() -> Vec<FieldSpec> {
-            use super::super::types::FieldType;
             vec![
                 FieldSpec::new("answer", FieldType::String).with_description("The answer"),
                 FieldSpec::new("confidence", FieldType::Float)
