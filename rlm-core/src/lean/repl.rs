@@ -489,6 +489,7 @@ impl ReplEnvironment for LeanRepl {
             },
             execution_time_ms: elapsed_ms,
             pending_operations: self.pending_sorries.clone(),
+            submit_result: None, // Lean doesn't support SUBMIT mechanism
         })
     }
 
@@ -567,6 +568,22 @@ impl ReplEnvironment for LeanRepl {
         // Remove from pending operations
         self.pending_sorries.retain(|op| op != id);
 
+        Ok(())
+    }
+
+    fn register_signature(
+        &mut self,
+        _output_fields: Vec<crate::signature::FieldSpec>,
+        _signature_name: Option<&str>,
+    ) -> Result<()> {
+        // Lean REPL doesn't support SUBMIT mechanism - it uses tactics instead
+        Err(Error::repl_execution(
+            "Signature registration not supported in Lean REPL",
+        ))
+    }
+
+    fn clear_signature(&mut self) -> Result<()> {
+        // No-op since signatures aren't supported
         Ok(())
     }
 }

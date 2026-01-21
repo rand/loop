@@ -2,8 +2,17 @@
 //!
 //! This module provides the Rust side of the REPL subprocess communication,
 //! spawning a Python process and communicating via JSON-RPC over stdin/stdout.
+//!
+//! # Signature Support
+//!
+//! The REPL supports typed signatures via the SUBMIT mechanism:
+//! 1. Register a signature with `register_signature()` before execution
+//! 2. Execute code that calls `SUBMIT(outputs)` when done
+//! 3. Outputs are validated against the registered signature
+//! 4. Results are returned in `ExecuteResult.submit_result`
 
 use crate::error::{Error, Result};
+use crate::signature::{FieldSpec, SubmitResult, SignatureRegistration};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -69,6 +78,9 @@ pub struct ExecuteResult {
     pub execution_time_ms: f64,
     /// IDs of pending deferred operations
     pub pending_operations: Vec<String>,
+    /// Result of SUBMIT call (if signature was registered and SUBMIT was called)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submit_result: Option<SubmitResult>,
 }
 
 /// A pending deferred operation that needs to be resolved.
@@ -320,6 +332,47 @@ impl ReplHandle {
         Ok(())
     }
 
+    /// Register a signature for SUBMIT validation.
+    ///
+    /// This must be called before executing code that uses `SUBMIT()`.
+    /// The signature defines the expected output fields and their types.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use rlm_core::signature::{FieldSpec, FieldType};
+    ///
+    /// let fields = vec![
+    ///     FieldSpec::new("answer", FieldType::String),
+    ///     FieldSpec::new("confidence", FieldType::Float),
+    /// ];
+    /// repl.register_signature(fields, Some("MySignature"))?;
+    ///
+    /// // Now execute code that calls SUBMIT({answer: "...", confidence: 0.95})
+    /// let result = repl.execute("SUBMIT({'answer': 'test', 'confidence': 0.95})")?;
+    /// ```
+    pub fn register_signature(
+        &mut self,
+        output_fields: Vec<FieldSpec>,
+        signature_name: Option<&str>,
+    ) -> Result<()> {
+        let registration = SignatureRegistration {
+            output_fields,
+            signature_name: signature_name.map(String::from),
+        };
+        let params = registration.to_params();
+        self.send_request("register_signature", params)?;
+        Ok(())
+    }
+
+    /// Clear the registered signature.
+    ///
+    /// After calling this, `SUBMIT()` calls will return `NoSignatureRegistered` error.
+    pub fn clear_signature(&mut self) -> Result<()> {
+        self.send_request("clear_signature", Value::Null)?;
+        Ok(())
+    }
+
     /// Shutdown the REPL subprocess.
     pub fn shutdown(&mut self) -> Result<()> {
         let _ = self.send_request("shutdown", Value::Null);
@@ -402,6 +455,19 @@ pub trait ReplEnvironment: Send + Sync {
 
     /// Resolve a deferred operation.
     fn resolve_operation(&mut self, id: &str, result: Value) -> Result<()>;
+
+    /// Register a signature for SUBMIT validation.
+    ///
+    /// The signature defines expected output fields that will be validated
+    /// when `SUBMIT()` is called in the executed code.
+    fn register_signature(
+        &mut self,
+        output_fields: Vec<FieldSpec>,
+        signature_name: Option<&str>,
+    ) -> Result<()>;
+
+    /// Clear the registered signature.
+    fn clear_signature(&mut self) -> Result<()>;
 }
 
 #[cfg(test)]
@@ -430,5 +496,77 @@ mod tests {
         let config = ReplConfig::default();
         let handle = ReplHandle::spawn(config);
         assert!(handle.is_ok());
+    }
+
+    #[test]
+    fn test_execute_result_with_submit() {
+        use crate::signature::SubmitResult;
+
+        // Test ExecuteResult serialization with submit_result
+        let result = ExecuteResult {
+            success: true,
+            result: Some(serde_json::json!({"value": 42})),
+            stdout: "output".to_string(),
+            stderr: String::new(),
+            error: None,
+            error_type: None,
+            execution_time_ms: 100.0,
+            pending_operations: vec![],
+            submit_result: Some(SubmitResult::success(serde_json::json!({
+                "answer": "test",
+                "confidence": 0.95
+            }))),
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("submit_result"));
+        assert!(json.contains("success"));
+
+        // Deserialize back
+        let parsed: ExecuteResult = serde_json::from_str(&json).unwrap();
+        assert!(parsed.submit_result.is_some());
+        assert!(parsed.submit_result.unwrap().is_success());
+    }
+
+    #[test]
+    fn test_execute_result_without_submit() {
+        // Test ExecuteResult without submit_result (None should be skipped in JSON)
+        let result = ExecuteResult {
+            success: true,
+            result: None,
+            stdout: String::new(),
+            stderr: String::new(),
+            error: None,
+            error_type: None,
+            execution_time_ms: 50.0,
+            pending_operations: vec![],
+            submit_result: None,
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        // submit_result should be skipped when None
+        assert!(!json.contains("submit_result"));
+    }
+
+    #[test]
+    fn test_signature_registration_params() {
+        use crate::signature::{FieldSpec, FieldType};
+
+        let fields = vec![
+            FieldSpec::new("answer", FieldType::String),
+            FieldSpec::new("confidence", FieldType::Float),
+        ];
+
+        let registration = SignatureRegistration::with_name(fields, "TestSig");
+        let params = registration.to_params();
+
+        assert!(params.get("output_fields").is_some());
+        assert_eq!(
+            params.get("signature_name"),
+            Some(&serde_json::json!("TestSig"))
+        );
+
+        let output_fields = params.get("output_fields").unwrap().as_array().unwrap();
+        assert_eq!(output_fields.len(), 2);
     }
 }

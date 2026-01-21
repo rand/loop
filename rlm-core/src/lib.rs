@@ -24,6 +24,9 @@
 //! }
 //! ```
 
+// Self-alias for derive macro support within the crate
+extern crate self as rlm_core;
+
 pub mod adapters;
 pub mod complexity;
 pub mod context;
@@ -40,6 +43,7 @@ pub mod proof;
 pub mod pybind;
 pub mod reasoning;
 pub mod repl;
+pub mod signature;
 pub mod spec_agent;
 pub mod sync;
 pub mod topos;
@@ -88,4 +92,8 @@ pub use adapters::{
     AdapterConfig, AdapterStatus, ClaudeCodeAdapter, CompactData, HookContext, HookHandler,
     HookResult, HookTrigger, McpTool, McpToolRegistry, PromptEnhancement, RlmRequest, RlmResponse,
     RlmSkill, AdapterSessionContext,
+};
+pub use signature::{
+    apply_defaults, validate_fields, validate_value, FieldSpec, FieldType, ParseError, Signature,
+    ValidationError, ValidationResult,
 };
