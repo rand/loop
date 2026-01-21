@@ -143,6 +143,19 @@ pub struct PyProbability {
 
 #[pymethods]
 impl PyProbability {
+    /// Create a new probability from a point estimate (0.0-1.0).
+    #[new]
+    fn new(p: f64) -> PyResult<Self> {
+        if !(0.0..=1.0).contains(&p) {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "Probability must be between 0.0 and 1.0",
+            ));
+        }
+        Ok(Self {
+            inner: Probability::point(p),
+        })
+    }
+
     /// Create a probability from a point estimate.
     #[staticmethod]
     fn point(p: f64) -> Self {
