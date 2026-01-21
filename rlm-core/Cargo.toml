@@ -10,7 +10,7 @@ categories = ["development-tools", "asynchronous"]
 
 [lib]
 name = "rlm_core"
-crate-type = ["lib", "cdylib"]
+crate-type = ["lib", "cdylib", "staticlib"]
 
 [features]
 default = ["tokio-runtime"]
