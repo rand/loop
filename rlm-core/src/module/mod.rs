@@ -38,10 +38,14 @@
 
 mod compose;
 mod example;
+mod optimize;
 mod predict;
 
 pub use compose::{chain_direct, Chain, ChainSignature, ParallelSignature, ParallelVec};
 pub use example::{Demonstration, ErasedDemonstration, Example, ExampleMetadata};
+pub use optimize::{
+    metrics, BootstrapFewShot, MetricFn, OptimizationStats, OptimizedModule, Optimizer, RoundStats,
+};
 pub use predict::{Predict, PredictConfig};
 
 use crate::error::Result;
