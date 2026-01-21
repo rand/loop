@@ -37,6 +37,7 @@ pub mod ffi;
 pub mod lean;
 pub mod llm;
 pub mod memory;
+pub mod module;
 pub mod orchestrator;
 pub mod proof;
 #[cfg(feature = "python")]
@@ -58,6 +59,10 @@ pub use llm::{
     ModelTier, Provider, QueryType, RoutingContext, SmartRouter,
 };
 pub use memory::{Node, NodeId, NodeType, SqliteMemoryStore, Tier};
+pub use module::{
+    chain_direct, Chain, Demonstration, Example, Module, ModuleConfig, ParallelVec, Predict,
+    PredictConfig, Predictor,
+};
 pub use orchestrator::Orchestrator;
 pub use repl::{ExecuteResult, ReplConfig, ReplHandle, ReplPool};
 pub use topos::{
