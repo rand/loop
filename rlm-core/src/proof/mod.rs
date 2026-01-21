@@ -64,12 +64,18 @@
 
 pub mod ai_assistant;
 pub mod engine;
+pub mod session;
 pub mod tactics;
 pub mod types;
 
 // Re-export main types
 pub use ai_assistant::{AIAssistantConfig, AIProofAssistant};
 pub use engine::{ProofAutomation, ProofAutomationBuilder, ProofAutomationConfig};
+pub use session::{
+    select_target, HelperLemma, HelperProofStatus, LimitReason, ProofSession, ProtocolConfig,
+    ProtocolEnforcer, ProtocolError, ProofSessionStatus, SorryLocation, TacticAttempt,
+    TacticOutcome,
+};
 pub use tactics::{
     domain_specific_tactics, tactics_for_goal, tactics_for_tier, AUTOMATION_TACTICS,
     DECIDABLE_TACTICS,

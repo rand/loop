@@ -70,8 +70,10 @@ pub use topos::{
     IndexBuilder, LeanRef, Link, LinkIndex, LinkType, ToposClient, ToposClientConfig, ToposRef,
 };
 pub use proof::{
-    AIAssistantConfig, AIProofAssistant, AutomationTier, ProofAttempt, ProofAutomation,
-    ProofAutomationBuilder, ProofContext, ProofStats, ProofStrategy, SpecDomain, TacticResult,
+    AIAssistantConfig, AIProofAssistant, AutomationTier, HelperLemma, HelperProofStatus,
+    LimitReason, ProofAttempt, ProofAutomation, ProofAutomationBuilder, ProofContext,
+    ProofSession, ProofSessionStatus, ProofStats, ProofStrategy, ProtocolConfig, ProtocolEnforcer,
+    SorryLocation, SpecDomain, TacticResult,
 };
 pub use sync::{
     DriftReport, DriftType, DualTrackSync, FormalizationLevel, SyncDirection, SyncResult,
