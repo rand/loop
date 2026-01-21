@@ -80,6 +80,7 @@ mod query;
 mod store;
 mod trace;
 mod types;
+mod visualize;
 
 // Re-export main types
 pub use query::{compare_traces, DecisionPath, TraceAnalyzer, TraceComparison, TraceQuery};
@@ -88,4 +89,7 @@ pub use trace::{DecisionTree, ReasoningTrace, TraceStats};
 pub use types::{
     DecisionNode, DecisionNodeId, DecisionNodeType, DecisionPoint, OptionStatus, TraceEdge,
     TraceEdgeLabel, TraceId,
+};
+pub use visualize::{
+    DotConfig, HtmlConfig, NetworkXGraph, NetworkXGraphAttrs, NetworkXLink, NetworkXNode,
 };

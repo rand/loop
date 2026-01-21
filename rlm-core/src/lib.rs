@@ -81,6 +81,7 @@ pub use sync::{
 pub use trajectory::{TrajectoryEvent, TrajectoryEventType};
 pub use reasoning::{
     DecisionNode, DecisionNodeId, DecisionNodeType, DecisionPath, DecisionPoint, DecisionTree,
+    DotConfig, HtmlConfig, NetworkXGraph, NetworkXGraphAttrs, NetworkXLink, NetworkXNode,
     OptionStatus, ReasoningTrace, ReasoningTraceStore, TraceAnalyzer, TraceComparison,
     TraceEdge, TraceEdgeLabel, TraceId, TraceQuery, TraceStats, TraceStoreStats,
 };
