@@ -4,6 +4,8 @@
 //! enabling use from Claude Code plugins and other Python applications.
 
 #[cfg(feature = "python")]
+mod adversarial;
+#[cfg(feature = "python")]
 mod context;
 #[cfg(feature = "python")]
 mod epistemic;
@@ -71,6 +73,20 @@ fn rlm_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<epistemic::PyClaimExtractor>()?;
     m.add_class::<epistemic::PyKL>()?;
     m.add_function(wrap_pyfunction!(epistemic::quick_hallucination_check, m)?)?;
+
+    // Adversarial validation types
+    m.add_class::<adversarial::PyIssueSeverity>()?;
+    m.add_class::<adversarial::PyIssueCategory>()?;
+    m.add_class::<adversarial::PyValidationVerdict>()?;
+    m.add_class::<adversarial::PyAdversarialTrigger>()?;
+    m.add_class::<adversarial::PyCodeFile>()?;
+    m.add_class::<adversarial::PyToolOutput>()?;
+    m.add_class::<adversarial::PyIssueLocation>()?;
+    m.add_class::<adversarial::PyIssue>()?;
+    m.add_class::<adversarial::PyValidationContext>()?;
+    m.add_class::<adversarial::PyValidationStats>()?;
+    m.add_class::<adversarial::PyValidationResult>()?;
+    m.add_class::<adversarial::PyAdversarialConfig>()?;
 
     Ok(())
 }
