@@ -16,6 +16,7 @@ pub enum PyProvider {
     Anthropic = 0,
     OpenAI = 1,
     OpenRouter = 2,
+    #[cfg(feature = "gemini")]
     Google = 3,
 }
 
@@ -25,7 +26,11 @@ impl From<Provider> for PyProvider {
             Provider::Anthropic => PyProvider::Anthropic,
             Provider::OpenAI => PyProvider::OpenAI,
             Provider::OpenRouter => PyProvider::OpenRouter,
+            #[cfg(feature = "gemini")]
             Provider::Google => PyProvider::Google,
+            // Handle unknown variants for forward compatibility
+            #[allow(unreachable_patterns)]
+            _ => PyProvider::OpenRouter, // Fallback for unknown providers
         }
     }
 }
@@ -36,6 +41,7 @@ impl From<PyProvider> for Provider {
             PyProvider::Anthropic => Provider::Anthropic,
             PyProvider::OpenAI => Provider::OpenAI,
             PyProvider::OpenRouter => Provider::OpenRouter,
+            #[cfg(feature = "gemini")]
             PyProvider::Google => Provider::Google,
         }
     }
@@ -48,6 +54,7 @@ impl PyProvider {
             PyProvider::Anthropic => "Provider.Anthropic",
             PyProvider::OpenAI => "Provider.OpenAI",
             PyProvider::OpenRouter => "Provider.OpenRouter",
+            #[cfg(feature = "gemini")]
             PyProvider::Google => "Provider.Google",
         }
     }

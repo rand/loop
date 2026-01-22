@@ -17,6 +17,15 @@ default = ["tokio-runtime"]
 tokio-runtime = ["tokio/rt-multi-thread", "tokio/macros"]
 python = ["pyo3", "pyo3-async-runtimes"]
 
+# Gemini provider - gates GoogleClient
+gemini = []
+
+# Adversarial validation module - depends on Gemini for cross-provider validation
+adversarial = ["gemini"]
+
+# Full feature set - enables all optional features
+full = ["adversarial", "gemini", "python"]
+
 [dependencies]
 # Async runtime
 tokio = { version = "1.43", features = ["sync", "time", "process", "io-util"] }

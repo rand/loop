@@ -28,6 +28,7 @@
 extern crate self as rlm_core;
 
 pub mod adapters;
+#[cfg(feature = "adversarial")]
 pub mod adversarial;
 pub mod complexity;
 pub mod context;
@@ -112,6 +113,7 @@ pub use signature::{
     FallbackConfig, FallbackExtractor, FallbackTrigger, FieldSpec, FieldType, HistoryEntry,
     HistoryEntryType, ParseError, ReplHistory, Signature, ValidationError, ValidationResult,
 };
+#[cfg(feature = "adversarial")]
 pub use adversarial::{
     AdversarialConfig, AdversarialTrigger, AdversarialValidator, CodeFile, CriticStrategy,
     EdgeCaseStrategy, FreshContextInvoker, FreshInvokerBuilder, GeminiFreshInvoker,

@@ -567,11 +567,13 @@ impl LLMClient for OpenAIClient {
 }
 
 /// Google Gemini client.
+#[cfg(feature = "gemini")]
 pub struct GoogleClient {
     config: ClientConfig,
     http: Client,
 }
 
+#[cfg(feature = "gemini")]
 impl GoogleClient {
     const DEFAULT_BASE_URL: &'static str = "https://generativelanguage.googleapis.com";
 
@@ -593,6 +595,7 @@ impl GoogleClient {
 }
 
 // Google Gemini API types
+#[cfg(feature = "gemini")]
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct GeminiRequest {
@@ -603,17 +606,20 @@ struct GeminiRequest {
     generation_config: Option<GeminiGenerationConfig>,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Serialize, Deserialize)]
 struct GeminiContent {
     role: String,
     parts: Vec<GeminiPart>,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Serialize, Deserialize)]
 struct GeminiPart {
     text: String,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct GeminiGenerationConfig {
@@ -625,6 +631,7 @@ struct GeminiGenerationConfig {
     stop_sequences: Option<Vec<String>>,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GeminiResponse {
@@ -632,6 +639,7 @@ struct GeminiResponse {
     usage_metadata: Option<GeminiUsageMetadata>,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GeminiCandidate {
@@ -639,6 +647,7 @@ struct GeminiCandidate {
     finish_reason: Option<String>,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GeminiUsageMetadata {
@@ -649,11 +658,13 @@ struct GeminiUsageMetadata {
     cached_content_token_count: Option<u64>,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Deserialize)]
 struct GeminiError {
     error: GeminiErrorDetail,
 }
 
+#[cfg(feature = "gemini")]
 #[derive(Debug, Deserialize)]
 struct GeminiErrorDetail {
     message: String,
@@ -661,6 +672,7 @@ struct GeminiErrorDetail {
     status: Option<String>,
 }
 
+#[cfg(feature = "gemini")]
 #[async_trait]
 impl LLMClient for GoogleClient {
     async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {

@@ -3,7 +3,7 @@
 //! This module provides Python bindings for the core rlm-core functionality,
 //! enabling use from Claude Code plugins and other Python applications.
 
-#[cfg(feature = "python")]
+#[cfg(all(feature = "python", feature = "adversarial"))]
 mod adversarial;
 #[cfg(feature = "python")]
 mod context;
@@ -74,19 +74,22 @@ fn rlm_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<epistemic::PyKL>()?;
     m.add_function(wrap_pyfunction!(epistemic::quick_hallucination_check, m)?)?;
 
-    // Adversarial validation types
-    m.add_class::<adversarial::PyIssueSeverity>()?;
-    m.add_class::<adversarial::PyIssueCategory>()?;
-    m.add_class::<adversarial::PyValidationVerdict>()?;
-    m.add_class::<adversarial::PyAdversarialTrigger>()?;
-    m.add_class::<adversarial::PyCodeFile>()?;
-    m.add_class::<adversarial::PyToolOutput>()?;
-    m.add_class::<adversarial::PyIssueLocation>()?;
-    m.add_class::<adversarial::PyIssue>()?;
-    m.add_class::<adversarial::PyValidationContext>()?;
-    m.add_class::<adversarial::PyValidationStats>()?;
-    m.add_class::<adversarial::PyValidationResult>()?;
-    m.add_class::<adversarial::PyAdversarialConfig>()?;
+    // Adversarial validation types (requires "adversarial" feature)
+    #[cfg(feature = "adversarial")]
+    {
+        m.add_class::<adversarial::PyIssueSeverity>()?;
+        m.add_class::<adversarial::PyIssueCategory>()?;
+        m.add_class::<adversarial::PyValidationVerdict>()?;
+        m.add_class::<adversarial::PyAdversarialTrigger>()?;
+        m.add_class::<adversarial::PyCodeFile>()?;
+        m.add_class::<adversarial::PyToolOutput>()?;
+        m.add_class::<adversarial::PyIssueLocation>()?;
+        m.add_class::<adversarial::PyIssue>()?;
+        m.add_class::<adversarial::PyValidationContext>()?;
+        m.add_class::<adversarial::PyValidationStats>()?;
+        m.add_class::<adversarial::PyValidationResult>()?;
+        m.add_class::<adversarial::PyAdversarialConfig>()?;
+    }
 
     Ok(())
 }

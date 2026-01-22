@@ -7,10 +7,12 @@ use std::collections::HashMap;
 /// LLM provider.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum Provider {
     Anthropic,
     OpenAI,
     OpenRouter,
+    #[cfg(feature = "gemini")]
     Google,
 }
 
@@ -20,6 +22,7 @@ impl std::fmt::Display for Provider {
             Self::Anthropic => write!(f, "anthropic"),
             Self::OpenAI => write!(f, "openai"),
             Self::OpenRouter => write!(f, "openrouter"),
+            #[cfg(feature = "gemini")]
             Self::Google => write!(f, "google"),
         }
     }
@@ -155,8 +158,9 @@ impl ModelSpec {
         }
     }
 
-    // Google/Gemini models
+    // Google/Gemini models (requires "gemini" feature)
 
+    #[cfg(feature = "gemini")]
     pub fn gemini_2_0_flash() -> Self {
         Self {
             id: "gemini-2.0-flash".to_string(),
@@ -173,6 +177,7 @@ impl ModelSpec {
         }
     }
 
+    #[cfg(feature = "gemini")]
     pub fn gemini_1_5_pro() -> Self {
         Self {
             id: "gemini-1.5-pro".to_string(),
@@ -189,6 +194,7 @@ impl ModelSpec {
         }
     }
 
+    #[cfg(feature = "gemini")]
     pub fn gemini_1_5_flash() -> Self {
         Self {
             id: "gemini-1.5-flash".to_string(),
