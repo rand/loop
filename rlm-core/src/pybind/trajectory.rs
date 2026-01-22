@@ -30,6 +30,10 @@ pub enum PyTrajectoryEventType {
     Externalize = 18,
     Decompose = 19,
     Synthesize = 20,
+    AdversarialStart = 21,
+    CriticInvoked = 22,
+    IssueFound = 23,
+    AdversarialComplete = 24,
 }
 
 impl From<TrajectoryEventType> for PyTrajectoryEventType {
@@ -56,6 +60,10 @@ impl From<TrajectoryEventType> for PyTrajectoryEventType {
             TrajectoryEventType::Externalize => PyTrajectoryEventType::Externalize,
             TrajectoryEventType::Decompose => PyTrajectoryEventType::Decompose,
             TrajectoryEventType::Synthesize => PyTrajectoryEventType::Synthesize,
+            TrajectoryEventType::AdversarialStart => PyTrajectoryEventType::AdversarialStart,
+            TrajectoryEventType::CriticInvoked => PyTrajectoryEventType::CriticInvoked,
+            TrajectoryEventType::IssueFound => PyTrajectoryEventType::IssueFound,
+            TrajectoryEventType::AdversarialComplete => PyTrajectoryEventType::AdversarialComplete,
         }
     }
 }
@@ -84,6 +92,10 @@ impl From<PyTrajectoryEventType> for TrajectoryEventType {
             PyTrajectoryEventType::Externalize => TrajectoryEventType::Externalize,
             PyTrajectoryEventType::Decompose => TrajectoryEventType::Decompose,
             PyTrajectoryEventType::Synthesize => TrajectoryEventType::Synthesize,
+            PyTrajectoryEventType::AdversarialStart => TrajectoryEventType::AdversarialStart,
+            PyTrajectoryEventType::CriticInvoked => TrajectoryEventType::CriticInvoked,
+            PyTrajectoryEventType::IssueFound => TrajectoryEventType::IssueFound,
+            PyTrajectoryEventType::AdversarialComplete => TrajectoryEventType::AdversarialComplete,
         }
     }
 }
@@ -113,6 +125,10 @@ impl PyTrajectoryEventType {
             PyTrajectoryEventType::Externalize => "TrajectoryEventType.Externalize",
             PyTrajectoryEventType::Decompose => "TrajectoryEventType.Decompose",
             PyTrajectoryEventType::Synthesize => "TrajectoryEventType.Synthesize",
+            PyTrajectoryEventType::AdversarialStart => "TrajectoryEventType.AdversarialStart",
+            PyTrajectoryEventType::CriticInvoked => "TrajectoryEventType.CriticInvoked",
+            PyTrajectoryEventType::IssueFound => "TrajectoryEventType.IssueFound",
+            PyTrajectoryEventType::AdversarialComplete => "TrajectoryEventType.AdversarialComplete",
         }
     }
 }

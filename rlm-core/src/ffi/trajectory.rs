@@ -275,6 +275,10 @@ pub extern "C" fn rlm_trajectory_event_type_name(
         RlmTrajectoryEventType::Externalize => "EXTERNALIZE",
         RlmTrajectoryEventType::Decompose => "DECOMPOSE",
         RlmTrajectoryEventType::Synthesize => "SYNTHESIZE",
+        RlmTrajectoryEventType::AdversarialStart => "ADVERSARIAL_START",
+        RlmTrajectoryEventType::CriticInvoked => "CRITIC_INVOKED",
+        RlmTrajectoryEventType::IssueFound => "ISSUE_FOUND",
+        RlmTrajectoryEventType::AdversarialComplete => "ADVERSARIAL_COMPLETE",
     };
     str_to_cstring(name)
 }

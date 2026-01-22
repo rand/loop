@@ -165,6 +165,10 @@ pub enum RlmTrajectoryEventType {
     Externalize = 18,
     Decompose = 19,
     Synthesize = 20,
+    AdversarialStart = 21,
+    CriticInvoked = 22,
+    IssueFound = 23,
+    AdversarialComplete = 24,
 }
 
 impl From<crate::trajectory::TrajectoryEventType> for RlmTrajectoryEventType {
@@ -191,6 +195,10 @@ impl From<crate::trajectory::TrajectoryEventType> for RlmTrajectoryEventType {
             crate::trajectory::TrajectoryEventType::Externalize => RlmTrajectoryEventType::Externalize,
             crate::trajectory::TrajectoryEventType::Decompose => RlmTrajectoryEventType::Decompose,
             crate::trajectory::TrajectoryEventType::Synthesize => RlmTrajectoryEventType::Synthesize,
+            crate::trajectory::TrajectoryEventType::AdversarialStart => RlmTrajectoryEventType::AdversarialStart,
+            crate::trajectory::TrajectoryEventType::CriticInvoked => RlmTrajectoryEventType::CriticInvoked,
+            crate::trajectory::TrajectoryEventType::IssueFound => RlmTrajectoryEventType::IssueFound,
+            crate::trajectory::TrajectoryEventType::AdversarialComplete => RlmTrajectoryEventType::AdversarialComplete,
         }
     }
 }
@@ -219,6 +227,10 @@ impl From<RlmTrajectoryEventType> for crate::trajectory::TrajectoryEventType {
             RlmTrajectoryEventType::Externalize => crate::trajectory::TrajectoryEventType::Externalize,
             RlmTrajectoryEventType::Decompose => crate::trajectory::TrajectoryEventType::Decompose,
             RlmTrajectoryEventType::Synthesize => crate::trajectory::TrajectoryEventType::Synthesize,
+            RlmTrajectoryEventType::AdversarialStart => crate::trajectory::TrajectoryEventType::AdversarialStart,
+            RlmTrajectoryEventType::CriticInvoked => crate::trajectory::TrajectoryEventType::CriticInvoked,
+            RlmTrajectoryEventType::IssueFound => crate::trajectory::TrajectoryEventType::IssueFound,
+            RlmTrajectoryEventType::AdversarialComplete => crate::trajectory::TrajectoryEventType::AdversarialComplete,
         }
     }
 }

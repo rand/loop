@@ -65,6 +65,15 @@ pub enum TrajectoryEventType {
     Decompose,
     /// Synthesis step
     Synthesize,
+    // Adversarial validation events
+    /// Adversarial validation started
+    AdversarialStart,
+    /// Adversarial critic invoked (each strategy/iteration)
+    CriticInvoked,
+    /// Issue found during adversarial review
+    IssueFound,
+    /// Adversarial validation complete
+    AdversarialComplete,
 }
 
 impl std::fmt::Display for TrajectoryEventType {
@@ -91,6 +100,10 @@ impl std::fmt::Display for TrajectoryEventType {
             Self::Externalize => "EXTERNALIZE",
             Self::Decompose => "DECOMPOSE",
             Self::Synthesize => "SYNTHESIZE",
+            Self::AdversarialStart => "ADVERSARIAL_START",
+            Self::CriticInvoked => "CRITIC_INVOKED",
+            Self::IssueFound => "ISSUE_FOUND",
+            Self::AdversarialComplete => "ADVERSARIAL_COMPLETE",
         };
         write!(f, "{}", s)
     }
@@ -208,6 +221,77 @@ impl TrajectoryEvent {
         Self::new(TrajectoryEventType::HallucinationFlag, depth, claim)
             .with_metadata("budget_gap", budget_gap)
             .with_metadata("status", status.into())
+    }
+
+    /// Create an adversarial validation start event.
+    pub fn adversarial_start(
+        depth: u32,
+        validation_id: impl Into<String>,
+        strategies: &[String],
+    ) -> Self {
+        Self::new(
+            TrajectoryEventType::AdversarialStart,
+            depth,
+            format!("Starting adversarial validation {}", validation_id.into()),
+        )
+        .with_metadata("strategies", serde_json::json!(strategies))
+    }
+
+    /// Create a critic invoked event.
+    pub fn critic_invoked(
+        depth: u32,
+        strategy: impl Into<String>,
+        iteration: usize,
+    ) -> Self {
+        let strategy = strategy.into();
+        Self::new(
+            TrajectoryEventType::CriticInvoked,
+            depth,
+            format!("Invoking {} critic (iteration {})", strategy, iteration),
+        )
+        .with_metadata("strategy", strategy)
+        .with_metadata("iteration", iteration as i64)
+    }
+
+    /// Create an issue found event.
+    pub fn issue_found(
+        depth: u32,
+        severity: impl Into<String>,
+        category: impl Into<String>,
+        title: impl Into<String>,
+    ) -> Self {
+        let severity = severity.into();
+        let category = category.into();
+        let title = title.into();
+        Self::new(
+            TrajectoryEventType::IssueFound,
+            depth,
+            format!("[{}] {}: {}", severity, category, title),
+        )
+        .with_metadata("severity", severity)
+        .with_metadata("category", category)
+        .with_metadata("title", title)
+    }
+
+    /// Create an adversarial validation complete event.
+    pub fn adversarial_complete(
+        depth: u32,
+        verdict: impl Into<String>,
+        issue_count: usize,
+        cost_usd: f64,
+    ) -> Self {
+        let verdict = verdict.into();
+        Self::new(
+            TrajectoryEventType::AdversarialComplete,
+            depth,
+            format!(
+                "Adversarial validation complete: {} ({} issues, ${:.4})",
+                verdict, issue_count, cost_usd
+            ),
+        )
+        .with_metadata("verdict", verdict)
+        .with_metadata("issue_count", issue_count as i64)
+        .with_metadata("cost_usd", cost_usd)
     }
 
     /// Check if this is an error event.
@@ -732,13 +816,18 @@ impl TrajectoryEventType {
             | Self::VerifyStart
             | Self::VerifyComplete
             | Self::Decompose
-            | Self::Synthesize => Verbosity::Verbose,
+            | Self::Synthesize
+            | Self::CriticInvoked => Verbosity::Verbose,
             // Debug only
             Self::ClaimExtracted
             | Self::EvidenceChecked
             | Self::BudgetComputed
             | Self::Memory
             | Self::Externalize => Verbosity::Debug,
+            // Adversarial events - show at normal verbosity since they're important
+            Self::AdversarialStart | Self::IssueFound | Self::AdversarialComplete => {
+                Verbosity::Normal
+            }
         }
     }
 
