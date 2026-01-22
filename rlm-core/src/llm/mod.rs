@@ -45,7 +45,8 @@ pub use cache::{
     apply_cache_markers, find_cache_breakpoints, CacheEntry, CacheKey, CacheStats, PromptCache,
 };
 pub use client::{
-    AnthropicClient, ClientConfig, LLMClient, MultiProviderClient, OpenAIClient, TrackedClient,
+    AnthropicClient, ClientConfig, GoogleClient, LLMClient, MultiProviderClient, OpenAIClient,
+    TrackedClient,
 };
 pub use router::{
     DualModelConfig, QueryType, RoutingContext, RoutingDecision, SmartRouter, SwitchStrategy,

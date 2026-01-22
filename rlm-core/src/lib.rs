@@ -28,6 +28,7 @@
 extern crate self as rlm_core;
 
 pub mod adapters;
+pub mod adversarial;
 pub mod complexity;
 pub mod context;
 pub mod dp_integration;
@@ -110,4 +111,12 @@ pub use signature::{
     apply_defaults, validate_fields, validate_value, ExecutionLimits, ExecutionResult,
     FallbackConfig, FallbackExtractor, FallbackTrigger, FieldSpec, FieldType, HistoryEntry,
     HistoryEntryType, ParseError, ReplHistory, Signature, ValidationError, ValidationResult,
+};
+pub use adversarial::{
+    AdversarialConfig, AdversarialTrigger, AdversarialValidator, CodeFile, CriticStrategy,
+    EdgeCaseStrategy, GeminiValidator, Issue, IssueCategory, IssueLocation, IssueSeverity,
+    PerformanceStrategy, SecurityStrategy, StrategyFactory, TestingStrategy,
+    ToolOutput as AdversarialToolOutput, TraceabilityStrategy, ValidationContext, ValidationId,
+    ValidationIteration, ValidationResult as AdversarialValidationResult,
+    ValidationStats as AdversarialValidationStats, ValidationStrategy, ValidationVerdict,
 };
