@@ -64,6 +64,109 @@ pub extern "C" fn rlm_version() -> *mut c_char {
     }
 }
 
+/// Get the library version major number.
+#[no_mangle]
+pub extern "C" fn rlm_version_major() -> i32 {
+    let version = env!("CARGO_PKG_VERSION");
+    version
+        .split('.')
+        .next()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Get the library version minor number.
+#[no_mangle]
+pub extern "C" fn rlm_version_minor() -> i32 {
+    let version = env!("CARGO_PKG_VERSION");
+    version
+        .split('.')
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Get the library version patch number.
+#[no_mangle]
+pub extern "C" fn rlm_version_patch() -> i32 {
+    let version = env!("CARGO_PKG_VERSION");
+    version
+        .split('.')
+        .nth(2)
+        .and_then(|s| s.split('-').next()) // Handle pre-release like 0.2.0-alpha
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Check if a feature is available.
+///
+/// Returns 1 if the feature is available, 0 if not, -1 if the feature name is invalid.
+///
+/// Available features:
+/// - "gemini": Google/Gemini provider support
+/// - "adversarial": Adversarial validation support (requires gemini)
+/// - "python": Python bindings (PyO3)
+///
+/// # Safety
+/// - `feature_name` must be a valid null-terminated C string.
+#[no_mangle]
+pub unsafe extern "C" fn rlm_has_feature(feature_name: *const c_char) -> i32 {
+    if feature_name.is_null() {
+        return -1;
+    }
+
+    let name = match std::ffi::CStr::from_ptr(feature_name).to_str() {
+        Ok(s) => s,
+        Err(_) => return -1,
+    };
+
+    match name {
+        "gemini" => {
+            #[cfg(feature = "gemini")]
+            return 1;
+            #[cfg(not(feature = "gemini"))]
+            return 0;
+        }
+        "adversarial" => {
+            #[cfg(feature = "adversarial")]
+            return 1;
+            #[cfg(not(feature = "adversarial"))]
+            return 0;
+        }
+        "python" => {
+            #[cfg(feature = "python")]
+            return 1;
+            #[cfg(not(feature = "python"))]
+            return 0;
+        }
+        _ => -1, // Unknown feature
+    }
+}
+
+/// Get a comma-separated list of available features.
+///
+/// # Safety
+/// The returned string must be freed with `rlm_string_free()`.
+#[no_mangle]
+pub extern "C" fn rlm_available_features() -> *mut c_char {
+    let mut features = Vec::new();
+
+    #[cfg(feature = "gemini")]
+    features.push("gemini");
+
+    #[cfg(feature = "adversarial")]
+    features.push("adversarial");
+
+    #[cfg(feature = "python")]
+    features.push("python");
+
+    let features_str = features.join(",");
+    match CString::new(features_str) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
 /// Free a string allocated by the library.
 ///
 /// # Safety
@@ -353,5 +456,72 @@ mod tests {
         unsafe { rlm_string_free(json) };
 
         unsafe { rlm_reasoning_trace_free(trace) };
+    }
+
+    #[test]
+    fn test_version_components() {
+        let major = rlm_version_major();
+        let minor = rlm_version_minor();
+        let patch = rlm_version_patch();
+
+        // Version should be non-negative
+        assert!(major >= 0);
+        assert!(minor >= 0);
+        assert!(patch >= 0);
+
+        // Full version string should match components
+        let version = rlm_version();
+        assert!(!version.is_null());
+        let version_str = unsafe { CStr::from_ptr(version).to_str().unwrap() };
+        assert!(
+            version_str.starts_with(&format!("{}.{}.{}", major, minor, patch)),
+            "version {} should start with {}.{}.{}",
+            version_str,
+            major,
+            minor,
+            patch
+        );
+        unsafe { rlm_string_free(version) };
+    }
+
+    #[test]
+    fn test_has_feature() {
+        // Known features should return 0 or 1
+        let gemini = std::ffi::CString::new("gemini").unwrap();
+        let result = unsafe { rlm_has_feature(gemini.as_ptr()) };
+        assert!(result == 0 || result == 1);
+
+        let adversarial = std::ffi::CString::new("adversarial").unwrap();
+        let result = unsafe { rlm_has_feature(adversarial.as_ptr()) };
+        assert!(result == 0 || result == 1);
+
+        let python = std::ffi::CString::new("python").unwrap();
+        let result = unsafe { rlm_has_feature(python.as_ptr()) };
+        assert!(result == 0 || result == 1);
+
+        // Unknown feature should return -1
+        let unknown = std::ffi::CString::new("unknown_feature").unwrap();
+        let result = unsafe { rlm_has_feature(unknown.as_ptr()) };
+        assert_eq!(result, -1);
+
+        // Null should return -1
+        let result = unsafe { rlm_has_feature(std::ptr::null()) };
+        assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn test_available_features() {
+        let features = rlm_available_features();
+        assert!(!features.is_null());
+        let features_str = unsafe { CStr::from_ptr(features).to_str().unwrap() };
+
+        // Features string should be comma-separated or empty
+        // Depending on compile flags, it may or may not contain certain features
+        assert!(
+            features_str.is_empty()
+                || features_str.split(',').all(|f| ["gemini", "adversarial", "python"].contains(&f))
+        );
+
+        unsafe { rlm_string_free(features) };
     }
 }

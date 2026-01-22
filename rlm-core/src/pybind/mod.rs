@@ -91,7 +91,90 @@ fn rlm_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<adversarial::PyAdversarialConfig>()?;
     }
 
+    // Version and feature functions
+    m.add_function(wrap_pyfunction!(version, m)?)?;
+    m.add_function(wrap_pyfunction!(version_tuple, m)?)?;
+    m.add_function(wrap_pyfunction!(has_feature, m)?)?;
+    m.add_function(wrap_pyfunction!(available_features, m)?)?;
+
     Ok(())
+}
+
+// ============================================================================
+// Version and Feature Functions
+// ============================================================================
+
+/// Get the library version string.
+#[cfg(feature = "python")]
+#[pyfunction]
+fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+/// Get the library version as a tuple (major, minor, patch).
+#[cfg(feature = "python")]
+#[pyfunction]
+fn version_tuple() -> (i32, i32, i32) {
+    let version = env!("CARGO_PKG_VERSION");
+    let parts: Vec<&str> = version.split('.').collect();
+
+    let major = parts.first().and_then(|s| s.parse().ok()).unwrap_or(0);
+    let minor = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let patch = parts
+        .get(2)
+        .and_then(|s| s.split('-').next()) // Handle pre-release
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+
+    (major, minor, patch)
+}
+
+/// Check if a feature is available.
+///
+/// Returns True if the feature is available, False if not.
+/// Raises ValueError for unknown feature names.
+///
+/// Available features:
+/// - "gemini": Google/Gemini provider support
+/// - "adversarial": Adversarial validation support (requires gemini)
+/// - "python": Python bindings (always True if you can call this)
+#[cfg(feature = "python")]
+#[pyfunction]
+fn has_feature(feature_name: &str) -> PyResult<bool> {
+    match feature_name {
+        "gemini" => {
+            #[cfg(feature = "gemini")]
+            return Ok(true);
+            #[cfg(not(feature = "gemini"))]
+            return Ok(false);
+        }
+        "adversarial" => {
+            #[cfg(feature = "adversarial")]
+            return Ok(true);
+            #[cfg(not(feature = "adversarial"))]
+            return Ok(false);
+        }
+        "python" => Ok(true), // If you can call this, Python is available
+        _ => Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Unknown feature: {}. Valid features: gemini, adversarial, python",
+            feature_name
+        ))),
+    }
+}
+
+/// Get a list of available features.
+#[cfg(feature = "python")]
+#[pyfunction]
+fn available_features() -> Vec<String> {
+    let mut features = vec!["python".to_string()];
+
+    #[cfg(feature = "gemini")]
+    features.push("gemini".to_string());
+
+    #[cfg(feature = "adversarial")]
+    features.push("adversarial".to_string());
+
+    features
 }
 
 /// Python wrapper for ActivationDecision.
