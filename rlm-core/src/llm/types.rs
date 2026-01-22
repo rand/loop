@@ -11,6 +11,7 @@ pub enum Provider {
     Anthropic,
     OpenAI,
     OpenRouter,
+    Google,
 }
 
 impl std::fmt::Display for Provider {
@@ -19,6 +20,7 @@ impl std::fmt::Display for Provider {
             Self::Anthropic => write!(f, "anthropic"),
             Self::OpenAI => write!(f, "openai"),
             Self::OpenRouter => write!(f, "openrouter"),
+            Self::Google => write!(f, "google"),
         }
     }
 }
@@ -148,6 +150,56 @@ impl ModelSpec {
             input_cost_per_m: 0.15,
             output_cost_per_m: 0.60,
             supports_caching: false,
+            supports_vision: true,
+            supports_tools: true,
+        }
+    }
+
+    // Google/Gemini models
+
+    pub fn gemini_2_0_flash() -> Self {
+        Self {
+            id: "gemini-2.0-flash".to_string(),
+            name: "Gemini 2.0 Flash".to_string(),
+            provider: Provider::Google,
+            tier: ModelTier::Fast,
+            context_window: 1_000_000,
+            max_output: 8192,
+            input_cost_per_m: 0.075,
+            output_cost_per_m: 0.30,
+            supports_caching: true,
+            supports_vision: true,
+            supports_tools: true,
+        }
+    }
+
+    pub fn gemini_1_5_pro() -> Self {
+        Self {
+            id: "gemini-1.5-pro".to_string(),
+            name: "Gemini 1.5 Pro".to_string(),
+            provider: Provider::Google,
+            tier: ModelTier::Balanced,
+            context_window: 2_000_000,
+            max_output: 8192,
+            input_cost_per_m: 1.25,
+            output_cost_per_m: 5.00,
+            supports_caching: true,
+            supports_vision: true,
+            supports_tools: true,
+        }
+    }
+
+    pub fn gemini_1_5_flash() -> Self {
+        Self {
+            id: "gemini-1.5-flash".to_string(),
+            name: "Gemini 1.5 Flash".to_string(),
+            provider: Provider::Google,
+            tier: ModelTier::Fast,
+            context_window: 1_000_000,
+            max_output: 8192,
+            input_cost_per_m: 0.075,
+            output_cost_per_m: 0.30,
+            supports_caching: true,
             supports_vision: true,
             supports_tools: true,
         }

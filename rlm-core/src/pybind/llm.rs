@@ -16,6 +16,7 @@ pub enum PyProvider {
     Anthropic = 0,
     OpenAI = 1,
     OpenRouter = 2,
+    Google = 3,
 }
 
 impl From<Provider> for PyProvider {
@@ -24,6 +25,7 @@ impl From<Provider> for PyProvider {
             Provider::Anthropic => PyProvider::Anthropic,
             Provider::OpenAI => PyProvider::OpenAI,
             Provider::OpenRouter => PyProvider::OpenRouter,
+            Provider::Google => PyProvider::Google,
         }
     }
 }
@@ -34,6 +36,7 @@ impl From<PyProvider> for Provider {
             PyProvider::Anthropic => Provider::Anthropic,
             PyProvider::OpenAI => Provider::OpenAI,
             PyProvider::OpenRouter => Provider::OpenRouter,
+            PyProvider::Google => Provider::Google,
         }
     }
 }
@@ -45,6 +48,7 @@ impl PyProvider {
             PyProvider::Anthropic => "Provider.Anthropic",
             PyProvider::OpenAI => "Provider.OpenAI",
             PyProvider::OpenRouter => "Provider.OpenRouter",
+            PyProvider::Google => "Provider.Google",
         }
     }
 }

@@ -566,6 +566,255 @@ impl LLMClient for OpenAIClient {
     }
 }
 
+/// Google Gemini client.
+pub struct GoogleClient {
+    config: ClientConfig,
+    http: Client,
+}
+
+impl GoogleClient {
+    const DEFAULT_BASE_URL: &'static str = "https://generativelanguage.googleapis.com";
+
+    pub fn new(config: ClientConfig) -> Self {
+        let http = Client::builder()
+            .timeout(std::time::Duration::from_secs(config.timeout_secs))
+            .build()
+            .expect("Failed to create HTTP client");
+
+        Self { config, http }
+    }
+
+    fn base_url(&self) -> &str {
+        self.config
+            .base_url
+            .as_deref()
+            .unwrap_or(Self::DEFAULT_BASE_URL)
+    }
+}
+
+// Google Gemini API types
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GeminiRequest {
+    contents: Vec<GeminiContent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    system_instruction: Option<GeminiContent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    generation_config: Option<GeminiGenerationConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GeminiContent {
+    role: String,
+    parts: Vec<GeminiPart>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GeminiPart {
+    text: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GeminiGenerationConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_output_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stop_sequences: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GeminiResponse {
+    candidates: Vec<GeminiCandidate>,
+    usage_metadata: Option<GeminiUsageMetadata>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GeminiCandidate {
+    content: GeminiContent,
+    finish_reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GeminiUsageMetadata {
+    prompt_token_count: u64,
+    candidates_token_count: Option<u64>,
+    #[allow(dead_code)]
+    total_token_count: Option<u64>,
+    cached_content_token_count: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GeminiError {
+    error: GeminiErrorDetail,
+}
+
+#[derive(Debug, Deserialize)]
+struct GeminiErrorDetail {
+    message: String,
+    #[allow(dead_code)]
+    status: Option<String>,
+}
+
+#[async_trait]
+impl LLMClient for GoogleClient {
+    async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {
+        let model = request
+            .model
+            .or(self.config.default_model.clone())
+            .unwrap_or_else(|| "gemini-2.0-flash".to_string());
+
+        // Build contents from messages
+        let contents: Vec<GeminiContent> = request
+            .messages
+            .iter()
+            .map(|m| GeminiContent {
+                role: match m.role {
+                    super::types::ChatRole::User => "user".to_string(),
+                    super::types::ChatRole::Assistant => "model".to_string(),
+                    super::types::ChatRole::System => "user".to_string(), // Handled separately
+                },
+                parts: vec![GeminiPart {
+                    text: m.content.clone(),
+                }],
+            })
+            .collect();
+
+        // System instruction (Gemini's equivalent of system prompt)
+        let system_instruction = request.system.map(|s| GeminiContent {
+            role: "user".to_string(),
+            parts: vec![GeminiPart { text: s }],
+        });
+
+        let generation_config = Some(GeminiGenerationConfig {
+            max_output_tokens: request.max_tokens,
+            temperature: request.temperature,
+            stop_sequences: request.stop,
+        });
+
+        let api_request = GeminiRequest {
+            contents,
+            system_instruction,
+            generation_config,
+        };
+
+        let url = format!(
+            "{}/v1beta/models/{}:generateContent?key={}",
+            self.base_url(),
+            model,
+            self.config.api_key
+        );
+
+        let response = self
+            .http
+            .post(&url)
+            .header("content-type", "application/json")
+            .json(&api_request)
+            .send()
+            .await
+            .map_err(|e| Error::LLM(format!("HTTP request failed: {}", e)))?;
+
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .map_err(|e| Error::LLM(format!("Failed to read response: {}", e)))?;
+
+        if !status.is_success() {
+            if let Ok(error) = serde_json::from_str::<GeminiError>(&body) {
+                return Err(Error::LLM(format!(
+                    "Gemini API error: {}",
+                    error.error.message
+                )));
+            }
+            return Err(Error::LLM(format!("Gemini API error ({}): {}", status, body)));
+        }
+
+        let api_response: GeminiResponse = serde_json::from_str(&body)
+            .map_err(|e| Error::LLM(format!("Failed to parse response: {}", e)))?;
+
+        let candidate = api_response
+            .candidates
+            .first()
+            .ok_or_else(|| Error::LLM("No candidates in response".to_string()))?;
+
+        let content = candidate
+            .content
+            .parts
+            .iter()
+            .map(|p| p.text.clone())
+            .collect::<Vec<_>>()
+            .join("");
+
+        let stop_reason = candidate.finish_reason.as_deref().map(|r| match r {
+            "STOP" => StopReason::EndTurn,
+            "MAX_TOKENS" => StopReason::MaxTokens,
+            "STOP_SEQUENCE" => StopReason::StopSequence,
+            _ => StopReason::EndTurn,
+        });
+
+        let usage_metadata = api_response.usage_metadata.unwrap_or(GeminiUsageMetadata {
+            prompt_token_count: 0,
+            candidates_token_count: Some(0),
+            total_token_count: Some(0),
+            cached_content_token_count: None,
+        });
+
+        let usage = TokenUsage {
+            input_tokens: usage_metadata.prompt_token_count,
+            output_tokens: usage_metadata.candidates_token_count.unwrap_or(0),
+            cache_read_tokens: usage_metadata.cached_content_token_count,
+            cache_creation_tokens: None,
+        };
+
+        // Calculate cost based on model
+        let model_spec = self
+            .available_models()
+            .into_iter()
+            .find(|m| m.id == model || model.contains(&m.id))
+            .unwrap_or_else(ModelSpec::gemini_2_0_flash);
+        let cost = model_spec.calculate_cost(usage.input_tokens, usage.output_tokens);
+
+        // Generate a unique ID since Gemini doesn't return one
+        let id = format!("gemini-{}", Utc::now().timestamp_millis());
+
+        Ok(CompletionResponse {
+            id,
+            model,
+            content,
+            stop_reason,
+            usage,
+            timestamp: Utc::now(),
+            cost: Some(cost),
+        })
+    }
+
+    async fn embed(&self, _request: EmbeddingRequest) -> Result<EmbeddingResponse> {
+        // Gemini has embedding API but using different endpoint
+        // For now, return not supported - can be added later
+        Err(Error::LLM(
+            "Gemini embedding not yet implemented".to_string(),
+        ))
+    }
+
+    fn provider(&self) -> Provider {
+        Provider::Google
+    }
+
+    fn available_models(&self) -> Vec<ModelSpec> {
+        vec![
+            ModelSpec::gemini_2_0_flash(),
+            ModelSpec::gemini_1_5_pro(),
+            ModelSpec::gemini_1_5_flash(),
+        ]
+    }
+}
+
 /// Multi-provider client that manages multiple LLM providers.
 pub struct MultiProviderClient {
     clients: HashMap<Provider, Arc<dyn LLMClient>>,
