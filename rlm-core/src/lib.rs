@@ -114,8 +114,9 @@ pub use signature::{
 };
 pub use adversarial::{
     AdversarialConfig, AdversarialTrigger, AdversarialValidator, CodeFile, CriticStrategy,
-    EdgeCaseStrategy, GeminiValidator, Issue, IssueCategory, IssueLocation, IssueSeverity,
-    PerformanceStrategy, SecurityStrategy, StrategyFactory, TestingStrategy,
+    EdgeCaseStrategy, FreshContextInvoker, FreshInvokerBuilder, GeminiFreshInvoker,
+    GeminiValidator, InvocationStats, Issue, IssueCategory, IssueLocation, IssueSeverity,
+    PerformanceStrategy, PooledFreshInvoker, SecurityStrategy, StrategyFactory, TestingStrategy,
     ToolOutput as AdversarialToolOutput, TraceabilityStrategy, ValidationContext, ValidationId,
     ValidationIteration, ValidationResult as AdversarialValidationResult,
     ValidationStats as AdversarialValidationStats, ValidationStrategy, ValidationVerdict,

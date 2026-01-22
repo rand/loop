@@ -98,11 +98,16 @@
 //!
 //! Configure triggers carefully to balance coverage vs. cost.
 
+pub mod invoker;
 pub mod strategies;
 pub mod types;
 pub mod validator;
 
 // Re-exports
+pub use invoker::{
+    FreshContextInvoker, FreshInvokerBuilder, GeminiFreshInvoker, InvocationStats,
+    PooledFreshInvoker,
+};
 pub use strategies::{
     CriticStrategy, EdgeCaseStrategy, PerformanceStrategy, SecurityStrategy, StrategyFactory,
     TestingStrategy, TraceabilityStrategy, ValidationStrategy,
