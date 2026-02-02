@@ -1,9 +1,12 @@
 //! Python bindings for memory types.
 
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
+use serde_json::Value;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::memory::{EdgeId, EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, SqliteMemoryStore, Tier};
+use crate::memory::{EdgeId, EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, Provenance, ProvenanceSource, SqliteMemoryStore, Tier};
 
 /// Python enum for NodeType.
 #[pyclass(name = "NodeType", eq, eq_int)]
@@ -117,14 +120,19 @@ pub struct PyNode {
 #[pymethods]
 impl PyNode {
     #[new]
-    #[pyo3(signature = (node_type, content, subtype=None, tier=None, confidence=None))]
+    #[pyo3(signature = (node_type, content, subtype=None, tier=None, confidence=None, metadata=None, provenance_source=None, provenance_ref=None, embedding=None))]
     fn new(
+        py: Python<'_>,
         node_type: PyNodeType,
         content: String,
         subtype: Option<String>,
         tier: Option<PyTier>,
         confidence: Option<f64>,
-    ) -> Self {
+        metadata: Option<Bound<'_, PyDict>>,
+        provenance_source: Option<String>,
+        provenance_ref: Option<String>,
+        embedding: Option<Vec<f32>>,
+    ) -> PyResult<Self> {
         let mut node = Node::new(node_type.into(), content);
         if let Some(st) = subtype {
             node = node.with_subtype(st);
@@ -135,7 +143,27 @@ impl PyNode {
         if let Some(c) = confidence {
             node = node.with_confidence(c);
         }
-        Self { inner: node }
+        if let Some(dict) = metadata {
+            for (key, value) in dict.iter() {
+                let k: String = key.extract()?;
+                let v = pyobj_to_json_value(py, &value)?;
+                node = node.with_metadata(k, v);
+            }
+        }
+        if let Some(src) = provenance_source {
+            let source_type = parse_provenance_source(&src)?;
+            let prov = Provenance {
+                source_type,
+                source_ref: provenance_ref,
+                observed_at: chrono::Utc::now(),
+                context: None,
+            };
+            node = node.with_provenance(prov);
+        }
+        if let Some(emb) = embedding {
+            node = node.with_embedding(emb);
+        }
+        Ok(Self { inner: node })
     }
 
     #[getter]
@@ -186,6 +214,35 @@ impl PyNode {
     #[getter]
     fn access_count(&self) -> u64 {
         self.inner.access_count
+    }
+
+    #[getter]
+    fn metadata(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
+        match &self.inner.metadata {
+            Some(map) => {
+                let dict = PyDict::new(py);
+                for (k, v) in map {
+                    dict.set_item(k, json_value_to_pyobj(py, v)?)?;
+                }
+                Ok(Some(dict.into_any().unbind()))
+            }
+            None => Ok(None),
+        }
+    }
+
+    #[getter]
+    fn provenance_source(&self) -> Option<String> {
+        self.inner.provenance.as_ref().map(|p| format!("{:?}", p.source_type).to_lowercase())
+    }
+
+    #[getter]
+    fn provenance_ref(&self) -> Option<String> {
+        self.inner.provenance.as_ref().and_then(|p| p.source_ref.clone())
+    }
+
+    #[getter]
+    fn embedding(&self) -> Option<Vec<f32>> {
+        self.inner.embedding.clone()
     }
 
     /// Record an access to this node.
@@ -545,5 +602,80 @@ fn truncate(s: &str, max_len: usize) -> String {
         s.to_string()
     } else {
         format!("{}...", &s[..max_len])
+    }
+}
+
+/// Convert a Python object to serde_json::Value.
+fn pyobj_to_json_value(_py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Value> {
+    if obj.is_none() {
+        Ok(Value::Null)
+    } else if let Ok(b) = obj.extract::<bool>() {
+        Ok(Value::Bool(b))
+    } else if let Ok(i) = obj.extract::<i64>() {
+        Ok(Value::Number(i.into()))
+    } else if let Ok(f) = obj.extract::<f64>() {
+        Ok(serde_json::Number::from_f64(f)
+            .map(Value::Number)
+            .unwrap_or(Value::Null))
+    } else if let Ok(s) = obj.extract::<String>() {
+        Ok(Value::String(s))
+    } else if let Ok(list) = obj.downcast::<pyo3::types::PyList>() {
+        let items: PyResult<Vec<Value>> = list.iter().map(|item| pyobj_to_json_value(_py, &item)).collect();
+        Ok(Value::Array(items?))
+    } else if let Ok(dict) = obj.downcast::<PyDict>() {
+        let mut map = serde_json::Map::new();
+        for (k, v) in dict.iter() {
+            let key: String = k.extract()?;
+            map.insert(key, pyobj_to_json_value(_py, &v)?);
+        }
+        Ok(Value::Object(map))
+    } else {
+        Ok(Value::String(obj.str()?.to_string()))
+    }
+}
+
+/// Convert a serde_json::Value to a Python object.
+fn json_value_to_pyobj(py: Python<'_>, val: &Value) -> PyResult<PyObject> {
+    match val {
+        Value::Null => Ok(py.None()),
+        Value::Bool(b) => Ok((*b).into_pyobject(py)?.to_owned().into_any().unbind()),
+        Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(i.into_pyobject(py)?.into_any().unbind())
+            } else if let Some(f) = n.as_f64() {
+                Ok(f.into_pyobject(py)?.into_any().unbind())
+            } else {
+                Ok(py.None())
+            }
+        }
+        Value::String(s) => Ok(s.into_pyobject(py)?.into_any().unbind()),
+        Value::Array(arr) => {
+            let items: PyResult<Vec<PyObject>> = arr.iter().map(|v| json_value_to_pyobj(py, v)).collect();
+            Ok(pyo3::types::PyList::new(py, items?)?.into_any().unbind())
+        }
+        Value::Object(map) => {
+            let dict = PyDict::new(py);
+            for (k, v) in map {
+                dict.set_item(k, json_value_to_pyobj(py, v)?)?;
+            }
+            Ok(dict.into_any().unbind())
+        }
+    }
+}
+
+/// Parse a provenance source string.
+fn parse_provenance_source(s: &str) -> PyResult<ProvenanceSource> {
+    match s.to_lowercase().as_str() {
+        "user_message" | "user" => Ok(ProvenanceSource::UserMessage),
+        "assistant_response" | "assistant" => Ok(ProvenanceSource::AssistantResponse),
+        "tool_output" | "tool" => Ok(ProvenanceSource::ToolOutput),
+        "file_content" | "file" => Ok(ProvenanceSource::FileContent),
+        "consolidation" => Ok(ProvenanceSource::Consolidation),
+        "inference" => Ok(ProvenanceSource::Inference),
+        "import" => Ok(ProvenanceSource::Import),
+        _ => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+            "Invalid provenance source: {}. Valid: user_message, assistant_response, tool_output, file_content, consolidation, inference, import",
+            s
+        ))),
     }
 }
