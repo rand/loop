@@ -1,0 +1,29 @@
+ M docs/spec/SPEC-20-typed-signatures.md
+ M docs/spec/SPEC-26-batched-queries.md
+ M docs/spec/SPEC-27-fallback-extraction.md
+ M rlm-core/python/README.md
+ M rlm-core/python/rlm_repl/helpers.py
+ M rlm-core/python/rlm_repl/main.py
+ M rlm-core/python/rlm_repl/protocol.py
+ M rlm-core/python/rlm_repl/sandbox.py
+ M rlm-core/python/tests/test_repl.py
+ M rlm-core/src/complexity.rs
+ M rlm-core/src/epistemic/scrubber.rs
+ M rlm-core/src/ffi/mod.rs
+ M rlm-core/src/llm/batch.rs
+ M rlm-core/src/llm/client.rs
+ M rlm-core/src/llm/router.rs
+ M rlm-core/src/module/optimize.rs
+ M rlm-core/src/proof/session.rs
+ M rlm-core/src/reasoning/visualize.rs
+ M rlm-core/src/repl.rs
+?? ${CLAUDE_PLUGIN_ROOT}/
+?? .DS_Store
+?? .github/
+?? .reasoning_logs/
+?? docs/.DS_Store
+?? docs/execution-plan/evidence/2026-02-19/milestone-M7/recovery/
+?? rlm-core/proptest-regressions/
+?? rlm-core/python/rlm_repl/__main__.py
+?? rlm-core/uv.lock
+?? scripts/perf/__pycache__/

@@ -1,0 +1,7 @@
+1609 .reasoning_logs
+  12 ${CLAUDE_PLUGIN_ROOT}
+   6 docs
+   3 rlm-core
+   2 scripts
+   1 .github
+   1 .DS_Store

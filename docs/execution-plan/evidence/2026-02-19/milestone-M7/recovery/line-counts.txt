@@ -1,0 +1,5 @@
+      29 docs/execution-plan/evidence/2026-02-19/milestone-M7/recovery/git-status-short.txt
+      19 docs/execution-plan/evidence/2026-02-19/milestone-M7/recovery/tracked-diff-numstat.txt
+    1633 docs/execution-plan/evidence/2026-02-19/milestone-M7/recovery/untracked-manifest.txt
+       7 docs/execution-plan/evidence/2026-02-19/milestone-M7/recovery/untracked-top-level-counts.txt
+    1688 total
