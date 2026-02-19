@@ -88,12 +88,13 @@ Last updated: 2026-02-19
 | R34 | loop-e5u resolved B9 by isolating `io-rflx` cargo target output (`RFLX_CARGO_TARGET_DIR=/tmp/io-rflx-cargo-target`), restoring weekly cadence to full pass on required gates | `evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-pipeline-summary.md` |
 | R35 | Published dp-codex-aligned M7 execution tranche with sequenced task cards and explicit gate matrix extensions | `evidence/2026-02-19/milestone-M7/M7-dp-decompose-context1024.json` |
 | R36 | Opened Beads execution epic `loop-bih` with child tasks `loop-bih.1`..`loop-bih.10` to track M7 implementation across sessions | `bd show loop-bih` |
+| R37 | Integrated crash-session recovery bundles in audited commit trains (REPL/SUBMIT/batch, stabilization, behavior adjustments) with evidence-backed validation and residue cleanup | `evidence/2026-02-19/milestone-M7/recovery-integration-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | M7-T01 (`loop-bih.1`) | Close SPEC-26 `LLM_BATCH` end-to-end runtime gap (`G-001`) |
+| P0 | M7-T01 (`loop-bih.1`) | Complete remaining SPEC-26 host-orchestration closure after recovered REPL/helper integration (`G-001`) |
 | P0 | M7-T02 (`loop-bih.2`) | Close SPEC-27 orchestrator fallback wiring gap (`G-002`) |
 | P0 | M7-T03 (`loop-bih.3`) | Complete SPEC-20 typed-signature parity (enum + input validation) |
 | P1 | M7-T04 (`loop-bih.4`) | Integrate dual-model orchestration behavior (SPEC-21) |

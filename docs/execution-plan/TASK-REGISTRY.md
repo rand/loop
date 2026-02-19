@@ -19,7 +19,7 @@ Single source of truth for execution tasks and dependencies.
 
 | Rank | Task ID | Status | Why Next |
 |---|---|---|---|
-| 1 | M7-T01 (`loop-bih.1`) | todo | Closes G-001 (`LLM_BATCH` end-to-end runtime gap) and unblocks fallback/proof follow-ons |
+| 1 | M7-T01 (`loop-bih.1`) | in_progress | Recovered REPL/SUBMIT + helper/test bundle integrated; remaining host-orchestration closure still required for full G-001 exit |
 | 2 | M7-T02 (`loop-bih.2`) | todo | Closes G-002 orchestrator fallback wiring gap and stabilizes fallback-dependent efficacy behavior |
 | 3 | M7-T03 (`loop-bih.3`) | todo | Restores typed-signature parity required by SPEC-20 acceptance and downstream contracts |
 | 4 | M7-T04 (`loop-bih.4`) | todo | Completes dual-model orchestration integration before proof/optimizer refinements |
@@ -99,7 +99,7 @@ Single source of truth for execution tasks and dependencies.
 
 | Task ID | Status | Depends On | Required Gates | Deliverable |
 |---|---|---|---|---|
-| M7-T01 SPEC-26 `LLM_BATCH` end-to-end runtime closure (`loop-bih.1`) | todo | M6-T03 | VG-LOOP-BATCH-001, VG-LOOP-REPL-001, VG-EFFICACY-001 | Rust-host + Python REPL batched path integration with deterministic tests |
+| M7-T01 SPEC-26 `LLM_BATCH` end-to-end runtime closure (`loop-bih.1`) | in_progress | M6-T03 | VG-LOOP-BATCH-001, VG-LOOP-REPL-001, VG-EFFICACY-001 | Rust-host + Python REPL batched path integration with deterministic tests |
 | M7-T02 SPEC-27 orchestrator fallback wiring (`loop-bih.2`) | todo | M7-T01 | VG-LOOP-FALLBACK-001, VG-EFFICACY-001, VG-LOOP-SIG-001 | Fallback extraction triggered and validated in orchestrator runtime loop |
 | M7-T03 SPEC-20 typed-signature parity completion (`loop-bih.3`) | todo | M7-T02 | VG-LOOP-SIG-002, VG-LOOP-SIG-001, VG-EFFICACY-001 | Enum/input-validation parity and deterministic pre-exec errors |
 | M7-T04 SPEC-21 dual-model orchestration integration (`loop-bih.4`) | todo | M7-T03 | VG-LOOP-DUAL-001, VG-LOOP-CORE-001, VG-PERF-002 | Orchestrator-applied dual-model routing with tiered accounting |
