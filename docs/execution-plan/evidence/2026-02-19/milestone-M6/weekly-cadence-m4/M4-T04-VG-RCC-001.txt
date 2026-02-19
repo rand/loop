@@ -1,0 +1,14 @@
+safe_run: heavy command admitted (available=5032MiB, threshold=4096MiB)
+ImportError while loading conftest '/Users/rand/src/rlm-claude-code/tests/conftest.py'.
+tests/conftest.py:55: in <module>
+    from src.config import RLMConfig
+src/__init__.py:18: in <module>
+    from .auto_activation import AutoActivator, check_auto_activation
+src/auto_activation.py:20: in <module>
+    from .complexity_classifier import (
+src/complexity_classifier.py:12: in <module>
+    import rlm_core
+rlm_core/__init__.py:72: in <module>
+    raise ImportError(_msg) from _e
+E   ImportError: rlm_core native extension is not available. This typically means the Rust library was not compiled for your platform. Install from a pre-built wheel: pip install rlm-claude-code
+E   Original error: No module named 'rlm_core.rlm_core'

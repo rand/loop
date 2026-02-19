@@ -1,0 +1,338 @@
+# M4-T02 loop-agent seam scan
+UTC 2026-02-19 19:01:31
+
+## Backend protocol (optional adapter seam anchor)
+     1	"""LLM backend protocol and implementations. [SPEC-02, ADR-003]"""
+     2	
+     3	from __future__ import annotations
+     4	
+     5	from collections.abc import Callable
+     6	from dataclasses import dataclass
+     7	from typing import Any, Protocol, runtime_checkable
+     8	
+     9	
+    10	@dataclass
+    11	class CompletionRequest:
+    12	    """Request to an LLM backend."""
+    13	
+    14	    messages: list[dict[str, Any]]
+    15	    model: str | None = None
+    16	    max_tokens: int | None = None
+    17	    temperature: float | None = None
+    18	    system: str | None = None
+    19	    json_mode: bool = False
+    20	
+    21	
+    22	@dataclass(frozen=True)
+    23	class CompletionResponse:
+    24	    """Response from an LLM backend."""
+    25	
+    26	    content: str
+    27	    model: str
+    28	    input_tokens: int
+    29	    output_tokens: int
+    30	    stop_reason: str
+    31	
+    32	
+    33	@runtime_checkable
+    34	class LLMBackend(Protocol):
+    35	    """Protocol for LLM backends. [ADR-003: async-first]"""
+    36	
+    37	    async def complete(self, request: CompletionRequest) -> CompletionResponse: ...
+    38	
+    39	
+    40	class MockBackend:
+    41	    """Test backend that returns pre-configured responses or delegates to a handler."""
+    42	
+    43	    def __init__(
+    44	        self,
+    45	        responses: list[str] | None = None,
+    46	        handler: Callable[[CompletionRequest], str] | None = None,
+    47	    ) -> None:
+    48	        self._responses = list(responses) if responses else []
+    49	        self._handler = handler
+    50	        self._call_index = 0
+    51	        self.requests: list[CompletionRequest] = []
+    52	
+    53	    async def complete(self, request: CompletionRequest) -> CompletionResponse:
+    54	        self.requests.append(request)
+    55	
+    56	        if self._handler is not None:
+    57	            content = self._handler(request)
+    58	        else:
+    59	            if self._call_index >= len(self._responses):
+    60	                raise IndexError(
+    61	                    f"MockBackend exhausted: {self._call_index} calls but only "
+    62	                    f"{len(self._responses)} responses configured"
+    63	                )
+    64	            content = self._responses[self._call_index]
+    65	            self._call_index += 1
+    66	
+    67	        return CompletionResponse(
+    68	            content=content,
+    69	            model="mock",
+    70	            input_tokens=0,
+    71	            output_tokens=len(content),
+    72	            stop_reason="end_turn",
+    73	        )
+
+## Module backend propagation and no-kernel default path
+    44	
+    45	
+    46	class Module:
+    47	    """Base class for all Modules. [SPEC-02]
+    48	
+    49	    Subclasses must set `signature` class attribute and override `aforward()`.
+    50	    """
+    51	
+    52	    signature: type  # Signature subclass
+    53	
+    54	    def __init__(self) -> None:
+    55	        self.backend: LLMBackend | None = None
+    56	        self.sensitive_context: SensitiveContext | None = None
+    57	
+    58	    @property
+    59	    def named_sub_modules(self) -> dict[str, Module]:
+    60	        """Return public Module-typed instance attributes. [SPEC-02]"""
+    61	        return {
+    62	            name: val
+    63	            for name, val in vars(self).items()
+    64	            if isinstance(val, Module) and not name.startswith("_")
+    65	        }
+    66	
+    67	    @property
+    68	    def parameters(self) -> dict[str, Any]:
+    69	        """Return optimizable parameters (demonstrations, instructions). [SPEC-02]"""
+    70	        return {
+    71	            "demonstrations": getattr(self, "_demonstrations", []),
+    72	            "instructions": getattr(self, "_instructions", {}),
+    73	        }
+    74	
+    75	    def save(self, path: str) -> None:
+    76	        """Save optimizable state (demonstrations, instructions) to JSON. [SPEC-02]"""
+    77	        state = self.parameters
+    78	        # Include sub-module parameters keyed by name
+    79	        sub_states: dict[str, Any] = {}
+    80	        for name, sub in self.named_sub_modules.items():
+    81	            sub_params = sub.parameters
+    82	            if sub_params["demonstrations"] or sub_params["instructions"]:
+    83	                sub_states[name] = sub_params
+    84	        if sub_states:
+    85	            state["sub_modules"] = sub_states
+    86	        Path(path).write_text(json.dumps(state, indent=2))
+    87	
+    88	    def load(self, path: str) -> None:
+    89	        """Load optimizable state from JSON. [SPEC-02]"""
+    90	        state = json.loads(Path(path).read_text())
+    91	        self._demonstrations = state.get("demonstrations", [])
+    92	        self._instructions = state.get("instructions", {})
+    93	        sub_states = state.get("sub_modules", {})
+    94	        for name, sub in self.named_sub_modules.items():
+    95	            if name in sub_states:
+    96	                sub._demonstrations = sub_states[name].get("demonstrations", [])
+    97	                sub._instructions = sub_states[name].get("instructions", {})
+    98	
+    99	    def set_backend(self, backend: LLMBackend) -> None:
+   100	        """Set the LLM backend for this module and sub-modules. [SPEC-02]"""
+   101	        self.backend = backend
+   102	        for sub in self.named_sub_modules.values():
+   103	            sub.set_backend(backend)
+   104	
+   105	    def set_sensitive_context(self, ctx: SensitiveContext) -> None:
+   106	        """Set the sensitivity context for this module and sub-modules. [SPEC-02]"""
+   107	        self.sensitive_context = ctx
+   108	        for sub in self.named_sub_modules.values():
+   109	            sub.set_sensitive_context(ctx)
+   110	
+   111	    async def run(self, **kwargs: Any) -> BaseModel:
+   112	        """Validate inputs, execute aforward(), validate outputs. [ADR-003]"""
+   113	        sig = self.signature
+   114	
+   115	        # Validate inputs via Pydantic model
+   116	        validated_input = sig.Input(**kwargs)  # type: ignore[attr-defined]
+   117	
+   118	        # Execute within OTel span
+   119	        with module_span(type(self).__name__) as span:
+   120	            raw_output = await self.aforward(**validated_input.model_dump())
+   121	
+   122	            # Validate outputs via Pydantic model
+   123	            validated_output = sig.Output(**raw_output)  # type: ignore[attr-defined]
+   124	
+   125	            span.set_attribute("loop_agent.signature", sig.__name__)
+   126	
+   127	        return validated_output  # type: ignore[no-any-return]
+   128	
+   129	    def run_sync(self, **kwargs: Any) -> BaseModel:
+   130	        """Synchronous convenience wrapper. [ADR-003]"""
+
+## Router classifier determinism surface
+     1	"""Router: conditional dispatch based on classifier. [SPEC-02]"""
+     2	
+     3	from __future__ import annotations
+     4	
+     5	from collections.abc import Callable
+     6	from typing import Any
+     7	
+     8	from pydantic import BaseModel
+     9	
+    10	from loop_agent.backend import LLMBackend
+    11	from loop_agent.module import Module, _run_coroutine_sync
+    12	from loop_agent.telemetry import module_span
+    13	
+    14	
+    15	class Router:
+    16	    """Dispatch to a route selected by a classifier function. [SPEC-02]"""
+    17	
+    18	    def __init__(
+    19	        self,
+    20	        routes: dict[str, Module],
+    21	        classifier: Callable[..., str],
+    22	    ) -> None:
+    23	        self.routes = routes
+    24	        self.classifier = classifier
+    25	
+    26	    def set_backend(self, backend: LLMBackend) -> None:
+    27	        """Propagate backend to all route modules."""
+    28	        for module in self.routes.values():
+    29	            module.set_backend(backend)
+    30	
+    31	    def set_sensitive_context(self, ctx: Any) -> None:
+    32	        """Propagate sensitivity context to all route modules."""
+    33	        for module in self.routes.values():
+    34	            if hasattr(module, "set_sensitive_context"):
+    35	                module.set_sensitive_context(ctx)
+    36	
+    37	    async def run(self, **kwargs: Any) -> BaseModel:
+    38	        """Classify inputs and dispatch to the selected route."""
+    39	        route_name = self.classifier(**kwargs)
+    40	
+    41	        if route_name not in self.routes:
+    42	            raise KeyError(
+    43	                f"Unknown route '{route_name}'. "
+    44	                f"Available: {list(self.routes.keys())}"
+    45	            )
+    46	
+    47	        with module_span("Router") as span:
+    48	            span.set_attribute("loop_agent.router.route", route_name)
+    49	            result = await self.routes[route_name].run(**kwargs)
+    50	
+    51	        return result
+    52	
+    53	    def run_sync(self, **kwargs: Any) -> BaseModel:
+    54	        """Synchronous convenience wrapper."""
+    55	        return _run_coroutine_sync(self.run(**kwargs))
+    56	
+    57	    def __call__(self, **kwargs: Any) -> BaseModel:
+    58	        """Delegate to run_sync."""
+    59	        return self.run_sync(**kwargs)
+
+## Trajectory event bridge
+     1	"""Trajectory event bridge: OTel span mapping. [SPEC-11]
+     2	
+     3	TrajectoryEvent types map agent execution events to OTel span events,
+     4	bridging the internal execution model with the ACP session/update protocol.
+     5	"""
+     6	
+     7	from __future__ import annotations
+     8	
+     9	import json
+    10	import time
+    11	from dataclasses import dataclass, field
+    12	from typing import Any
+    13	
+    14	from opentelemetry.trace import Span
+    15	
+    16	
+    17	@dataclass
+    18	class TrajectoryEvent:
+    19	    """Base trajectory event. [SPEC-11]"""
+    20	
+    21	    event_type: str
+    22	    data: dict[str, Any]
+    23	    timestamp: float = field(default_factory=time.time)
+    24	
+    25	
+    26	@dataclass
+    27	class LLMChunkEvent(TrajectoryEvent):
+    28	    """LLM token generation event."""
+    29	
+    30	    def __init__(
+    31	        self, text: str, metadata: dict[str, Any] | None = None, **kwargs: Any
+    32	    ) -> None:
+    33	        data: dict[str, Any] = {"text": text}
+    34	        if metadata:
+    35	            data["metadata"] = metadata
+    36	        super().__init__(
+    37	            event_type="llm_chunk",
+    38	            data=data,
+    39	            **kwargs,
+    40	        )
+    41	
+    42	
+    43	@dataclass
+    44	class ToolCallEvent(TrajectoryEvent):
+    45	    """Tool invocation event."""
+    46	
+    47	    def __init__(
+    48	        self, name: str, args: dict[str, Any], status: str, **kwargs: Any
+    49	    ) -> None:
+    50	        super().__init__(
+    51	            event_type="tool_call",
+    52	            data={"name": name, "args": args, "status": status},
+    53	            **kwargs,
+    54	        )
+    55	
+    56	
+    57	@dataclass
+    58	class RecurseDecomposeEvent(TrajectoryEvent):
+    59	    """Recurse decomposition plan event."""
+    60	
+    61	    def __init__(self, plan: dict[str, Any], **kwargs: Any) -> None:
+    62	        super().__init__(
+    63	            event_type="recurse_decompose",
+    64	            data={"plan": plan},
+    65	            **kwargs,
+    66	        )
+    67	
+    68	
+    69	@dataclass
+    70	class SensitivityDowngradeEvent(TrajectoryEvent):
+    71	    """Sensitivity downgrade audit event. [SPEC-08]
+    72	
+    73	    Emitted when an output field's annotated sensitivity is lower than
+    74	    the propagated level, with sensitivity_downgrade=True explicitly set.
+    75	    """
+    76	
+    77	    def __init__(
+    78	        self,
+    79	        field_name: str,
+    80	        propagated_level: str,
+    81	        annotated_level: str,
+    82	        reason: str | None = None,
+    83	        **kwargs: Any,
+    84	    ) -> None:
+    85	        data: dict[str, Any] = {
+    86	            "field_name": field_name,
+    87	            "propagated_level": propagated_level,
+    88	            "annotated_level": annotated_level,
+    89	        }
+    90	        if reason:
+    91	            data["reason"] = reason
+    92	        super().__init__(
+    93	            event_type="sensitivity_downgrade",
+    94	            data=data,
+    95	            **kwargs,
+    96	        )
+    97	
+    98	
+    99	def record_event(span: Span, event: TrajectoryEvent) -> None:
+   100	    """Map a TrajectoryEvent to an OTel span event."""
+   101	    attributes: dict[str, str] = {
+   102	        "trajectory.event_type": event.event_type,
+   103	        "trajectory.data": json.dumps(event.data),
+   104	    }
+   105	    span.add_event(
+   106	        name=f"trajectory.{event.event_type}",
+   107	        attributes=attributes,
+   108	        timestamp=int(event.timestamp * 1e9),
+   109	    )

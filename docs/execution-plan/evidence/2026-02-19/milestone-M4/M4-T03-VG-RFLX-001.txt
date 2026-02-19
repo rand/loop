@@ -1,0 +1,3 @@
+safe_run: heavy command admitted (available=5664MiB, threshold=4096MiB)
+    Checking rflx-core v0.1.0 (/Users/rand/src/io-rflx/crates/rflx-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 51.91s

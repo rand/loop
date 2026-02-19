@@ -1,0 +1,5 @@
+# M1-T02 Workflow YAML Parse
+Date: 2026-02-19
+Command: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/rlm-core-feature-matrix.yml"); puts "yaml-ok"'
+
+yaml-ok

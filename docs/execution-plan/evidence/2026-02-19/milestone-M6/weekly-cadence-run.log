@@ -1,0 +1,11 @@
+weekly cadence packet starting
+date: UTC 2026-02-19 20:41:08
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6
+pipeline_evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4
+loop_min_available_mib: 4096
+run_la_full_snapshot: 1
+
+tuple snapshot captured: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-tuples.txt
+
+weekly cadence packet finished
+packet: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-packet.md

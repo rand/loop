@@ -1,0 +1,298 @@
+# M4-T01 loop-side A5 compatibility scan
+UTC 2026-02-19 18:40:27
+
+## helper canonical + alias
+   240	    )
+   241	
+   242	
+   243	def llm_batch(
+   244	    prompts: Sequence[str],
+   245	    contexts: Sequence[str] | None = None,
+   246	    max_parallel: int = 5,
+   247	    model: str | None = None,
+   248	    max_tokens: int = 1024,
+   249	) -> DeferredOperation:
+   250	    """Make parallel LLM calls.
+   251	
+   252	    Args:
+   253	        prompts: List of prompts
+   254	        contexts: Optional list of contexts (same length as prompts)
+   255	        max_parallel: Maximum concurrent queries (default 5)
+   256	        model: Optional model override
+   257	        max_tokens: Maximum response tokens per call
+   258	
+   259	    Returns:
+   260	        DeferredOperation that resolves to list of response strings
+   261	    """
+   262	    if contexts is not None and len(contexts) != len(prompts):
+   263	        raise ValueError("contexts must have same length as prompts")
+   264	
+   265	    return get_registry().create(
+   266	        OperationType.LLM_BATCH,
+   267	        params={
+   268	            "prompts": list(prompts),
+   269	            "contexts": list(contexts) if contexts else None,
+   270	            "max_parallel": max_parallel,
+   271	            "model": model,
+   272	            "max_tokens": max_tokens,
+   273	        },
+   274	    )
+   275	
+   276	
+   277	def llm_query_batched(
+   278	    prompts: Sequence[str],
+   279	    contexts: Sequence[str] | None = None,
+   280	    max_parallel: int = 5,
+   281	    model: str | None = None,
+   282	    max_tokens: int = 1024,
+   283	) -> DeferredOperation:
+   284	    """Compatibility alias for llm_batch().
+   285	
+   286	    Deprecated:
+   287	        Use `llm_batch(...)` instead.
+   288	    """
+   289	    warnings.warn(
+   290	        "llm_query_batched() is deprecated; use llm_batch() instead.",
+   291	        DeprecationWarning,
+   292	        stacklevel=2,
+   293	    )
+   294	    return llm_batch(
+   295	        prompts=prompts,
+   296	        contexts=contexts,
+   297	        max_parallel=max_parallel,
+   298	        model=model,
+   299	        max_tokens=max_tokens,
+   300	    )
+   301	
+   302	
+   303	def map_reduce(
+   304	    data: Sequence[Any],
+   305	    map_prompt: str,
+   306	    reduce_prompt: str,
+   307	    chunk_size: int = 10,
+   308	) -> DeferredOperation:
+   309	    """Apply map-reduce pattern over data using LLM.
+   310	
+   311	    First maps each chunk through the map_prompt, then reduces all
+   312	    results using the reduce_prompt.
+   313	
+   314	    Args:
+   315	        data: Sequence of items to process
+   316	        map_prompt: Prompt template for mapping (use {item} placeholder)
+   317	        reduce_prompt: Prompt template for reducing (use {results} placeholder)
+   318	        chunk_size: Number of items per map call (default 10)
+   319	
+   320	    Returns:
+   321	        DeferredOperation that resolves to the final reduced result
+   322	    """
+   323	    # Chunk the data
+   324	    items = list(data)
+   325	    chunks = [items[i : i + chunk_size] for i in range(0, len(items), chunk_size)]
+   326	
+   327	    return get_registry().create(
+   328	        OperationType.MAP_REDUCE,
+   329	        params={
+   330	            "chunks": chunks,
+   331	            "map_prompt": map_prompt,
+   332	            "reduce_prompt": reduce_prompt,
+   333	        },
+   334	    )
+   335	
+   336	
+   337	# Verification helpers (Strawberry integration)
+   338	
+   339	
+   340	def verify_claim(
+   341	    claim: str,
+   342	    evidence: str,
+   343	    confidence: float = 0.95,
+   344	) -> DeferredOperation:
+   345	    """Verify a claim against evidence using Strawberry methodology.
+   346	
+   347	    Args:
+   348	        claim: The claim to verify
+   349	        evidence: The evidence to check against
+   350	        confidence: Target confidence level (default 0.95)
+
+## sandbox exposure includes alias
+   260	
+   261	    RestrictedPython transforms print() calls to _print_() and expects
+   262	    a class that can collect the output.
+   263	    """
+   264	
+   265	    def __init__(self, _getattr_=None):
+   266	        self._output: list[str] = []
+   267	
+   268	    def _call_print(self, *args, **kwargs):
+   269	        """Handle a print() call."""
+   270	        sep = kwargs.get("sep", " ")
+   271	        end = kwargs.get("end", "\n")
+   272	        output = sep.join(str(arg) for arg in args) + end
+   273	        self._output.append(output)
+   274	        # Also write to actual stdout so capture works
+   275	        import sys
+   276	        sys.stdout.write(output)
+   277	
+   278	    def __call__(self, *args, **kwargs):
+   279	        self._call_print(*args, **kwargs)
+   280	        return self
+   281	
+   282	    @property
+   283	    def printed(self):
+   284	        return "".join(self._output)
+   285	
+   286	
+   287	class Sandbox:
+   288	    """Sandboxed Python execution environment."""
+   289	
+   290	    def __init__(self, registry: DeferredRegistry | None = None):
+   291	        """Initialize the sandbox.
+   292	
+   293	        Args:
+   294	            registry: DeferredRegistry for tracking async operations.
+   295	                     Uses global registry if not provided.
+   296	        """
+   297	        self.registry = registry or get_registry()
+   298	        self.signature_registration: dict[str, Any] | None = None
+   299	        self._submit_result: dict[str, Any] | None = None
+   300	        self._submit_count = 0
+   301	        self.globals: dict[str, Any] = {}
+   302	        self.locals: dict[str, Any] = {}
+   303	        self._setup_environment()
+   304	
+   305	    def _setup_environment(self) -> None:
+   306	        """Set up the restricted execution environment."""
+   307	        # Restricted builtins
+   308	        self.globals["__builtins__"] = SAFE_BUILTINS.copy()
+   309	
+   310	        # RestrictedPython guards
+   311	        self.globals["_getattr_"] = _guarded_getattr
+   312	        self.globals["_getitem_"] = _guarded_getitem
+   313	        self.globals["_getiter_"] = default_guarded_getiter
+   314	        self.globals["_iter_unpack_sequence_"] = guarded_iter_unpack_sequence
+   315	        self.globals["_write_"] = _guarded_write
+   316	        self.globals["__builtins__"]["__import__"] = _guarded_import
+   317	
+   318	        # Print handler for RestrictedPython
+   319	        self.globals["_print_"] = _PrintCollector
+   320	        self.globals["_getattr_"] = _guarded_getattr
+   321	
+   322	        # RLM helper functions
+   323	        self.globals["peek"] = helpers.peek
+   324	        self.globals["search"] = helpers.search
+   325	        self.globals["find_relevant"] = helpers.find_relevant
+   326	        self.globals["summarize"] = helpers.summarize
+   327	        self.globals["llm"] = helpers.llm
+   328	        self.globals["llm_batch"] = helpers.llm_batch
+   329	        self.globals["llm_query_batched"] = helpers.llm_query_batched
+   330	        self.globals["map_reduce"] = helpers.map_reduce
+   331	        self.globals["verify_claim"] = helpers.verify_claim
+   332	        self.globals["audit_reasoning"] = helpers.audit_reasoning
+   333	        self.globals["count_tokens"] = helpers.count_tokens
+   334	        self.globals["truncate"] = helpers.truncate
+   335	        self.globals["extract_code_blocks"] = helpers.extract_code_blocks
+   336	        self.globals["SUBMIT"] = self._submit
+   337	
+   338	        # Expose DeferredOperation for type checking
+   339	        self.globals["DeferredOperation"] = DeferredOperation
+   340	
+   341	    def compile(self, code: str, filename: str = "<repl>") -> Any:
+   342	        """Compile code in restricted mode.
+   343	
+   344	        Args:
+   345	            code: Python source code
+   346	            filename: Filename for error messages
+   347	
+   348	        Returns:
+   349	            Compiled code object
+   350	
+   351	        Raises:
+   352	            CompilationError: If code fails to compile
+   353	        """
+   354	        try:
+   355	            # compile_restricted returns a code object directly in newer versions
+   356	            result = compile_restricted(code, filename, "exec")
+   357	            # Handle both old API (returns CompileResult) and new API (returns code)
+   358	            if hasattr(result, "errors") and result.errors:
+   359	                raise CompilationError("\n".join(result.errors))
+   360	            if hasattr(result, "code"):
+   361	                return result.code
+   362	            return result
+   363	        except SyntaxError as e:
+   364	            raise CompilationError(f"Syntax error: {e}")
+   365	
+   366	    def set_signature_registration(self, registration: dict[str, Any] | None) -> None:
+   367	        """Set signature metadata used for SUBMIT validation."""
+   368	        self.signature_registration = registration
+   369	
+   370	    def clear_signature_registration(self) -> None:
+   371	        """Clear signature metadata used for SUBMIT validation."""
+   372	        self.signature_registration = None
+   373	
+   374	    def consume_submit_result(self) -> dict[str, Any] | None:
+   375	        """Return and clear the latest submit result for current execution."""
+   376	        result = self._submit_result
+   377	        self._submit_result = None
+   378	        return result
+   379	
+   380	    def _reset_submit_state(self) -> None:
+   381	        self._submit_result = None
+   382	        self._submit_count = 0
+   383	
+   384	    def _submit(self, outputs: Any) -> None:
+   385	        """SUBMIT callable exposed to sandboxed code."""
+   386	        serialized_outputs = _serialize_submit_value(outputs)
+   387	        self._submit_count += 1
+   388	
+   389	        if self._submit_count > 1:
+   390	            self._submit_result = {
+   391	                "status": "validation_error",
+   392	                "errors": [
+   393	                    {
+   394	                        "error_type": "multiple_submits",
+   395	                        "count": self._submit_count,
+   396	                    }
+   397	                ],
+   398	                "original_outputs": serialized_outputs,
+   399	            }
+   400	            raise SubmitSignal()
+   401	
+   402	        if self.signature_registration is None:
+   403	            self._submit_result = {
+   404	                "status": "validation_error",
+   405	                "errors": [{"error_type": "no_signature_registered"}],
+   406	                "original_outputs": serialized_outputs,
+   407	            }
+   408	            raise SubmitSignal()
+   409	
+   410	        errors = self._validate_submit_outputs(serialized_outputs)
+   411	        if errors:
+   412	            self._submit_result = {
+   413	                "status": "validation_error",
+   414	                "errors": errors,
+   415	                "original_outputs": serialized_outputs,
+   416	            }
+   417	        else:
+   418	            self._submit_result = {
+   419	                "status": "success",
+   420	                "outputs": serialized_outputs,
+   421	            }
+   422	        raise SubmitSignal()
+   423	
+   424	    def _validate_submit_outputs(self, outputs: Any) -> list[dict[str, Any]]:
+   425	        errors: list[dict[str, Any]] = []
+   426	
+   427	        if not isinstance(outputs, dict):
+   428	            return [
+   429	                {
+   430	                    "error_type": "validation_failed",
+
+## alias tests
+15:    llm_batch,
+16:    llm_query_batched,
+141:    def test_llm_batch_helper_params(self):
+142:        op = llm_batch(
+157:    def test_llm_query_batched_alias_deprecated(self):
+159:            op = llm_query_batched(["q1"], max_parallel=3)
+472:    def test_llm_query_batched_alias_available(self):
+474:        sandbox.execute("result = llm_query_batched(['q1', 'q2'])")

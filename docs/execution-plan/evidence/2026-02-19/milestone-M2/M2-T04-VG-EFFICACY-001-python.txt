@@ -1,0 +1,9 @@
+safe_run: heavy command admitted (available=3636MiB, threshold=3072MiB)
+........................................                                 [100%]
+=============================== warnings summary ===============================
+tests/test_repl.py::TestSandbox::test_stdout_capture
+  /Users/rand/src/loop/rlm-core/python/.venv/lib/python3.12/site-packages/RestrictedPython/compile.py:206: SyntaxWarning: Line None: Prints, but never reads 'printed' variable.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+40 passed, 1 warning in 0.26s

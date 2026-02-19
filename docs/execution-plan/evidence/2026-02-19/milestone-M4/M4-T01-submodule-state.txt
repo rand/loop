@@ -1,0 +1,20 @@
+# M4-T01 submodule state
+UTC 2026-02-19 18:40:04
+
+main
+6a3a31123984d779f2edc617f9bf6a1c71a83061
+
+[submodule "vendor/loop"]
+	path = vendor/loop
+	url = https://github.com/rand/loop
+
+ 6779cdbc970c70f3ce82a998d6dcda59cd171560 vendor/loop (heads/main)
+
+origin	https://github.com/rand/loop (fetch)
+origin	https://github.com/rand/loop (push)
+6779cdbc970c70f3ce82a998d6dcda59cd171560
+* (HEAD detached at 6779cdb) 6779cdb fix: use rustls-tls instead of native-tls for reqwest
+  main                       6779cdb [origin/main] fix: use rustls-tls instead of native-tls for reqwest
+6779cdbc970c70f3ce82a998d6dcda59cd171560
+Mon Feb 2 19:32:47 2026 -0700
+fix: use rustls-tls instead of native-tls for reqwest

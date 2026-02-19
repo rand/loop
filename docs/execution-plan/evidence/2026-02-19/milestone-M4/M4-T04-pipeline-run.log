@@ -1,0 +1,15 @@
+M4 compatibility pipeline starting
+date: UTC 2026-02-19 19:16:20
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M4
+loop_min_available_mib: 4096
+run_la_full_snapshot: 0
+
+[VG-RCC-001] running...
+[VG-RCC-001] pass -> /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M4/M4-T04-VG-RCC-001.txt
+[VG-LA-001] running...
+[VG-LA-001] pass -> /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M4/M4-T04-VG-LA-001.txt
+[VG-RFLX-001] running...
+[VG-RFLX-001] pass -> /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M4/M4-T04-VG-RFLX-001.txt
+
+M4 compatibility pipeline finished successfully
+summary: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M4/M4-T04-pipeline-summary.md

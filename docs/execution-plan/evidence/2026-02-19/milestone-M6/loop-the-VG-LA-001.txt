@@ -1,0 +1,4 @@
+safe_run: heavy command admitted (available=5150MiB, threshold=4096MiB)
+WARN Failed to acquire environment lock: Could not create temporary file
+..............................                                           [100%]
+30 passed in 0.75s

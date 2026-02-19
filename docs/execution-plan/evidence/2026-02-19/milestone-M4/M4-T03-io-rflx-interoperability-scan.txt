@@ -1,0 +1,601 @@
+# M4-T03 io-rflx interoperability scan
+UTC 2026-02-19 19:09:11
+
+## rflx-core public exports
+   120	};
+   121	pub use lean_repl::{
+   122	    CheckResult, DefineResult, EnvResult, EvalResult, LeanRepl, ProveResult, SearchResult,
+   123	    TacticAttempt,
+   124	};
+   125	pub use memory::{
+   126	    MemoryContent, MemoryEdge, MemoryEdgeType, MemoryId, MemoryNode, MemoryNodeType, MemorySource,
+   127	    MemoryTier, ProcedureStep, RefinementStage,
+   128	};
+   129	pub use memory_store::{LifecycleConfig, LifecycleResult, MemoryStore};
+   130	pub use progressive_formalize::{
+   131	    FormalizationHistory, FormalizationStep, StepDecision, StepRecord, apply_decision,
+   132	    auto_formalize, suggest_next,
+   133	};
+   134	pub use proof_automation::{
+   135	    ObligationKind, ProofAutomation, ProofObligation, ProofResult as AutoProofResult, ProofSummary,
+   136	    ProofTier, TacticScript, TierAttempt, TierConfig, classify_obligation, summarize_results,
+   137	};
+   138	pub use provenance::{Confidence, Provenance, ProvenanceSource};
+   139	pub use provider::{
+   140	    GenerationConstraints, GenerationRequest, GenerationResponse, InferenceError,
+   141	    InferenceProvider, MockProvider, ProviderCapabilities, ProviderConfig, UsageStats,
+   142	};
+   143	pub use pubsub::{EventBus, EventSubscription, RflxEvent};
+   144	pub use reward::{RewardConfig, RewardFunction, RewardInput, RewardResult};
+   145	pub use spec_formalize::{
+   146	    FormalizationSuggestion, PropositionSource, PropositionSuggestion, suggest_formalization,
+   147	    suggestion_to_spec, type_to_lean,
+   148	};
+   149	pub use spec_hole::{
+   150	    FormalizationLevel, ParseError, SpecCondition, SpecContent, SpecFile, SpecHole, SpecHoleId,
+   151	    TypeExpr,
+   152	};
+   153	pub use spec_render::{
+   154	    Audience, EngineerRenderer, ProductManagerRenderer, RenderedSpec, SpecRenderer,
+   155	    VerifierRenderer, render_all, render_for,
+   156	};
+   157	pub use spec_sync::{
+   158	    SyncMapping, SyncResult, hole_to_spec, spec_to_hole, update_hole_from_spec,
+   159	    update_spec_from_hole,
+   160	};
+   161	pub use think_constrain::{
+   162	    DetectedRegion, GenerationMode, PipelineConfig, PipelineResult, SentinelConfig,
+   163	    SentinelDetector, ThinkThenConstrainPipeline,
+   164	};
+   165	pub use trajectory::{
+   166	    GenerationSnapshot, InMemoryCollector, JsonlCollector, Outcome, RoutingSnapshot,
+   167	    TrajectoryCollector, TrajectoryRecord, TrajectoryStats,
+   168	};
+   169	pub use type_bridge::{
+   170	    BridgeEvaluation, BridgeResult, EnumDef, EnumVariant, FieldDef, RustTypeDef, StructDef,
+   171	    StructKind, TypeAliasDef, bridge_type, evaluate_bridge,
+   172	};
+   173	
+   174	#[cfg(test)]
+   175	mod tests {
+   176	    use super::*;
+   177	
+   178	    #[test]
+   179	    fn core_types_exist() {
+   180	        // Basic structure check - crate loads correctly
+   181	        let prov = Provenance::new(ProvenanceSource::Computation {
+   182	            method: "test".into(),
+   183	        });
+   184	        let _ = Hole::new("test", "test", prov);
+   185	    }
+   186	}
+
+## Provenance model
+     1	//! Provenance tracking for all RFLX artifacts.
+     2	
+     3	use serde::{Deserialize, Serialize};
+     4	
+     5	/// Provenance information tracking the origin and confidence of artifacts.
+     6	///
+     7	/// Every hole, constraint, fill, and verification result carries provenance
+     8	/// to enable auditing, learning, and trust calibration.
+     9	#[derive(Debug, Clone, Serialize, Deserialize)]
+    10	pub struct Provenance {
+    11	    /// How this artifact was created.
+    12	    pub source: ProvenanceSource,
+    13	
+    14	    /// Confidence level in this artifact.
+    15	    pub confidence: Confidence,
+    16	
+    17	    /// Unix timestamp of creation.
+    18	    pub created_at: u64,
+    19	
+    20	    /// Optional evidence references supporting this artifact.
+    21	    pub evidence: Vec<String>,
+    22	}
+    23	
+    24	/// Source of an artifact.
+    25	#[derive(Debug, Clone, Serialize, Deserialize)]
+    26	pub enum ProvenanceSource {
+    27	    /// Created by a human user.
+    28	    Human {
+    29	        /// User identifier
+    30	        user_id: String,
+    31	    },
+    32	
+    33	    /// Created by an AI agent.
+    34	    Agent {
+    35	        /// Model identifier (e.g., "claude-3-opus")
+    36	        model: String,
+    37	    },
+    38	
+    39	    /// Derived from computation (e.g., type inference).
+    40	    Computation {
+    41	        /// Computation method name
+    42	        method: String,
+    43	    },
+    44	
+    45	    /// Result of formal verification.
+    46	    FormalProof {
+    47	        /// Prover name (e.g., "lean4", "coq")
+    48	        prover: String,
+    49	    },
+    50	
+    51	    /// Imported from external source.
+    52	    External {
+    53	        /// External source identifier
+    54	        source: String,
+    55	    },
+    56	}
+    57	
+    58	/// Confidence level in an artifact.
+    59	#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+    60	pub enum Confidence {
+    61	    /// Speculative - low confidence, needs verification.
+    62	    Speculative,
+    63	    /// Plausible - reasonable confidence but not proven.
+    64	    Plausible,
+    65	    /// High - strong evidence supports this.
+    66	    High,
+    67	    /// Verified - formally proven or exhaustively tested.
+    68	    Verified,
+    69	}
+    70	
+    71	impl Provenance {
+    72	    /// Create new provenance with the given source.
+    73	    #[must_use]
+    74	    pub fn new(source: ProvenanceSource) -> Self {
+    75	        Self {
+    76	            source,
+    77	            confidence: Confidence::Speculative,
+    78	            created_at: std::time::SystemTime::now()
+    79	                .duration_since(std::time::UNIX_EPOCH)
+    80	                .map(|d| d.as_secs())
+    81	                .unwrap_or(0),
+    82	            evidence: Vec::new(),
+    83	        }
+    84	    }
+    85	
+    86	    /// Set confidence level.
+    87	    #[must_use]
+    88	    pub fn with_confidence(mut self, confidence: Confidence) -> Self {
+    89	        self.confidence = confidence;
+    90	        self
+    91	    }
+    92	}
+    93	
+    94	#[cfg(test)]
+    95	mod tests {
+    96	    use super::*;
+    97	
+    98	    #[test]
+    99	    fn provenance_creation() {
+   100	        let prov = Provenance::new(ProvenanceSource::Human {
+   101	            user_id: "test".into(),
+   102	        })
+   103	        .with_confidence(Confidence::High);
+   104	        assert_eq!(prov.confidence, Confidence::High);
+   105	    }
+   106	
+   107	    #[test]
+   108	    fn provenance_serialization_roundtrip() {
+   109	        let sources = vec![
+   110	            ProvenanceSource::Human {
+   111	                user_id: "user123".into(),
+   112	            },
+   113	            ProvenanceSource::Agent {
+   114	                model: "claude-opus-4".into(),
+   115	            },
+   116	            ProvenanceSource::Computation {
+   117	                method: "type_inference".into(),
+   118	            },
+   119	            ProvenanceSource::FormalProof {
+   120	                prover: "lean4".into(),
+   121	            },
+   122	            ProvenanceSource::External {
+   123	                source: "github.com/example".into(),
+   124	            },
+   125	        ];
+   126	
+   127	        for source in sources {
+   128	            let prov = Provenance::new(source).with_confidence(Confidence::High);
+   129	            let json = serde_json::to_string(&prov).expect("serialize");
+   130	            let restored: Provenance = serde_json::from_str(&json).expect("deserialize");
+   131	            assert_eq!(restored.confidence, prov.confidence);
+   132	            assert_eq!(restored.created_at, prov.created_at);
+   133	        }
+   134	    }
+   135	
+   136	    #[test]
+   137	    fn confidence_ordering() {
+   138	        assert!(Confidence::Speculative < Confidence::Plausible);
+   139	        assert!(Confidence::Plausible < Confidence::High);
+   140	        assert!(Confidence::High < Confidence::Verified);
+   141	    }
+   142	}
+
+## Trajectory record model
+    60	use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    61	
+    62	use serde::{Deserialize, Serialize};
+    63	
+    64	use crate::router::ModelTier;
+    65	use crate::{FillStatus, HoleType};
+    66	
+    67	// ---------------------------------------------------------------------------
+    68	// Core data types
+    69	// ---------------------------------------------------------------------------
+    70	
+    71	/// A single trajectory record capturing a routing→generation→outcome cycle.
+    72	#[derive(Debug, Clone, Serialize, Deserialize)]
+    73	pub struct TrajectoryRecord {
+    74	    /// Unique record ID (auto-generated).
+    75	    pub id: String,
+    76	
+    77	    /// Session ID for grouping related trajectories.
+    78	    pub session_id: String,
+    79	
+    80	    /// Unix timestamp (seconds since epoch).
+    81	    pub timestamp: u64,
+    82	
+    83	    /// Routing decision snapshot.
+    84	    pub routing: RoutingSnapshot,
+    85	
+    86	    /// Generation execution snapshot.
+    87	    pub generation: GenerationSnapshot,
+    88	
+    89	    /// Outcome of the generation.
+    90	    pub outcome: Outcome,
+    91	}
+    92	
+    93	impl TrajectoryRecord {
+    94	    /// Create a new trajectory record with auto-generated ID and timestamp.
+    95	    #[must_use]
+    96	    pub fn new(
+    97	        session_id: &str,
+    98	        routing: RoutingSnapshot,
+    99	        generation: GenerationSnapshot,
+   100	        outcome: Outcome,
+   101	    ) -> Self {
+   102	        let timestamp = SystemTime::now()
+   103	            .duration_since(UNIX_EPOCH)
+   104	            .map(|d| d.as_secs())
+   105	            .unwrap_or(0);
+   106	        let id = format!("traj-{timestamp:x}-{:04x}", rand_u16());
+   107	        Self {
+   108	            id,
+   109	            session_id: session_id.into(),
+   110	            timestamp,
+   111	            routing,
+   112	            generation,
+   113	            outcome,
+   114	        }
+   115	    }
+   116	}
+   117	
+   118	/// Snapshot of the routing decision for a hole.
+   119	#[derive(Debug, Clone, Serialize, Deserialize)]
+   120	pub struct RoutingSnapshot {
+   121	    /// Hole identifier.
+   122	    pub hole_id: String,
+   123	
+   124	    /// Type of the hole.
+   125	    pub hole_type: HoleType,
+   126	
+   127	    /// Intent description (truncated to 200 chars for storage).
+   128	    pub intent: String,
+   129	
+   130	    /// Total constraint count.
+   131	    pub constraint_count: u32,
+   132	
+   133	    /// Number of hard constraints (Syntax, Types, Imports).
+   134	    pub hard_constraint_count: u32,
+   135	
+   136	    /// Number of soft constraints (ControlFlow, Semantics).
+   137	    pub soft_constraint_count: u32,
+   138	
+   139	    /// Complexity score from the router (0-100).
+   140	    pub complexity_score: u32,
+   141	
+   142	    /// Chosen model tier.
+   143	    pub chosen_tier: ModelTier,
+   144	}
+   145	
+   146	/// Snapshot of the generation execution.
+   147	#[derive(Debug, Clone, Serialize, Deserialize)]
+   148	pub struct GenerationSnapshot {
+   149	    /// Provider name (e.g., "anthropic", "openai", "sglang").
+   150	    pub provider: String,
+   151	
+   152	    /// Model identifier.
+   153	    pub model: String,
+   154	
+   155	    /// Prompt token count.
+   156	    pub prompt_tokens: u32,
+   157	
+   158	    /// Completion token count.
+   159	    pub completion_tokens: u32,
+   160	
+   161	    /// Wall-clock latency.
+   162	    pub latency: Duration,
+   163	
+   164	    /// Estimated cost in USD.
+   165	    pub estimated_cost_usd: f64,
+   166	
+   167	    /// Whether constrained decoding was used.
+   168	    pub constrained: bool,
+   169	
+   170	    /// Sampling temperature (if set).
+   171	    pub temperature: Option<f32>,
+   172	}
+   173	
+   174	/// Outcome of a generation attempt.
+   175	#[derive(Debug, Clone, Serialize, Deserialize)]
+   176	pub enum Outcome {
+   177	    /// Fill passed all hard constraint checks.
+   178	    Verified {
+   179	        /// Verification score (0.0-1.0).
+   180	        score: f64,
+   181	    },
+   182	
+   183	    /// Fill failed constraint checks.
+   184	    Rejected {
+   185	        /// Verification score before rejection.
+   186	        score: f64,
+   187	        /// Which domain(s) failed (e.g., "types", "syntax").
+   188	        failed_domains: Vec<String>,
+   189	    },
+   190	
+   191	    /// Fill was accepted by the user.
+   192	    Accepted,
+   193	
+   194	    /// Fill was proposed but not yet verified.
+   195	    Proposed,
+   196	
+   197	    /// Generation itself failed (timeout, error, etc.).
+   198	    Error {
+   199	        /// Error category.
+   200	        error_kind: String,
+   201	    },
+   202	}
+   203	
+   204	impl Outcome {
+   205	    /// Convert a `FillStatus` to an Outcome with a score.
+   206	    #[must_use]
+   207	    pub fn from_fill_status(status: FillStatus, score: f64) -> Self {
+   208	        match status {
+   209	            FillStatus::Verified => Self::Verified { score },
+   210	            FillStatus::Rejected => Self::Rejected {
+   211	                score,
+   212	                failed_domains: Vec::new(),
+   213	            },
+   214	            FillStatus::Accepted => Self::Accepted,
+   215	            FillStatus::Proposed => Self::Proposed,
+   216	        }
+   217	    }
+   218	
+   219	    /// Whether this outcome is a success for RL reward purposes.
+   220	    #[must_use]
+   221	    pub fn is_success(&self) -> bool {
+   222	        matches!(self, Self::Verified { .. } | Self::Accepted)
+   223	    }
+   224	
+   225	    /// RL reward signal: +1 for success, -1 for failure, 0 for pending/error.
+   226	    #[must_use]
+   227	    pub fn reward(&self) -> f64 {
+   228	        match self {
+   229	            Self::Accepted => 1.0,
+   230	            Self::Verified { score } => *score,
+   231	            Self::Rejected { score, .. } => -1.0 + score, // partial credit
+   232	            Self::Proposed => 0.0,
+   233	            Self::Error { .. } => -1.0,
+   234	        }
+   235	    }
+   236	}
+   237	
+   238	// ---------------------------------------------------------------------------
+   239	// Collector trait and implementations
+   240	// ---------------------------------------------------------------------------
+   241	
+   242	/// Trait for trajectory collection backends.
+   243	pub trait TrajectoryCollector: Send {
+   244	    /// Append a trajectory record.
+   245	    fn record(&mut self, record: TrajectoryRecord);
+   246	
+   247	    /// Number of records collected.
+   248	    fn len(&self) -> usize;
+   249	
+   250	    /// Whether the collector is empty.
+   251	    fn is_empty(&self) -> bool {
+   252	        self.len() == 0
+   253	    }
+   254	
+   255	    /// Flush any buffered records to storage.
+   256	    fn flush(&mut self) -> std::io::Result<()>;
+   257	}
+   258	
+   259	/// In-memory collector for testing and short-lived sessions.
+   260	#[derive(Debug, Default)]
+
+## Verification result model
+   200	    #[must_use]
+   201	    pub fn proposition_count(&self) -> usize {
+   202	        self.propositions.len()
+   203	    }
+   204	
+   205	    /// Number of critical propositions.
+   206	    #[must_use]
+   207	    pub fn critical_count(&self) -> usize {
+   208	        self.propositions.iter().filter(|p| p.critical).count()
+   209	    }
+   210	}
+   211	
+   212	impl Default for LeanSpec {
+   213	    fn default() -> Self {
+   214	        Self::new()
+   215	    }
+   216	}
+   217	
+   218	// ---------------------------------------------------------------------------
+   219	// Verification request/result
+   220	// ---------------------------------------------------------------------------
+   221	
+   222	/// A request to verify a fill against a Lean specification.
+   223	#[derive(Debug, Clone, Serialize, Deserialize)]
+   224	pub struct VerificationRequest {
+   225	    /// The fill content (source code). Stored for traceability but not
+   226	    /// directly sent to Lean — the Lean model in the spec is what gets verified.
+   227	    pub fill_content: String,
+   228	
+   229	    /// The Lean specification to verify against.
+   230	    pub spec: LeanSpec,
+   231	
+   232	    /// If true, all critical propositions must pass for overall verification
+   233	    /// to succeed. If false, partial success is reported.
+   234	    pub require_all: bool,
+   235	}
+   236	
+   237	/// Result of verifying a fill against a specification.
+   238	#[derive(Debug, Clone, Serialize, Deserialize)]
+   239	pub struct VerificationResult {
+   240	    /// Per-proposition outcomes.
+   241	    pub outcomes: Vec<PropOutcome>,
+   242	    /// Total time for all verification attempts.
+   243	    pub total_elapsed: Duration,
+   244	    /// Whether the model loaded successfully.
+   245	    pub model_loaded: bool,
+   246	    /// Errors from loading the model (if any).
+   247	    pub model_errors: Vec<String>,
+   248	}
+   249	
+   250	/// Outcome for a single proposition.
+   251	#[derive(Debug, Clone, Serialize, Deserialize)]
+   252	pub struct PropOutcome {
+   253	    /// The proposition that was checked.
+   254	    pub statement: String,
+   255	    /// Human-readable description (if provided).
+   256	    pub description: Option<String>,
+   257	    /// Whether this was a critical proposition.
+   258	    pub critical: bool,
+   259	    /// The verification outcome.
+   260	    pub outcome: VerificationOutcome,
+   261	    /// Which tier proved it (if proved).
+   262	    pub proof_tier: Option<ProofTier>,
+   263	    /// The tactic that proved it (if proved).
+   264	    pub proof_tactic: Option<String>,
+   265	    /// Number of tactics attempted.
+   266	    pub attempts: usize,
+   267	    /// Time for this proposition.
+   268	    pub elapsed: Duration,
+   269	}
+   270	
+   271	/// Outcome of verifying a single proposition.
+   272	#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+   273	pub enum VerificationOutcome {
+   274	    /// Proposition was proved.
+   275	    Verified,
+   276	    /// Proposition could not be proved (doesn't mean it's false).
+   277	    Unproved,
+   278	    /// Proof search timed out.
+   279	    Timeout,
+   280	    /// Error during verification (Lean process issue).
+   281	    Error,
+   282	}
+   283	
+   284	impl fmt::Display for VerificationOutcome {
+   285	    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+   286	        match self {
+   287	            Self::Verified => write!(f, "verified"),
+   288	            Self::Unproved => write!(f, "unproved"),
+   289	            Self::Timeout => write!(f, "timeout"),
+   290	            Self::Error => write!(f, "error"),
+   291	        }
+   292	    }
+   293	}
+   294	
+   295	impl VerificationResult {
+   296	    /// Whether verification passed (all critical propositions verified).
+   297	    #[must_use]
+   298	    pub fn passed(&self) -> bool {
+   299	        if !self.model_loaded {
+   300	            return false;
+   301	        }
+   302	        self.outcomes
+   303	            .iter()
+   304	            .filter(|o| o.critical)
+   305	            .all(|o| o.outcome == VerificationOutcome::Verified)
+   306	    }
+   307	
+   308	    /// Number of propositions that were verified.
+   309	    #[must_use]
+   310	    pub fn verified_count(&self) -> usize {
+   311	        self.outcomes
+   312	            .iter()
+   313	            .filter(|o| o.outcome == VerificationOutcome::Verified)
+   314	            .count()
+   315	    }
+   316	
+   317	    /// Number of propositions that failed or couldn't be proved.
+   318	    #[must_use]
+   319	    pub fn unverified_count(&self) -> usize {
+   320	        self.outcomes
+   321	            .iter()
+   322	            .filter(|o| o.outcome != VerificationOutcome::Verified)
+   323	            .count()
+   324	    }
+   325	
+   326	    /// Total propositions checked.
+   327	    #[must_use]
+   328	    pub fn total_count(&self) -> usize {
+   329	        self.outcomes.len()
+   330	    }
+   331	
+   332	    /// Confidence score (0.0 to 1.0) based on proportion of verified props.
+   333	    #[must_use]
+   334	    #[allow(clippy::cast_precision_loss)]
+   335	    pub fn confidence(&self) -> f64 {
+   336	        if self.outcomes.is_empty() || !self.model_loaded {
+   337	            return 0.0;
+   338	        }
+   339	        self.verified_count() as f64 / self.outcomes.len() as f64
+   340	    }
+   341	
+   342	    /// Get only the failed critical outcomes.
+   343	    #[must_use]
+   344	    pub fn critical_failures(&self) -> Vec<&PropOutcome> {
+   345	        self.outcomes
+   346	            .iter()
+   347	            .filter(|o| o.critical && o.outcome != VerificationOutcome::Verified)
+   348	            .collect()
+   349	    }
+   350	}
+   351	
+   352	impl fmt::Display for VerificationResult {
+   353	    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+   354	        if !self.model_loaded {
+   355	            return write!(f, "FAIL (model failed to load)");
+   356	        }
+   357	        let status = if self.passed() { "PASS" } else { "FAIL" };
+   358	        write!(
+   359	            f,
+   360	            "{} ({}/{} verified, {:.0}% confidence, {:.1}s)",
+   361	            status,
+   362	            self.verified_count(),
+   363	            self.total_count(),
+   364	            self.confidence() * 100.0,
+   365	            self.total_elapsed.as_secs_f64(),
+   366	        )
+   367	    }
+   368	}
+   369	
+   370	// ---------------------------------------------------------------------------
+   371	// Verification engine
+   372	// ---------------------------------------------------------------------------
+   373	
+   374	/// Verify a fill against a Lean specification.
+   375	///
+   376	/// Loads the model definitions into the REPL, then attempts to prove each
+   377	/// proposition using the proof automation engine.
+   378	pub async fn verify_fill(
+   379	    repl: &mut LeanRepl,
+   380	    automation: &ProofAutomation,

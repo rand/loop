@@ -1,0 +1,114 @@
+safe_run: heavy command admitted (available=7619MiB, threshold=4096MiB)
+   Compiling rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> src/module/compose.rs:305:9
+    |
+305 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:605:13
+    |
+605 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_field`, and `output` are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             output: String,
+    |             ^^^^^^
+
+warning: `rlm-core` (lib test) generated 9 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.94s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-03e7e08dcec83f0e)
+
+running 8 tests
+test complexity::tests::test_signals_score ... ok
+test complexity::tests::test_active_signals ... ok
+test complexity::tests::test_force_activation ... ok
+test complexity::tests::test_classifier_user_wants_fast ... ok
+test complexity::tests::test_classifier_complex_query ... ok
+test complexity::tests::test_classifier_thorough_override ... ok
+test complexity::tests::test_classifier_multi_file ... ok
+test complexity::tests::test_classifier_simple_query ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 560 filtered out; finished in 0.03s
+

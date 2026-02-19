@@ -1,0 +1,3 @@
+safe_run: heavy command admitted (available=4446MiB, threshold=3072MiB)
+    Checking rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.84s

@@ -1,0 +1,22 @@
+# loop-8th loop-agent state
+date: UTC 2026-02-19 20:31:08
+branch: dp/loop-agent
+head: 390f459f389933a948a785ad4c7554fa6ac7cb3d
+dirty_files:
+ M .beads/hooks/post-checkout
+ M .beads/hooks/post-merge
+ M .beads/hooks/pre-commit
+ M .beads/hooks/pre-push
+ M .beads/metadata.json
+ M pyproject.toml
+ M src/loop_agent/__init__.py
+ M src/loop_agent/durable.py
+ M src/loop_agent/mismatch.py
+ M tests/test_coverage_gaps.py
+ M tests/test_durable_sensitivity.py
+ M uv.lock
+?? .beads/issues.jsonl
+?? .hypothesis/
+?? AGENTS.md
+?? pytest-of-rand/
+?? tests/test_batch4_durable.py

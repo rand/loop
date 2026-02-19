@@ -1,0 +1,123 @@
+# M4-T01 consumer coupling scan
+UTC 2026-02-19 18:40:21
+
+## Build/import coupling
+    35	    "sentence-transformers>=2.0.0",  # SetFit dependency
+    36	    "gliner>=0.2.0",  # Entity/signal extraction for complexity detection
+    37	]
+    38	[build-system]
+    39	requires = ["maturin>=1.4,<2.0"]
+    40	build-backend = "maturin"
+    41	
+    42	[tool.maturin]
+    43	manifest-path = "vendor/loop/rlm-core/Cargo.toml"
+    44	features = ["python"]
+    45	python-source = "."
+    46	module-name = "rlm_core"
+    47	
+    48	[tool.ruff]
+    49	line-length = 100
+    50	target-version = "py312"
+    51	
+    52	[tool.ruff.lint]
+    53	select = [
+    54	    "E",   # pycodestyle errors
+    55	    "W",   # pycodestyle warnings
+
+## rlm_core trajectory enum/factory coupling
+   240	
+   241	
+   242	# ============================================================================
+   243	# rlm_core Delegation Helpers
+   244	# ============================================================================
+   245	
+   246	
+   247	def _map_event_type_to_core(event_type: TrajectoryEventType) -> Any:
+   248	    """Map Python TrajectoryEventType to rlm_core.TrajectoryEventType."""
+   249	    mapping = {
+   250	        TrajectoryEventType.RLM_START: rlm_core.TrajectoryEventType.RlmStart,
+   251	        TrajectoryEventType.ANALYZE: rlm_core.TrajectoryEventType.Analyze,
+   252	        TrajectoryEventType.REPL_EXEC: rlm_core.TrajectoryEventType.ReplExec,
+   253	        TrajectoryEventType.REPL_RESULT: rlm_core.TrajectoryEventType.ReplResult,
+   254	        TrajectoryEventType.REASON: rlm_core.TrajectoryEventType.Reason,
+   255	        TrajectoryEventType.RECURSE_START: rlm_core.TrajectoryEventType.RecurseStart,
+   256	        TrajectoryEventType.RECURSE_END: rlm_core.TrajectoryEventType.RecurseEnd,
+   257	        TrajectoryEventType.FINAL: rlm_core.TrajectoryEventType.Final,
+   258	        TrajectoryEventType.ERROR: rlm_core.TrajectoryEventType.Error,
+   259	        TrajectoryEventType.TOOL_USE: rlm_core.TrajectoryEventType.ToolUse,
+   260	        TrajectoryEventType.COST_REPORT: rlm_core.TrajectoryEventType.CostReport,
+   261	        TrajectoryEventType.BUDGET_ALERT: rlm_core.TrajectoryEventType.BudgetComputed,
+   262	        TrajectoryEventType.VERIFICATION: rlm_core.TrajectoryEventType.VerifyComplete,
+   263	    }
+   264	    return mapping.get(event_type, rlm_core.TrajectoryEventType.Analyze)
+   265	
+   266	
+   267	def _map_core_event_type_to_python(core_type: Any) -> TrajectoryEventType:
+   268	    """Map rlm_core.TrajectoryEventType to Python TrajectoryEventType."""
+   269	    # Build reverse mapping
+   270	    mapping = {
+   271	        rlm_core.TrajectoryEventType.RlmStart: TrajectoryEventType.RLM_START,
+   272	        rlm_core.TrajectoryEventType.Analyze: TrajectoryEventType.ANALYZE,
+   273	        rlm_core.TrajectoryEventType.ReplExec: TrajectoryEventType.REPL_EXEC,
+   274	        rlm_core.TrajectoryEventType.ReplResult: TrajectoryEventType.REPL_RESULT,
+   275	        rlm_core.TrajectoryEventType.Reason: TrajectoryEventType.REASON,
+   276	        rlm_core.TrajectoryEventType.RecurseStart: TrajectoryEventType.RECURSE_START,
+   277	        rlm_core.TrajectoryEventType.RecurseEnd: TrajectoryEventType.RECURSE_END,
+   278	        rlm_core.TrajectoryEventType.Final: TrajectoryEventType.FINAL,
+   279	        rlm_core.TrajectoryEventType.Error: TrajectoryEventType.ERROR,
+   280	        rlm_core.TrajectoryEventType.ToolUse: TrajectoryEventType.TOOL_USE,
+   281	        rlm_core.TrajectoryEventType.CostReport: TrajectoryEventType.COST_REPORT,
+   282	        rlm_core.TrajectoryEventType.BudgetComputed: TrajectoryEventType.BUDGET_ALERT,
+   283	        rlm_core.TrajectoryEventType.VerifyComplete: TrajectoryEventType.VERIFICATION,
+   284	    }
+   285	    return mapping.get(core_type, TrajectoryEventType.ANALYZE)
+   286	
+   287	
+   288	def _create_core_event(
+   289	    event_type: TrajectoryEventType,
+   290	    depth: int,
+   291	    content: str,
+   292	    metadata: dict[str, Any] | None = None,
+   293	) -> Any:
+   294	    """
+   295	    Create an rlm_core.TrajectoryEvent using factory methods.
+   296	
+   297	    Returns the core event or None if creation fails.
+   298	    """
+   299	    try:
+   300	        # Use factory methods based on event type
+   301	        core_event: Any = None
+   302	
+   303	        if event_type == TrajectoryEventType.RLM_START:
+   304	            core_event = rlm_core.TrajectoryEvent.rlm_start(content)
+   305	        elif event_type == TrajectoryEventType.RECURSE_START:
+   306	            core_event = rlm_core.TrajectoryEvent.recurse_start(depth, content)
+   307	        elif event_type == TrajectoryEventType.RECURSE_END:
+   308	            core_event = rlm_core.TrajectoryEvent.recurse_end(depth, content)
+   309	        elif event_type == TrajectoryEventType.REPL_EXEC:
+   310	            core_event = rlm_core.TrajectoryEvent.repl_exec(depth, content)
+   311	        elif event_type == TrajectoryEventType.REPL_RESULT:
+   312	            core_event = rlm_core.TrajectoryEvent.repl_result(depth, content)
+   313	        elif event_type == TrajectoryEventType.ANALYZE:
+   314	            core_event = rlm_core.TrajectoryEvent.analyze(content, depth=depth)
+   315	        elif event_type == TrajectoryEventType.REASON:
+   316	            core_event = rlm_core.TrajectoryEvent.reason(depth, content)
+   317	        elif event_type == TrajectoryEventType.ERROR:
+   318	            core_event = rlm_core.TrajectoryEvent.error(depth, content)
+   319	        elif event_type == TrajectoryEventType.FINAL:
+   320	            core_event = rlm_core.TrajectoryEvent.final_answer(content, depth=depth)
+   321	        else:
+   322	            # For event types without factory methods, use analyze as fallback
+   323	            core_event = rlm_core.TrajectoryEvent.analyze(content, depth=depth)
+   324	
+   325	        # Add metadata if provided
+   326	        if core_event is not None and metadata:
+   327	            for key, value in metadata.items():
+   328	                core_event = core_event.with_metadata(key, str(value))
+   329	
+   330	        return core_event
+
+## Memory/classifier/router critical tests present
+tests/unit/test_complexity_classifier.py
+tests/unit/test_memory_store.py
+tests/unit/test_smart_router.py

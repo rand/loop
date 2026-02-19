@@ -1,0 +1,216 @@
+safe_run: heavy command admitted (available=4968MiB, threshold=4096MiB)
+........................................................................ [  7%]
+........................................................................ [ 15%]
+........................................................................ [ 23%]
+..............FF...FFFF.FFFFF........................................... [ 30%]
+........................................................................ [ 38%]
+........................................................................ [ 46%]
+........................................................................ [ 54%]
+........................................................................ [ 61%]
+........................................................................ [ 69%]
+........................................................................ [ 77%]
+........................................................................ [ 85%]
+........................................................................ [ 92%]
+..................................................................       [100%]
+=================================== FAILURES ===================================
+___________________ TestCompileRecurse.test_compile_recurse ____________________
+
+self = <tests.test_batch8_config_sensitivity.TestCompileRecurse object at 0x10b1ffc20>
+
+    def test_compile_recurse(self) -> None:
+        from loop_agent.recurse import Recurse
+    
+        config = AgentConfig(
+            name="test_recurse",
+            description="Test recursive decomposition",
+            input_fields={"text": AgentConfig.__dataclass_fields__["input_fields"].default_factory()},
+            output_fields={"summary": AgentConfig.__dataclass_fields__["output_fields"].default_factory()},
+            strategy=StrategyConfig(type="recurse", max_depth=3, merge_strategy="concatenate"),
+        )
+        # Need actual field configs
+        from loop_agent.config import SignatureFieldConfig
+    
+        config.input_fields = {"text": SignatureFieldConfig(type="str")}
+        config.output_fields = {"summary": SignatureFieldConfig(type="str")}
+    
+        backend = MockBackend(responses=[json.dumps({"summary": "test"})])
+>       module = config.compile(backend=backend)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_batch8_config_sensitivity.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = AgentConfig(name='test_recurse', description='Test recursive decomposition', version='0.1.0', model='auto', input_fiel..._mcp=False, expose_a2a=False, expose_acp=False, mcp_transport='streamable_http', acp_transport='stdio', a2a_skills=[]))
+
+    def compile(
+        self,
+        *,
+        backend: LLMBackend | None = None,
+        tools: list[Tool] | None = None,
+    ) -> Any:
+        """Create a runtime Module from this declarative config. [SPEC-07]
+    
+        Dynamically builds a Signature class from field configs, then
+        instantiates the appropriate Module based on strategy.type.
+    
+        Supports: predict, chain_of_thought, agent, pipeline, parallel, router.
+        Returns Module, Pipeline, Parallel, or Router depending on strategy.
+        """
+        from loop_agent.agent_module import Agent
+        from loop_agent.chain_of_thought import ChainOfThought
+        from loop_agent.predict import Predict
+        from loop_agent.signature import Field, Signature, SignatureMeta
+    
+        if not self.input_fields:
+            raise ValueError("AgentConfig requires at least one input field to compile")
+        if not self.output_fields:
+            raise ValueError("AgentConfig requires at least one output field to compile")
+    
+        # Resolve model (None means use backend default)
+        model = self.model if self.model != "auto" else None
+    
+        strategy_type = self.strategy.type
+        if strategy_type == "predict":
+            sig = self._build_signature(Field, Signature, SignatureMeta)
+            return Predict(sig, backend=backend, model=model)
+        elif strategy_type == "chain_of_thought":
+            sig = self._build_signature(Field, Signature, SignatureMeta)
+            return ChainOfThought(sig, backend=backend, model=model)
+        elif strategy_type == "agent":
+            sig = self._build_signature(Field, Signature, SignatureMeta)
+            return Agent(sig, tools=tools or [], backend=backend, model=model)
+        elif strategy_type == "pipeline":
+            return self._compile_pipeline(backend, model, Field, Signature, SignatureMeta)
+        elif strategy_type == "parallel":
+            return self._compile_parallel(backend, model, Field, Signature, SignatureMeta)
+        elif strategy_type == "router":
+            return self._compile_router(backend, model, Field, Signature, SignatureMeta)
+        else:
+>           raise ValueError(
+                f"Unknown strategy type: '{strategy_type}'. "
+                f"Supported: predict, chain_of_thought, agent, pipeline, parallel, router"
+            )
+E           ValueError: Unknown strategy type: 'recurse'. Supported: predict, chain_of_thought, agent, pipeline, parallel, router
+
+src/loop_agent/config.py:409: ValueError
+______________ TestCompileDurability.test_compile_with_durability ______________
+
+self = <tests.test_batch8_config_sensitivity.TestCompileDurability object at 0x10b7983e0>
+
+    def test_compile_with_durability(self) -> None:
+        from loop_agent.config import SignatureFieldConfig
+    
+        config = AgentConfig(
+            name="durable_agent",
+            description="Test durable wiring",
+            input_fields={"text": SignatureFieldConfig(type="str")},
+            output_fields={"answer": SignatureFieldConfig(type="str")},
+            durability=DurabilityConfig(checkpoint=True),
+        )
+        backend = MockBackend(responses=[json.dumps({"answer": "ok"})])
+        module = config.compile(backend=backend)
+        # The module should have durable attributes
+>       assert hasattr(module, "_durable_store")
+E       AssertionError: assert False
+E        +  where False = hasattr(<loop_agent.predict.Predict object at 0x10c666a50>, '_durable_store')
+
+tests/test_batch8_config_sensitivity.py:67: AssertionError
+_____________ TestFormatPreservingTokenization.test_email_pattern ______________
+
+self = <tests.test_batch8_config_sensitivity.TestFormatPreservingTokenization object at 0x10b799ee0>
+
+    def test_email_pattern(self) -> None:
+>       ctx = SensitiveContext(tokenizer="format_preserving")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensitiveContext.__init__() got an unexpected keyword argument 'tokenizer'
+
+tests/test_batch8_config_sensitivity.py:130: TypeError
+_____________ TestFormatPreservingTokenization.test_phone_pattern ______________
+
+self = <tests.test_batch8_config_sensitivity.TestFormatPreservingTokenization object at 0x10b79a2d0>
+
+    def test_phone_pattern(self) -> None:
+>       ctx = SensitiveContext(tokenizer="format_preserving")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensitiveContext.__init__() got an unexpected keyword argument 'tokenizer'
+
+tests/test_batch8_config_sensitivity.py:138: TypeError
+______________ TestFormatPreservingTokenization.test_ssn_pattern _______________
+
+self = <tests.test_batch8_config_sensitivity.TestFormatPreservingTokenization object at 0x10b79a780>
+
+    def test_ssn_pattern(self) -> None:
+>       ctx = SensitiveContext(tokenizer="format_preserving")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensitiveContext.__init__() got an unexpected keyword argument 'tokenizer'
+
+tests/test_batch8_config_sensitivity.py:147: TypeError
+____________ TestFormatPreservingTokenization.test_generic_fallback ____________
+
+self = <tests.test_batch8_config_sensitivity.TestFormatPreservingTokenization object at 0x10b79ac90>
+
+    def test_generic_fallback(self) -> None:
+        """Non-pattern values get standard TOKEN_ prefix."""
+>       ctx = SensitiveContext(tokenizer="format_preserving")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensitiveContext.__init__() got an unexpected keyword argument 'tokenizer'
+
+tests/test_batch8_config_sensitivity.py:155: TypeError
+__________________ TestOutputScanning.test_scan_detects_email __________________
+
+self = <tests.test_batch8_config_sensitivity.TestOutputScanning object at 0x10b79b980>
+
+    def test_scan_detects_email(self) -> None:
+>       from loop_agent.sensitive_context import scan_outputs
+E       ImportError: cannot import name 'scan_outputs' from 'loop_agent.sensitive_context' (/Users/rand/src/loop-agent/src/loop_agent/sensitive_context.py)
+
+tests/test_batch8_config_sensitivity.py:175: ImportError
+___________________ TestOutputScanning.test_scan_detects_ssn ___________________
+
+self = <tests.test_batch8_config_sensitivity.TestOutputScanning object at 0x10b79cb90>
+
+    def test_scan_detects_ssn(self) -> None:
+>       from loop_agent.sensitive_context import scan_outputs
+E       ImportError: cannot import name 'scan_outputs' from 'loop_agent.sensitive_context' (/Users/rand/src/loop-agent/src/loop_agent/sensitive_context.py)
+
+tests/test_batch8_config_sensitivity.py:182: ImportError
+_______________ TestOutputScanning.test_scan_passes_clean_output _______________
+
+self = <tests.test_batch8_config_sensitivity.TestOutputScanning object at 0x10b79c2f0>
+
+    def test_scan_passes_clean_output(self) -> None:
+>       from loop_agent.sensitive_context import scan_outputs
+E       ImportError: cannot import name 'scan_outputs' from 'loop_agent.sensitive_context' (/Users/rand/src/loop-agent/src/loop_agent/sensitive_context.py)
+
+tests/test_batch8_config_sensitivity.py:189: ImportError
+__________________ TestOutputScanning.test_scan_detects_phone __________________
+
+self = <tests.test_batch8_config_sensitivity.TestOutputScanning object at 0x10b79d1c0>
+
+    def test_scan_detects_phone(self) -> None:
+>       from loop_agent.sensitive_context import scan_outputs
+E       ImportError: cannot import name 'scan_outputs' from 'loop_agent.sensitive_context' (/Users/rand/src/loop-agent/src/loop_agent/sensitive_context.py)
+
+tests/test_batch8_config_sensitivity.py:195: ImportError
+___________________ TestOutputScanning.test_scan_nested_dict ___________________
+
+self = <tests.test_batch8_config_sensitivity.TestOutputScanning object at 0x10b79bce0>
+
+    def test_scan_nested_dict(self) -> None:
+>       from loop_agent.sensitive_context import scan_outputs
+E       ImportError: cannot import name 'scan_outputs' from 'loop_agent.sensitive_context' (/Users/rand/src/loop-agent/src/loop_agent/sensitive_context.py)
+
+tests/test_batch8_config_sensitivity.py:202: ImportError
+=========================== short test summary info ============================
+FAILED tests/test_batch8_config_sensitivity.py::TestCompileRecurse::test_compile_recurse
+FAILED tests/test_batch8_config_sensitivity.py::TestCompileDurability::test_compile_with_durability
+FAILED tests/test_batch8_config_sensitivity.py::TestFormatPreservingTokenization::test_email_pattern
+FAILED tests/test_batch8_config_sensitivity.py::TestFormatPreservingTokenization::test_phone_pattern
+FAILED tests/test_batch8_config_sensitivity.py::TestFormatPreservingTokenization::test_ssn_pattern
+FAILED tests/test_batch8_config_sensitivity.py::TestFormatPreservingTokenization::test_generic_fallback
+FAILED tests/test_batch8_config_sensitivity.py::TestOutputScanning::test_scan_detects_email
+FAILED tests/test_batch8_config_sensitivity.py::TestOutputScanning::test_scan_detects_ssn
+FAILED tests/test_batch8_config_sensitivity.py::TestOutputScanning::test_scan_passes_clean_output
+FAILED tests/test_batch8_config_sensitivity.py::TestOutputScanning::test_scan_detects_phone
+FAILED tests/test_batch8_config_sensitivity.py::TestOutputScanning::test_scan_nested_dict
+11 failed, 919 passed in 21.85s

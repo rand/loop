@@ -1,0 +1,12 @@
+# SPEC-20 file-location existence check
+OK  rlm-core/src/signature/mod.rs
+OK  rlm-core/src/signature/types.rs
+OK  rlm-core/src/signature/validation.rs
+OK  rlm-core/src/signature/submit.rs
+OK  rlm-core-derive/src/lib.rs
+OK  rlm-core/src/module/mod.rs
+OK  rlm-core/src/module/predict.rs
+OK  rlm-core/python/rlm_repl/sandbox.py
+OK  rlm-core/python/rlm_repl/main.py
+OK  rlm-core/python/rlm_repl/protocol.py
+OK  rlm-core/src/repl.rs

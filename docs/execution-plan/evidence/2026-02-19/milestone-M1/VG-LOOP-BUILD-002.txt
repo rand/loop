@@ -1,0 +1,14 @@
+safe_run: heavy command admitted (available=4324MiB, threshold=3072MiB)
+    Checking rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+warning: variable does not need to be mutable
+   --> src/ffi/mod.rs:152:9
+    |
+152 |     let mut features: Vec<&str> = Vec::new();
+    |         ----^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+warning: `rlm-core` (lib) generated 1 warning (run `cargo fix --lib -p rlm-core` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.76s

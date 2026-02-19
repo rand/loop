@@ -1,0 +1,148 @@
+safe_run: heavy command admitted (available=5291MiB, threshold=4096MiB)
+WARN Failed to acquire environment lock: Could not create temporary file
+..................F                                                      [100%]
+=================================== FAILURES ===================================
+_______ TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error ________
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x10b1c3ad0>
+
+    def optimize(
+        module: Any,
+        *,
+        metric: Any,
+        trainset: list[dict[str, Any]] | None = None,
+        optimizer: str = "bootstrap",
+        max_rounds: int = 3,
+        safety_gates: OptimizerSafetyGates | None = None,
+    ) -> Any:
+        """Optimize a Module using the specified optimizer strategy. [SPEC-05]
+    
+        This is the top-level optimization API. It creates an AgentVersion snapshot
+        before optimization, runs the optimizer, creates a snapshot after, and
+        validates via safety gates.
+    
+        Supported optimizer strategies:
+        - "bootstrap": Few-shot bootstrap (collects demonstrations from successful runs)
+        - "miprov2": MIPROv2 instruction optimization (requires dspy)
+        - "none": No-op passthrough (for testing the pipeline)
+    
+        Returns the optimized module (or the original if safety gates fail).
+    
+        Raises OptimizerInvariantViolation if safety gates detect invariant changes.
+        """
+        # Snapshot before
+        before = _snapshot_version(module, "before")
+    
+        if optimizer == "none":
+            return module
+    
+        if optimizer == "bootstrap":
+            # Bootstrap few-shot: collect demonstrations from trainset
+            optimized = _bootstrap_optimize(module, trainset or [], max_rounds)
+        elif optimizer == "miprov2":
+            try:
+>               optimized = _dspy_optimize(module, metric, trainset or [], optimizer)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/loop_agent/optimization.py:330: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x10b1c3ad0>
+metric = <function TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.<lambda> at 0x10b4d3060>
+trainset = [], strategy = 'miprov2'
+
+    def _dspy_optimize(
+        module: Any,
+        metric: Any,
+        trainset: list[dict[str, Any]],
+        strategy: str,
+    ) -> Any:
+        """DSPy bridge optimization. Requires dspy-ai package. [SPEC-05]"""
+>       import dspy  # noqa: F401
+        ^^^^^^^^^^^
+E       ModuleNotFoundError: No module named 'dspy'
+
+src/loop_agent/optimization.py:409: ModuleNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError object at 0x10b17b980>
+
+    def test_miprov2_raises_import_error(self) -> None:
+        from loop_agent.module import Module
+        from loop_agent.optimization import optimize
+    
+        class SimpleSig(Signature):
+            """Simple."""
+    
+            x: str = Field(input=True)
+            y: str = Field(output=True)
+    
+        class SimpleModule(Module):
+            signature = SimpleSig
+    
+            async def aforward(self, **kwargs: Any) -> dict[str, Any]:
+                return {"y": kwargs["x"]}
+    
+        module = SimpleModule()
+    
+        # dspy is installed but the bridge raises NotImplementedError
+        # until the optimizer classes are fully wired (SPEC-05)
+        with pytest.raises(NotImplementedError, match="DSPy"):
+>           optimize(
+                module,
+                metric=lambda x: 1.0,
+                optimizer="miprov2",
+            )
+
+tests/test_coverage_gaps.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x10b1c3ad0>
+
+    def optimize(
+        module: Any,
+        *,
+        metric: Any,
+        trainset: list[dict[str, Any]] | None = None,
+        optimizer: str = "bootstrap",
+        max_rounds: int = 3,
+        safety_gates: OptimizerSafetyGates | None = None,
+    ) -> Any:
+        """Optimize a Module using the specified optimizer strategy. [SPEC-05]
+    
+        This is the top-level optimization API. It creates an AgentVersion snapshot
+        before optimization, runs the optimizer, creates a snapshot after, and
+        validates via safety gates.
+    
+        Supported optimizer strategies:
+        - "bootstrap": Few-shot bootstrap (collects demonstrations from successful runs)
+        - "miprov2": MIPROv2 instruction optimization (requires dspy)
+        - "none": No-op passthrough (for testing the pipeline)
+    
+        Returns the optimized module (or the original if safety gates fail).
+    
+        Raises OptimizerInvariantViolation if safety gates detect invariant changes.
+        """
+        # Snapshot before
+        before = _snapshot_version(module, "before")
+    
+        if optimizer == "none":
+            return module
+    
+        if optimizer == "bootstrap":
+            # Bootstrap few-shot: collect demonstrations from trainset
+            optimized = _bootstrap_optimize(module, trainset or [], max_rounds)
+        elif optimizer == "miprov2":
+            try:
+                optimized = _dspy_optimize(module, metric, trainset or [], optimizer)
+            except ImportError as err:
+>               raise ImportError(
+                    "MIPROv2 optimization requires dspy-ai: pip install dspy-ai"
+                ) from err
+E               ImportError: MIPROv2 optimization requires dspy-ai: pip install dspy-ai
+
+src/loop_agent/optimization.py:332: ImportError
+=========================== short test summary info ============================
+FAILED tests/test_coverage_gaps.py::TestOptimizeMiprov2ImportError::test_miprov2_raises_import_error
+1 failed, 18 passed in 0.76s

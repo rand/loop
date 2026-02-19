@@ -1,0 +1,38 @@
+# M4-T02 loop-agent full-suite failure summary
+UTC 2026-02-19 19:01:43
+
+370:FAILED tests/test_batch4_durable.py::TestValidateOnReplay::test_validate_on_replay_true_passes_valid
+371:FAILED tests/test_batch4_durable.py::TestValidateOnReplay::test_validate_on_replay_false_skips
+372:FAILED tests/test_batch4_durable.py::TestCheckpointedActivity::test_importable
+373:FAILED tests/test_batch4_durable.py::TestCheckpointedActivity::test_construction
+374:FAILED tests/test_batch4_durable.py::TestCheckpointedActivity::test_with_metadata
+375:FAILED tests/test_batch4_durable.py::TestBestEffortMigrate::test_migrate_hook_called_on_mismatch
+376:FAILED tests/test_batch4_durable.py::TestDurableTimeout::test_timeout_parameter_accepted
+377:FAILED tests/test_batch4_durable.py::TestDurableTimeout::test_timeout_raises_on_exceed
+378:FAILED tests/test_batch4_durable.py::TestCheckpointTTL::test_ttl_parameter_accepted
+379:FAILED tests/test_batch4_durable.py::TestPostgresCheckpointStore::test_importable
+380:FAILED tests/test_batch4_durable.py::TestPostgresCheckpointStore::test_raises_without_asyncpg
+381:FAILED tests/test_batch4_durable.py::TestTemporalCheckpointStore::test_importable
+382:FAILED tests/test_batch4_durable.py::TestTemporalCheckpointStore::test_raises_not_implemented
+383:FAILED tests/test_batch4_durable.py::TestInngestCheckpointStore::test_importable
+384:FAILED tests/test_batch4_durable.py::TestInngestCheckpointStore::test_raises_not_implemented
+385:FAILED tests/test_batch4_durable.py::TestSecretRequiredForResume::test_excluded_field_raises_on_replay
+386:FAILED tests/test_coverage_gaps.py::TestOptimizeMiprov2ImportError::test_miprov2_raises_import_error
+
+31:E       TypeError: durable() got an unexpected keyword argument 'validate_on_replay'
+48:E       TypeError: durable() got an unexpected keyword argument 'validate_on_replay'
+57:E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+66:E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+75:E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+87:E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+104:E       TypeError: durable() got an unexpected keyword argument 'timeout'
+123:E       TypeError: durable() got an unexpected keyword argument 'timeout'
+140:E       TypeError: durable() got an unexpected keyword argument 'checkpoint_ttl'
+149:E       ImportError: cannot import name 'PostgresCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+158:E       ImportError: cannot import name 'PostgresCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+167:E       ImportError: cannot import name 'TemporalCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py)
+176:E       ImportError: cannot import name 'TemporalCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py)
+185:E       ImportError: cannot import name 'InngestCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+194:E       ImportError: cannot import name 'InngestCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+364:                    "MIPROv2 optimization requires dspy-ai: pip install dspy-ai"
+366:E               ImportError: MIPROv2 optimization requires dspy-ai: pip install dspy-ai

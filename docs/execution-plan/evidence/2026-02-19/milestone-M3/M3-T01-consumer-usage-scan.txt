@@ -1,0 +1,57 @@
+# rg: llm_batch / llm_query_batched across consumers
+/Users/rand/src/rlm-claude-code/src/orchestration_schema.py:258:            "Use llm_batch() for parallel file analysis",
+/Users/rand/src/rlm-claude-code/src/orchestrator/core.py:655:        - Parallel batch operations (llm_batch)
+/Users/rand/src/rlm-claude-code/src/orchestrator.py:526:        - Parallel batch operations (llm_batch)
+/Users/rand/src/rlm-claude-code/src/types.py:224:        str  # "recursive_query", "summarize", "llm_batch", "verify_claim", "evidence_dependence"
+/Users/rand/src/rlm-claude-code/src/types.py:243:    Implements: Spec §4.2 Parallel Sub-Calls (llm_batch)
+/Users/rand/src/rlm-claude-code/src/trajectory_analysis.py:185:        r"recursive_query\(|llm_batch\(",
+/Users/rand/src/rlm-claude-code/src/trajectory_analysis.py:389:            if "llm_batch" in content:
+/Users/rand/src/rlm-claude-code/src/trajectory_analysis.py:390:                patterns.append("llm_batch")
+/Users/rand/src/rlm-claude-code/src/repl_environment.py:46:        "llm_batch",
+/Users/rand/src/rlm-claude-code/src/repl_environment.py:316:            self.globals["llm_batch"] = self._llm_batch  # Parallel LLM calls
+/Users/rand/src/rlm-claude-code/src/repl_environment.py:672:            helpers.extend(["llm", "summarize", "map_reduce", "llm_batch"])
+/Users/rand/src/rlm-claude-code/src/repl_environment.py:836:    def _llm_batch(
+/Users/rand/src/rlm-claude-code/src/repl_environment.py:854:            results = llm_batch([
+/Users/rand/src/rlm-claude-code/src/repl_environment.py:1977:    - llm_batch() - Parallel sub-queries
+/Users/rand/src/rlm-claude-code/src/rich_output.py:365:        elif func in ("llm", "llm_batch", "summarize"):
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_advanced_functions.py:201:# SPEC-01.03: Parallel llm_batch() calls with map_prompt
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:453:    def test_llm_batch_returns_deferred_batch(self, basic_env):
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:454:        """llm_batch returns a DeferredBatch for parallel processing."""
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:457:        batch = basic_env._llm_batch(
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:483:        basic_env._llm_batch([("q2", "c2"), ("q3", "c3")])
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:503:        batch = basic_env._llm_batch(
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:521:        basic_env._llm_batch([("q2", "c2")])
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:548:    def test_llm_batch_available_in_repl(self, basic_env):
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:549:        """llm_batch is accessible as a helper in REPL execution."""
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:550:        assert "llm_batch" in basic_env.globals
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:551:        assert callable(basic_env.globals["llm_batch"])
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:608:    def test_micro_mode_no_llm_batch(self, micro_env):
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:609:        """SPEC-14.04: Micro mode does NOT have llm_batch function."""
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:610:        assert "llm_batch" not in micro_env.globals
+/Users/rand/src/rlm-claude-code/tests/unit/test_repl_environment.py:729:        assert "llm_batch" in standard_env.globals
+/Users/rand/src/rlm-claude-code/vendor/loop/rlm-core/python/rlm_repl/helpers.py:242:def llm_batch(
+/Users/rand/src/rlm-claude-code/vendor/loop/rlm-core/python/rlm_repl/helpers.py:263:        OperationType.LLM_BATCH,
+/Users/rand/src/rlm-claude-code/vendor/loop/rlm-core/python/rlm_repl/deferred.py:28:    LLM_BATCH = "llm_batch"
+/Users/rand/src/rlm-claude-code/vendor/loop/rlm-core/python/rlm_repl/sandbox.py:275:        self.globals["llm_batch"] = helpers.llm_batch
+/Users/rand/src/rlm-claude-code/vendor/loop/rlm-core/python/rlm_repl/sandbox.py:397:                "llm_batch",
+/Users/rand/src/rlm-claude-code/README.md:134:│  │    conversation  │    │  • llm(), llm_batch()    │   │
+/Users/rand/src/rlm-claude-code/README.md:246:| `llm_batch([(q1,c1), (q2,c2), ...])` | Parallel LLM calls |
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/unified-rlm-library-design.md:198:    // llm_batch(prompts, contexts) -> parallel LLM calls (deferred)
+/Users/rand/src/rlm-claude-code/CLAUDE.md:194:| `llm_batch(queries)` | Parallel sub-queries |
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/spec/SPEC-26-batched-queries.md:23:def llm_query_batched(
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/spec/SPEC-26-batched-queries.md:45:        >>> results = llm_query_batched([
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/spec/SPEC-26-batched-queries.md:280:summaries = llm_query_batched(prompts)
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/spec/SPEC-26-batched-queries.md:288:facts_list = llm_query_batched(facts_prompts, max_parallel=10)
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/spec/SPEC-26-batched-queries.md:298:results = llm_query_batched(prompts)
+/Users/rand/src/rlm-claude-code/vendor/loop/docs/spec/SPEC-26-batched-queries.md:324:- [DSPy llm_query_batched](https://github.com/stanfordnlp/dspy/blob/main/dspy/predict/rlm.py)
+/Users/rand/src/rlm-claude-code/docs/api-cookbook.md:336:# Available in REPL: peek, search, grep, summarize, llm, llm_batch,
+/Users/rand/src/rlm-claude-code/docs/RECURSE_ANALYSIS.md:35:| REPL Helpers | peek, search, summarize, llm, llm_batch | `repl_environment.py` |
+/Users/rand/src/rlm-claude-code/docs/RECURSE_ANALYSIS.md:275:    2. Map: Apply map_prompt to each chunk (parallel via llm_batch)
+/Users/rand/src/rlm-claude-code/docs/RECURSE_ANALYSIS.md:288:    map_results = llm_batch(
+/Users/rand/src/rlm-claude-code/docs/RECURSE_ANALYSIS.md:329:        scores = llm_batch(
+/Users/rand/src/rlm-claude-code/docs/jtbd-ooda-analysis.md:86:| **Act** | REPL: `search()` with regex, `llm_batch()` for parallel context analysis, `memory_add_fact()` for tracking |
+/Users/rand/src/rlm-claude-code/docs/jtbd-ooda-analysis.md:254:│    │     • llm(), llm_batch() → sub-queries             │   │
+/Users/rand/src/rlm-claude-code/docs/user-guide.md:131:#### `llm_batch(queries, spawn_repl=False)`
+/Users/rand/src/rlm-claude-code/docs/user-guide.md:137:results = llm_batch([
+/Users/rand/src/rlm-claude-code/docs/spec/01-repl-functions.md:15:[SPEC-01.03] `map_reduce()` SHALL apply `map_prompt` to each chunk in parallel using `llm_batch()`.
+/Users/rand/src/rlm-claude-code/docs/spec/14-always-on-rlm.md:47:- `llm_batch()` - Parallel sub-queries

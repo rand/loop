@@ -1,0 +1,15 @@
+{
+  "gate": "VG-PERF-001",
+  "budget_pct": 10.0,
+  "baseline_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M5/M5-T01-baseline.json",
+  "candidate_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M5/M5-T01-candidate.json",
+  "checks": {
+    "startup_p50": -13.574521663240105,
+    "startup_p95": -32.75161884646665,
+    "execute_no_submit_p50": -4.698190387712484,
+    "execute_no_submit_p95": -9.918811111744745,
+    "execute_with_submit_p50": -7.796579238158288,
+    "execute_with_submit_p95": -24.578504972311165
+  },
+  "pass": true
+}

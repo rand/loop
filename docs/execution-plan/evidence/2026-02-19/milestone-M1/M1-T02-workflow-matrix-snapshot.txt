@@ -1,0 +1,52 @@
+# M1-T02 Workflow Matrix Snapshot
+Date: 2026-02-19
+
+## Workflow file excerpt
+    20	jobs:
+    21	  cargo-check-matrix:
+    22	    name: "${{ matrix.vg_id }} :: ${{ matrix.label }}"
+    23	    runs-on: ubuntu-latest
+    24	    permissions:
+    25	      contents: read
+    26	    strategy:
+    27	      fail-fast: false
+    28	      matrix:
+    29	        include:
+    30	          - vg_id: VG-LOOP-BUILD-001
+    31	            label: default profile
+    32	            cargo_args: ""
+    33	          - vg_id: VG-LOOP-BUILD-002
+    34	            label: no default features
+    35	            cargo_args: "--no-default-features"
+    36	          - vg_id: VG-LOOP-BUILD-003
+    37	            label: gemini profile
+    38	            cargo_args: "--no-default-features --features gemini"
+    39	
+    40	    defaults:
+    41	      run:
+    42	        working-directory: rlm-core
+    43	
+    44	    steps:
+    45	      - name: Checkout repository
+    46	        uses: actions/checkout@v4
+    47	
+    48	      - name: Install Rust toolchain
+    49	        uses: dtolnay/rust-toolchain@stable
+    50	
+    51	      - name: Cache cargo artifacts
+    52	        uses: Swatinem/rust-cache@v2
+    53	        with:
+    54	          workspaces: |
+    55	            rlm-core
+    56	            rlm-core-derive
+    57	
+    58	      - name: Run cargo check (${{ matrix.vg_id }})
+    59	        shell: bash
+    60	        run: |
+    61	          set -euo pipefail
+    62	          echo "Running ${{ matrix.vg_id }} (${{ matrix.label }})"
+    63	          if [[ -n "${{ matrix.cargo_args }}" ]]; then
+    64	            cargo check --locked ${{ matrix.cargo_args }}
+    65	          else
+    66	            cargo check --locked
+    67	          fi

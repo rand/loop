@@ -1,0 +1,387 @@
+safe_run: heavy command admitted (available=5394MiB, threshold=4096MiB)
+........................................................................ [  8%]
+......................................................................FF [ 16%]
+FFFFFFFFFFFFFF.......................................................... [ 24%]
+.........................................................F.............. [ 33%]
+........................................................................ [ 41%]
+........................................................................ [ 49%]
+........................................................................ [ 58%]
+........................................................................ [ 66%]
+........................................................................ [ 74%]
+........................................................................ [ 83%]
+........................................................................ [ 91%]
+........................................................................ [ 99%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+________ TestValidateOnReplay.test_validate_on_replay_true_passes_valid ________
+
+self = <tests.test_batch4_durable.TestValidateOnReplay object at 0x107b57b60>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_validate_on_replay_true_p0')
+
+    @pytest.mark.asyncio
+    async def test_validate_on_replay_true_passes_valid(self, tmp_path: Path) -> None:
+        """Valid cached output passes validation on replay."""
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+        backend = MockBackend(responses=[json.dumps({"summary": "brief"})])
+>       DurableModule = durable(
+            OneStepModule, store=store, validate_on_replay=True,
+        )
+E       TypeError: durable() got an unexpected keyword argument 'validate_on_replay'
+
+tests/test_batch4_durable.py:73: TypeError
+___________ TestValidateOnReplay.test_validate_on_replay_false_skips ___________
+
+self = <tests.test_batch4_durable.TestValidateOnReplay object at 0x107b89880>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_validate_on_replay_false_0')
+
+    @pytest.mark.asyncio
+    async def test_validate_on_replay_false_skips(self, tmp_path: Path) -> None:
+        """With validate_on_replay=False (default), no re-validation occurs."""
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+        backend = MockBackend(responses=[json.dumps({"summary": "brief"})])
+>       DurableModule = durable(OneStepModule, store=store, validate_on_replay=False)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: durable() got an unexpected keyword argument 'validate_on_replay'
+
+tests/test_batch4_durable.py:95: TypeError
+___________________ TestCheckpointedActivity.test_importable ___________________
+
+self = <tests.test_batch4_durable.TestCheckpointedActivity object at 0x107b891f0>
+
+    def test_importable(self) -> None:
+>       from loop_agent.mismatch import CheckpointedActivity
+E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+
+tests/test_batch4_durable.py:108: ImportError
+__________________ TestCheckpointedActivity.test_construction __________________
+
+self = <tests.test_batch4_durable.TestCheckpointedActivity object at 0x107b88230>
+
+    def test_construction(self) -> None:
+>       from loop_agent.mismatch import CheckpointedActivity
+E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+
+tests/test_batch4_durable.py:113: ImportError
+_________________ TestCheckpointedActivity.test_with_metadata __________________
+
+self = <tests.test_batch4_durable.TestCheckpointedActivity object at 0x107b887d0>
+
+    def test_with_metadata(self) -> None:
+>       from loop_agent.mismatch import ActivityMetadata, CheckpointedActivity
+E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+
+tests/test_batch4_durable.py:127: ImportError
+__________ TestBestEffortMigrate.test_migrate_hook_called_on_mismatch __________
+
+self = <tests.test_batch4_durable.TestBestEffortMigrate object at 0x107b8aba0>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_migrate_hook_called_on_mi0')
+
+    @pytest.mark.asyncio
+    async def test_migrate_hook_called_on_mismatch(self, tmp_path: Path) -> None:
+        """When schema mismatches, migrate_checkpoint is called."""
+>       from loop_agent.mismatch import CheckpointedActivity
+E       ImportError: cannot import name 'CheckpointedActivity' from 'loop_agent.mismatch' (/Users/rand/src/loop-agent/src/loop_agent/mismatch.py)
+
+tests/test_batch4_durable.py:152: ImportError
+______________ TestDurableTimeout.test_timeout_parameter_accepted ______________
+
+self = <tests.test_batch4_durable.TestDurableTimeout object at 0x107b8ad20>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_timeout_parameter_accepte0')
+
+    @pytest.mark.asyncio
+    async def test_timeout_parameter_accepted(self, tmp_path: Path) -> None:
+        """durable() accepts a timeout parameter."""
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+>       DurableModule = durable(
+            OneStepModule, store=store, timeout=timedelta(hours=2),
+        )
+E       TypeError: durable() got an unexpected keyword argument 'timeout'
+
+tests/test_batch4_durable.py:206: TypeError
+_______________ TestDurableTimeout.test_timeout_raises_on_exceed _______________
+
+self = <tests.test_batch4_durable.TestDurableTimeout object at 0x107b88740>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_timeout_raises_on_exceed0')
+
+    @pytest.mark.asyncio
+    async def test_timeout_raises_on_exceed(self, tmp_path: Path) -> None:
+        """Exceeding timeout raises DurableTimeoutError."""
+        from loop_agent.types import DurableTimeoutError
+    
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+>       DurableModule = durable(
+            OneStepModule, store=store, timeout=timedelta(seconds=0),
+        )
+E       TypeError: durable() got an unexpected keyword argument 'timeout'
+
+tests/test_batch4_durable.py:222: TypeError
+________________ TestCheckpointTTL.test_ttl_parameter_accepted _________________
+
+self = <tests.test_batch4_durable.TestCheckpointTTL object at 0x107b89430>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_ttl_parameter_accepted0')
+
+    @pytest.mark.asyncio
+    async def test_ttl_parameter_accepted(self, tmp_path: Path) -> None:
+        """durable() accepts a checkpoint_ttl parameter."""
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+>       DurableModule = durable(
+            OneStepModule, store=store, checkpoint_ttl=timedelta(days=7),
+        )
+E       TypeError: durable() got an unexpected keyword argument 'checkpoint_ttl'
+
+tests/test_batch4_durable.py:260: TypeError
+_________________ TestPostgresCheckpointStore.test_importable __________________
+
+self = <tests.test_batch4_durable.TestPostgresCheckpointStore object at 0x107b8ae70>
+
+    def test_importable(self) -> None:
+>       from loop_agent.durable import PostgresCheckpointStore
+E       ImportError: cannot import name 'PostgresCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+
+tests/test_batch4_durable.py:276: ImportError
+___________ TestPostgresCheckpointStore.test_raises_without_asyncpg ____________
+
+self = <tests.test_batch4_durable.TestPostgresCheckpointStore object at 0x107b8b170>
+
+    def test_raises_without_asyncpg(self) -> None:
+>       from loop_agent.durable import PostgresCheckpointStore
+E       ImportError: cannot import name 'PostgresCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+
+tests/test_batch4_durable.py:281: ImportError
+_________________ TestTemporalCheckpointStore.test_importable __________________
+
+self = <tests.test_batch4_durable.TestTemporalCheckpointStore object at 0x107b8b4d0>
+
+    def test_importable(self) -> None:
+>       from loop_agent.durable import TemporalCheckpointStore
+E       ImportError: cannot import name 'TemporalCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py)
+
+tests/test_batch4_durable.py:291: ImportError
+___________ TestTemporalCheckpointStore.test_raises_not_implemented ____________
+
+self = <tests.test_batch4_durable.TestTemporalCheckpointStore object at 0x107b8b7d0>
+
+    def test_raises_not_implemented(self) -> None:
+>       from loop_agent.durable import TemporalCheckpointStore
+E       ImportError: cannot import name 'TemporalCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py)
+
+tests/test_batch4_durable.py:296: ImportError
+__________________ TestInngestCheckpointStore.test_importable __________________
+
+self = <tests.test_batch4_durable.TestInngestCheckpointStore object at 0x107b8bb30>
+
+    def test_importable(self) -> None:
+>       from loop_agent.durable import InngestCheckpointStore
+E       ImportError: cannot import name 'InngestCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+
+tests/test_batch4_durable.py:306: ImportError
+____________ TestInngestCheckpointStore.test_raises_not_implemented ____________
+
+self = <tests.test_batch4_durable.TestInngestCheckpointStore object at 0x107b8be30>
+
+    def test_raises_not_implemented(self) -> None:
+>       from loop_agent.durable import InngestCheckpointStore
+E       ImportError: cannot import name 'InngestCheckpointStore' from 'loop_agent.durable' (/Users/rand/src/loop-agent/src/loop_agent/durable.py). Did you mean: 'SQLiteCheckpointStore'?
+
+tests/test_batch4_durable.py:311: ImportError
+_______ TestSecretRequiredForResume.test_excluded_field_raises_on_replay _______
+
+self = <tests.test_batch4_durable.TestSecretRequiredForResume object at 0x107bb8200>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-0/test_excluded_field_raises_on_0')
+
+    @pytest.mark.asyncio
+    async def test_excluded_field_raises_on_replay(self, tmp_path: Path) -> None:
+        """Cached [EXCLUDED] values raise SecretRequiredForResume on replay."""
+        from loop_agent.types import SecretRequiredForResume
+    
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+        # Manually insert a checkpoint with [EXCLUDED] field
+        await store.save_activity(
+            run_id="test-run",
+            activity_index=0,
+            module_name="Predict",
+            inputs={"text": "hello"},
+            output={"summary": "[EXCLUDED]"},
+        )
+    
+        DurableModule = durable(OneStepModule, store=store)
+        module = DurableModule(MockBackend(responses=[]))
+        module._run_id = "test-run"
+    
+>       with pytest.raises(SecretRequiredForResume, match="EXCLUDED"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'loop_agent.types.SecretRequiredForResume'>
+
+tests/test_batch4_durable.py:344: Failed
+_______ TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error ________
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x1085a2120>
+
+    def optimize(
+        module: Any,
+        *,
+        metric: Any,
+        trainset: list[dict[str, Any]] | None = None,
+        optimizer: str = "bootstrap",
+        max_rounds: int = 3,
+        safety_gates: OptimizerSafetyGates | None = None,
+    ) -> Any:
+        """Optimize a Module using the specified optimizer strategy. [SPEC-05]
+    
+        This is the top-level optimization API. It creates an AgentVersion snapshot
+        before optimization, runs the optimizer, creates a snapshot after, and
+        validates via safety gates.
+    
+        Supported optimizer strategies:
+        - "bootstrap": Few-shot bootstrap (collects demonstrations from successful runs)
+        - "miprov2": MIPROv2 instruction optimization (requires dspy)
+        - "none": No-op passthrough (for testing the pipeline)
+    
+        Returns the optimized module (or the original if safety gates fail).
+    
+        Raises OptimizerInvariantViolation if safety gates detect invariant changes.
+        """
+        # Snapshot before
+        before = _snapshot_version(module, "before")
+    
+        if optimizer == "none":
+            return module
+    
+        if optimizer == "bootstrap":
+            # Bootstrap few-shot: collect demonstrations from trainset
+            optimized = _bootstrap_optimize(module, trainset or [], max_rounds)
+        elif optimizer == "miprov2":
+            try:
+>               optimized = _dspy_optimize(module, metric, trainset or [], optimizer)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/loop_agent/optimization.py:330: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x1085a2120>
+metric = <function TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.<lambda> at 0x108675260>
+trainset = [], strategy = 'miprov2'
+
+    def _dspy_optimize(
+        module: Any,
+        metric: Any,
+        trainset: list[dict[str, Any]],
+        strategy: str,
+    ) -> Any:
+        """DSPy bridge optimization. Requires dspy-ai package. [SPEC-05]"""
+>       import dspy  # noqa: F401
+        ^^^^^^^^^^^
+E       ModuleNotFoundError: No module named 'dspy'
+
+src/loop_agent/optimization.py:409: ModuleNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError object at 0x107cb5b80>
+
+    def test_miprov2_raises_import_error(self) -> None:
+        from loop_agent.module import Module
+        from loop_agent.optimization import optimize
+    
+        class SimpleSig(Signature):
+            """Simple."""
+    
+            x: str = Field(input=True)
+            y: str = Field(output=True)
+    
+        class SimpleModule(Module):
+            signature = SimpleSig
+    
+            async def aforward(self, **kwargs: Any) -> dict[str, Any]:
+                return {"y": kwargs["x"]}
+    
+        module = SimpleModule()
+    
+        # dspy is installed but the bridge raises NotImplementedError
+        # until the optimizer classes are fully wired (SPEC-05)
+        with pytest.raises(NotImplementedError, match="DSPy"):
+>           optimize(
+                module,
+                metric=lambda x: 1.0,
+                optimizer="miprov2",
+            )
+
+tests/test_coverage_gaps.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x1085a2120>
+
+    def optimize(
+        module: Any,
+        *,
+        metric: Any,
+        trainset: list[dict[str, Any]] | None = None,
+        optimizer: str = "bootstrap",
+        max_rounds: int = 3,
+        safety_gates: OptimizerSafetyGates | None = None,
+    ) -> Any:
+        """Optimize a Module using the specified optimizer strategy. [SPEC-05]
+    
+        This is the top-level optimization API. It creates an AgentVersion snapshot
+        before optimization, runs the optimizer, creates a snapshot after, and
+        validates via safety gates.
+    
+        Supported optimizer strategies:
+        - "bootstrap": Few-shot bootstrap (collects demonstrations from successful runs)
+        - "miprov2": MIPROv2 instruction optimization (requires dspy)
+        - "none": No-op passthrough (for testing the pipeline)
+    
+        Returns the optimized module (or the original if safety gates fail).
+    
+        Raises OptimizerInvariantViolation if safety gates detect invariant changes.
+        """
+        # Snapshot before
+        before = _snapshot_version(module, "before")
+    
+        if optimizer == "none":
+            return module
+    
+        if optimizer == "bootstrap":
+            # Bootstrap few-shot: collect demonstrations from trainset
+            optimized = _bootstrap_optimize(module, trainset or [], max_rounds)
+        elif optimizer == "miprov2":
+            try:
+                optimized = _dspy_optimize(module, metric, trainset or [], optimizer)
+            except ImportError as err:
+>               raise ImportError(
+                    "MIPROv2 optimization requires dspy-ai: pip install dspy-ai"
+                ) from err
+E               ImportError: MIPROv2 optimization requires dspy-ai: pip install dspy-ai
+
+src/loop_agent/optimization.py:332: ImportError
+=========================== short test summary info ============================
+FAILED tests/test_batch4_durable.py::TestValidateOnReplay::test_validate_on_replay_true_passes_valid
+FAILED tests/test_batch4_durable.py::TestValidateOnReplay::test_validate_on_replay_false_skips
+FAILED tests/test_batch4_durable.py::TestCheckpointedActivity::test_importable
+FAILED tests/test_batch4_durable.py::TestCheckpointedActivity::test_construction
+FAILED tests/test_batch4_durable.py::TestCheckpointedActivity::test_with_metadata
+FAILED tests/test_batch4_durable.py::TestBestEffortMigrate::test_migrate_hook_called_on_mismatch
+FAILED tests/test_batch4_durable.py::TestDurableTimeout::test_timeout_parameter_accepted
+FAILED tests/test_batch4_durable.py::TestDurableTimeout::test_timeout_raises_on_exceed
+FAILED tests/test_batch4_durable.py::TestCheckpointTTL::test_ttl_parameter_accepted
+FAILED tests/test_batch4_durable.py::TestPostgresCheckpointStore::test_importable
+FAILED tests/test_batch4_durable.py::TestPostgresCheckpointStore::test_raises_without_asyncpg
+FAILED tests/test_batch4_durable.py::TestTemporalCheckpointStore::test_importable
+FAILED tests/test_batch4_durable.py::TestTemporalCheckpointStore::test_raises_not_implemented
+FAILED tests/test_batch4_durable.py::TestInngestCheckpointStore::test_importable
+FAILED tests/test_batch4_durable.py::TestInngestCheckpointStore::test_raises_not_implemented
+FAILED tests/test_batch4_durable.py::TestSecretRequiredForResume::test_excluded_field_raises_on_replay
+FAILED tests/test_coverage_gaps.py::TestOptimizeMiprov2ImportError::test_miprov2_raises_import_error
+17 failed, 850 passed in 10.10s

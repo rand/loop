@@ -1,0 +1,62 @@
+diff --git a/tests/test_coverage_gaps.py b/tests/test_coverage_gaps.py
+index d916803..a462768 100644
+--- a/tests/test_coverage_gaps.py
++++ b/tests/test_coverage_gaps.py
+@@ -269,9 +269,9 @@ class TestOptimizeMiprov2ImportError:
+ 
+         module = SimpleModule()
+ 
+-        # dspy is installed but the bridge raises NotImplementedError
+-        # until the optimizer classes are fully wired (SPEC-05)
+-        with pytest.raises(NotImplementedError, match="DSPy"):
++        # Without dspy installed we expect ImportError; with dspy installed but
++        # unconfigured the bridge raises NotImplementedError.
++        with pytest.raises((ImportError, NotImplementedError), match="(dspy-ai|DSPy)"):
+             optimize(
+                 module,
+                 metric=lambda x: 1.0,
+diff --git a/tests/test_durable_sensitivity.py b/tests/test_durable_sensitivity.py
+index f9c8652..aa4c7e0 100644
+--- a/tests/test_durable_sensitivity.py
++++ b/tests/test_durable_sensitivity.py
+@@ -20,6 +20,7 @@ from loop_agent.sensitive_context import SensitiveContext
+ from loop_agent.sensitive_filter import CheckpointFilter
+ from loop_agent.sensitivity import Sensitivity
+ from loop_agent.signature import Field, Signature
++from loop_agent.types import SecretRequiredForResume
+ 
+ 
+ class PatientSig(Signature):
+@@ -94,8 +95,8 @@ class TestDurableCheckpointFilterIntegration:
+         assert stored_output["summary"] == "routine visit"
+ 
+     @pytest.mark.asyncio
+-    async def test_replay_decrypts_pii(self, tmp_path: Path) -> None:
+-        """On replay, PII/PHI fields should be decrypted back to plaintext."""
++    async def test_replay_with_secret_requires_resume_secret(self, tmp_path: Path) -> None:
++        """On replay, SECRET fields excluded from checkpoints must be re-supplied."""
+         store = SQLiteCheckpointStore(tmp_path / "test.db")
+         await store.initialize()
+ 
+@@ -129,19 +130,12 @@ class TestDurableCheckpointFilterIntegration:
+             module2 = DurablePatient2(backend=backend2)
+             module2._run_id = run_id
+ 
+-            result2 = await module2.run(query="check")
++            with pytest.raises(SecretRequiredForResume, match="must be re-supplied"):
++                await module2.run(query="check")
+ 
+         # Backend should NOT have been called (replay)
+         assert len(backend2.requests) == 0
+ 
+-        # Decrypted values should match original
+-        data = result2.model_dump()
+-        assert data["patient_name"] == "Jane Smith"
+-        assert data["diagnosis"] == "hypertension"
+-        assert data["summary"] == "follow-up"
+-        # SECRET was excluded, so it becomes "[EXCLUDED]" string
+-        assert data["api_key"] == "[EXCLUDED]"
+-
+     @pytest.mark.asyncio
+     async def test_no_filter_stores_raw(self, tmp_path: Path) -> None:
+         """Without checkpoint_filter, values stored as-is (backwards compat)."""

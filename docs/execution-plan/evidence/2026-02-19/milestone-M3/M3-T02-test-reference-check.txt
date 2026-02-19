@@ -1,0 +1,45 @@
+-- signature derive tests
+676:    mod derive_tests {
+-- signature validation tests
+408:mod tests {
+413:    fn test_validate_fields_success() {
+424:    fn test_validate_fields_missing_required() {
+440:    fn test_validate_fields_optional_missing() {
+451:    fn test_validate_fields_type_mismatch() {
+464:    fn test_validate_enum() {
+483:    fn test_validate_list() {
+495:    fn test_validate_nested_object() {
+520:    fn test_apply_defaults() {
+534:    fn test_error_user_message() {
+545:    fn test_nested_error_path() {
+554:    fn test_serialization() {
+-- signature submit tests
+379:mod tests {
+383:    fn test_submit_result_success() {
+390:    fn test_submit_result_validation_error() {
+398:    fn test_submit_error_messages() {
+422:    fn test_submit_error_from_validation_error() {
+432:    fn test_signature_registration() {
+444:    fn test_serialization() {
+-- python submit tests
+199:class TestReplServer:
+285:    def test_submit_without_signature_returns_validation_error(self):
+303:    def test_submit_with_registered_signature_success(self):
+323:    def test_submit_missing_field_returns_structured_error(self):
+344:    def test_submit_type_mismatch_returns_structured_error(self):
+-- rust submit roundtrip tests
+601:    fn test_submit_result_roundtrip_success() {
+629:    fn test_submit_result_roundtrip_validation_error() {
+661:    fn test_submit_result_roundtrip_no_signature() {
+686:    fn test_submit_result_roundtrip_type_mismatch() {
+718:    fn test_submit_result_roundtrip_multiple_submits() {
+-- module compose tests
+304:mod tests {
+311:    fn test_chain_name_format() {
+320:    fn test_parallel_name_format() {
+-- module predict tests
+379:mod tests {
+415:    fn test_predict_creation() {
+422:    fn test_predict_config() {
+434:    fn test_system_prompt_generation() {
+445:    fn test_format_inputs() {

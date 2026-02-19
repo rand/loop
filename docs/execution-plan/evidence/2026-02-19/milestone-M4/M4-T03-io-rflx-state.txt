@@ -1,0 +1,12 @@
+# M4-T03 io-rflx repo state
+UTC 2026-02-19 19:14:06
+
+main
+abf11ca4069bac7a740508d02242114483a6cf51
+ M .beads/.gitignore
+ M .beads/dolt/beads/.dolt/noms/journal.idx
+ M .beads/dolt/beads/.dolt/noms/manifest
+ M .beads/dolt/beads/.dolt/noms/vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+ M .beads/issues.jsonl
+ M .beads/metadata.json
+ M crates/rflx-core/src/memory_store.rs

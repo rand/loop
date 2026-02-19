@@ -1,0 +1,234 @@
+safe_run: heavy command admitted (available=5268MiB, threshold=4096MiB)
+WARN Failed to acquire environment lock: Could not create temporary file
+........................................................................ [  8%]
+........................................................................ [ 16%]
+........................................................................ [ 24%]
+.........................................................F.............. [ 33%]
+............F........................................................... [ 41%]
+........................................................................ [ 49%]
+........................................................................ [ 58%]
+........................................................................ [ 66%]
+........................................................................ [ 74%]
+........................................................................ [ 83%]
+........................................................................ [ 91%]
+........................................................................ [ 99%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+_______ TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error ________
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x108b62ab0>
+
+    def optimize(
+        module: Any,
+        *,
+        metric: Any,
+        trainset: list[dict[str, Any]] | None = None,
+        optimizer: str = "bootstrap",
+        max_rounds: int = 3,
+        safety_gates: OptimizerSafetyGates | None = None,
+    ) -> Any:
+        """Optimize a Module using the specified optimizer strategy. [SPEC-05]
+    
+        This is the top-level optimization API. It creates an AgentVersion snapshot
+        before optimization, runs the optimizer, creates a snapshot after, and
+        validates via safety gates.
+    
+        Supported optimizer strategies:
+        - "bootstrap": Few-shot bootstrap (collects demonstrations from successful runs)
+        - "miprov2": MIPROv2 instruction optimization (requires dspy)
+        - "none": No-op passthrough (for testing the pipeline)
+    
+        Returns the optimized module (or the original if safety gates fail).
+    
+        Raises OptimizerInvariantViolation if safety gates detect invariant changes.
+        """
+        # Snapshot before
+        before = _snapshot_version(module, "before")
+    
+        if optimizer == "none":
+            return module
+    
+        if optimizer == "bootstrap":
+            # Bootstrap few-shot: collect demonstrations from trainset
+            optimized = _bootstrap_optimize(module, trainset or [], max_rounds)
+        elif optimizer == "miprov2":
+            try:
+>               optimized = _dspy_optimize(module, metric, trainset or [], optimizer)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/loop_agent/optimization.py:330: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x108b62ab0>
+metric = <function TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.<lambda> at 0x108ca4720>
+trainset = [], strategy = 'miprov2'
+
+    def _dspy_optimize(
+        module: Any,
+        metric: Any,
+        trainset: list[dict[str, Any]],
+        strategy: str,
+    ) -> Any:
+        """DSPy bridge optimization. Requires dspy-ai package. [SPEC-05]"""
+>       import dspy  # noqa: F401
+        ^^^^^^^^^^^
+E       ModuleNotFoundError: No module named 'dspy'
+
+src/loop_agent/optimization.py:409: ModuleNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError object at 0x107e703e0>
+
+    def test_miprov2_raises_import_error(self) -> None:
+        from loop_agent.module import Module
+        from loop_agent.optimization import optimize
+    
+        class SimpleSig(Signature):
+            """Simple."""
+    
+            x: str = Field(input=True)
+            y: str = Field(output=True)
+    
+        class SimpleModule(Module):
+            signature = SimpleSig
+    
+            async def aforward(self, **kwargs: Any) -> dict[str, Any]:
+                return {"y": kwargs["x"]}
+    
+        module = SimpleModule()
+    
+        # dspy is installed but the bridge raises NotImplementedError
+        # until the optimizer classes are fully wired (SPEC-05)
+        with pytest.raises(NotImplementedError, match="DSPy"):
+>           optimize(
+                module,
+                metric=lambda x: 1.0,
+                optimizer="miprov2",
+            )
+
+tests/test_coverage_gaps.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <tests.test_coverage_gaps.TestOptimizeMiprov2ImportError.test_miprov2_raises_import_error.<locals>.SimpleModule object at 0x108b62ab0>
+
+    def optimize(
+        module: Any,
+        *,
+        metric: Any,
+        trainset: list[dict[str, Any]] | None = None,
+        optimizer: str = "bootstrap",
+        max_rounds: int = 3,
+        safety_gates: OptimizerSafetyGates | None = None,
+    ) -> Any:
+        """Optimize a Module using the specified optimizer strategy. [SPEC-05]
+    
+        This is the top-level optimization API. It creates an AgentVersion snapshot
+        before optimization, runs the optimizer, creates a snapshot after, and
+        validates via safety gates.
+    
+        Supported optimizer strategies:
+        - "bootstrap": Few-shot bootstrap (collects demonstrations from successful runs)
+        - "miprov2": MIPROv2 instruction optimization (requires dspy)
+        - "none": No-op passthrough (for testing the pipeline)
+    
+        Returns the optimized module (or the original if safety gates fail).
+    
+        Raises OptimizerInvariantViolation if safety gates detect invariant changes.
+        """
+        # Snapshot before
+        before = _snapshot_version(module, "before")
+    
+        if optimizer == "none":
+            return module
+    
+        if optimizer == "bootstrap":
+            # Bootstrap few-shot: collect demonstrations from trainset
+            optimized = _bootstrap_optimize(module, trainset or [], max_rounds)
+        elif optimizer == "miprov2":
+            try:
+                optimized = _dspy_optimize(module, metric, trainset or [], optimizer)
+            except ImportError as err:
+>               raise ImportError(
+                    "MIPROv2 optimization requires dspy-ai: pip install dspy-ai"
+                ) from err
+E               ImportError: MIPROv2 optimization requires dspy-ai: pip install dspy-ai
+
+src/loop_agent/optimization.py:332: ImportError
+_______ TestDurableCheckpointFilterIntegration.test_replay_decrypts_pii ________
+
+self = <tests.test_durable_sensitivity.TestDurableCheckpointFilterIntegration object at 0x107ec0b00>
+tmp_path = PosixPath('/private/var/folders/vx/_xxfn0z95bv7qmfgb3nx6z700000gn/T/pytest-of-rand/pytest-12/test_replay_decrypts_pii0')
+
+    @pytest.mark.asyncio
+    async def test_replay_decrypts_pii(self, tmp_path: Path) -> None:
+        """On replay, PII/PHI fields should be decrypted back to plaintext."""
+        store = SQLiteCheckpointStore(tmp_path / "test.db")
+        await store.initialize()
+    
+        with SensitiveContext() as ctx:
+            cf = CheckpointFilter(ctx, encryption_key=b"replay-key")
+    
+            backend = MockBackend(responses=[json.dumps({
+                "patient_name": "Jane Smith",
+                "diagnosis": "hypertension",
+                "api_key": "sk-key",
+                "summary": "follow-up",
+            })])
+    
+            DurablePatient = durable(
+                PatientModule, store=store, checkpoint_filter=cf,
+            )
+    
+            # First run: execute and checkpoint
+            module1 = DurablePatient(backend=backend)
+            await module1.run(query="check")
+            run_id = module1._run_id
+    
+        # Second run: replay from checkpoint (same filter, same key)
+        with SensitiveContext() as ctx2:
+            cf2 = CheckpointFilter(ctx2, encryption_key=b"replay-key")
+    
+            backend2 = MockBackend(responses=[])  # Empty — should not be called
+            DurablePatient2 = durable(
+                PatientModule, store=store, checkpoint_filter=cf2,
+            )
+            module2 = DurablePatient2(backend=backend2)
+            module2._run_id = run_id
+    
+>           result2 = await module2.run(query="check")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_durable_sensitivity.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/loop_agent/durable.py:399: in run
+    return await super().run(**kwargs)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/loop_agent/module.py:120: in run
+    raw_output = await self.aforward(**validated_input.model_dump())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_durable_sensitivity.py:45: in aforward
+    result = await self.step.run(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/loop_agent/durable.py:270: in run
+    self._check_excluded_fields(result["output"])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+output = {'api_key': '[EXCLUDED]', 'diagnosis': 'FERNET:gAAAAABpl280N8MjH2Iyb5NEMhTTyHSaopNhQVJipia--SEyh6-GbhLhSeQU3mDA2eGgkm5...pl280mdMD7mtyym6GctnU567NaOQr6DZpU2ymPu1nRrm-0GjAxHZxFBU7ZRDQ31HdZPvjYUDEYvEpsFgoqJ88fMQl3g==', 'summary': 'follow-up'}
+
+    @staticmethod
+    def _check_excluded_fields(output: dict[str, Any]) -> None:
+        """Raise SecretRequiredForResume if [EXCLUDED] values found. [SPEC-04]"""
+        for field_name, value in output.items():
+            if value == "[EXCLUDED]":
+>               raise SecretRequiredForResume(
+                    f"Field '{field_name}' contains [EXCLUDED] SECRET value. "
+                    "SECRET fields must be re-supplied on resume."
+                )
+E               loop_agent.types.SecretRequiredForResume: Field 'api_key' contains [EXCLUDED] SECRET value. SECRET fields must be re-supplied on resume.
+
+src/loop_agent/durable.py:256: SecretRequiredForResume
+=========================== short test summary info ============================
+FAILED tests/test_coverage_gaps.py::TestOptimizeMiprov2ImportError::test_miprov2_raises_import_error
+FAILED tests/test_durable_sensitivity.py::TestDurableCheckpointFilterIntegration::test_replay_decrypts_pii
+2 failed, 865 passed in 18.50s

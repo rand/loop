@@ -1,0 +1,21 @@
+M4 compatibility pipeline starting
+date: UTC 2026-02-19 20:41:08
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4
+loop_min_available_mib: 4096
+run_la_full_snapshot: 1
+pipeline_strict: 0
+
+rcc_pytest_cmd: /Users/rand/src/rlm-claude-code/.venv/bin/pytest
+la_pytest_cmd: /Users/rand/src/loop-agent/.venv/bin/pytest
+
+[VG-RCC-001] running...
+[VG-RCC-001] fail -> /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-RCC-001.txt
+[VG-LA-001] running...
+[VG-LA-001] pass -> /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-LA-001.txt
+[VG-LA-002] running advisory full-suite snapshot...
+[VG-LA-002] advisory snapshot is green
+[VG-RFLX-001] running...
+[VG-RFLX-001] fail -> /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-RFLX-001.txt
+
+M4 compatibility pipeline completed with required gate failures
+summary: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-pipeline-summary.md

@@ -1,0 +1,290 @@
+safe_run: heavy command admitted (available=6686MiB, threshold=6144MiB)
+   Compiling rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> src/module/compose.rs:305:9
+    |
+305 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:605:13
+    |
+605 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_field`, and `output` are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             output: String,
+    |             ^^^^^^
+
+warning: `rlm-core` (lib test) generated 9 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.35s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-03e7e08dcec83f0e)
+
+running 568 tests
+test adapters::claude_code::adapter::tests::test_adapter_creation ... ok
+test adapters::claude_code::adapter::tests::test_adapter_status ... ok
+test adapters::claude_code::adapter::tests::test_available_tools ... ok
+test adapters::claude_code::adapter::tests::test_execute_activate ... ok
+test adapters::claude_code::adapter::tests::test_execute_skip ... ok
+test adapters::claude_code::adapter::tests::test_export_skills ... ok
+test adapters::claude_code::adapter::tests::test_export_tools_schema ... ok
+test adapters::claude_code::adapter::tests::test_find_skills ... ok
+test adapters::claude_code::adapter::tests::test_handle_pre_compact ... ok
+test adapters::claude_code::adapter::tests::test_handle_prompt_submit ... ok
+test adapters::claude_code::adapter::tests::test_handle_session_start ... ok
+test adapters::claude_code::adapter::tests::test_mode_change ... ok
+test adapters::claude_code::adapter::tests::test_store_and_query_memory ... ok
+test adapters::claude_code::hooks::tests::test_hook_context_builder ... ok
+test adapters::claude_code::hooks::tests::test_hook_registry ... ok
+test adapters::claude_code::hooks::tests::test_hook_result_abort ... ok
+test adapters::claude_code::hooks::tests::test_hook_result_fail ... ok
+test adapters::claude_code::hooks::tests::test_hook_result_ok ... ok
+test adapters::claude_code::hooks::tests::test_hook_trigger_display ... ok
+test adapters::claude_code::hooks::tests::test_prompt_analysis_handler ... ok
+test adapters::claude_code::hooks::tests::test_session_start_handler ... ok
+test adapters::claude_code::mcp::tests::test_mcp_tool_creation ... ok
+test adapters::claude_code::mcp::tests::test_mcp_tool_with_schema ... ok
+test adapters::claude_code::mcp::tests::test_registry_default_tools ... ok
+test adapters::claude_code::mcp::tests::test_registry_execute ... ok
+test adapters::claude_code::mcp::tests::test_registry_execute_unknown ... ok
+test adapters::claude_code::mcp::tests::test_registry_export_schema ... ok
+test adapters::claude_code::mcp::tests::test_registry_tools_by_category ... ok
+test adapters::claude_code::mcp::tests::test_tool_example ... ok
+test adapters::claude_code::skills::tests::test_builtin_skills ... ok
+test adapters::claude_code::skills::tests::test_registry_by_category ... ok
+test adapters::claude_code::skills::tests::test_registry_defaults ... ok
+test adapters::claude_code::skills::tests::test_registry_export ... ok
+test adapters::claude_code::skills::tests::test_registry_find_matching ... ok
+test adapters::claude_code::skills::tests::test_skill_creation ... ok
+test adapters::claude_code::skills::tests::test_skill_disabled ... ok
+test adapters::claude_code::skills::tests::test_skill_matches_keyword ... ok
+test adapters::claude_code::skills::tests::test_skill_matches_trigger ... ok
+test adapters::claude_code::types::tests::test_adapter_config_default ... ok
+test adapters::claude_code::types::tests::test_adapter_config_testing ... ok
+test adapters::claude_code::types::tests::test_compact_data_builder ... ok
+test adapters::claude_code::types::tests::test_prompt_enhancement ... ok
+test adapters::claude_code::types::tests::test_rlm_request_builder ... ok
+test adapters::claude_code::types::tests::test_rlm_response_skip ... ok
+test adapters::claude_code::types::tests::test_rlm_response_success ... ok
+test adapters::claude_code::types::tests::test_session_context_builder ... ok
+test adapters::tui::adapter::tests::test_adapter_creation ... ok
+test adapters::tui::adapter::tests::test_budget_recording ... ok
+test adapters::tui::adapter::tests::test_config_builder ... ok
+test adapters::tui::adapter::tests::test_event_subscription ... ok
+test adapters::tui::adapter::tests::test_execution_lifecycle ... ok
+test adapters::tui::adapter::tests::test_reset ... ok
+test adapters::tui::adapter::tests::test_trajectory_processing ... ok
+test adapters::tui::events::tests::test_alert_level_from_budget_alert ... ok
+test adapters::tui::events::tests::test_budget_update ... ok
+test adapters::tui::events::tests::test_event_bridge_creation ... ok
+test adapters::tui::events::tests::test_event_bridge_emit ... ok
+test adapters::tui::events::tests::test_event_bridge_subscribe ... ok
+test adapters::tui::events::tests::test_execution_status_display ... ok
+test adapters::tui::events::tests::test_status_update ... ok
+test adapters::tui::events::tests::test_tui_event_serialization ... ok
+test adapters::tui::events::tests::test_tui_event_type_name ... ok
+test adapters::tui::panels::tests::test_budget_panel_limits ... ok
+test adapters::tui::panels::tests::test_event_style_from_type ... ok
+test adapters::tui::panels::tests::test_repl_entry_creation ... ok
+test adapters::tui::panels::tests::test_repl_panel_success_rate ... ok
+test adapters::tui::panels::tests::test_tier_counts ... ok
+test adapters::tui::panels::tests::test_trace_panel_data ... ok
+test adapters::tui::panels::tests::test_truncate_preview ... ok
+test complexity::tests::test_active_signals ... ok
+test complexity::tests::test_classifier_complex_query ... ok
+test complexity::tests::test_classifier_multi_file ... ok
+test complexity::tests::test_classifier_simple_query ... ok
+test complexity::tests::test_classifier_thorough_override ... ok
+test complexity::tests::test_classifier_user_wants_fast ... ok
+test complexity::tests::test_force_activation ... ok
+test complexity::tests::test_signals_score ... ok
+test context::externalize::tests::test_context_variable_creation ... ok
+test context::externalize::tests::test_context_variable_requires_chunking ... ok
+test context::externalize::tests::test_context_variable_size_warning ... ok
+test context::externalize::tests::test_externalization_config ... ok
+test context::externalize::tests::test_externalized_context_from_session ... ok
+test context::externalize::tests::test_growth_rate ... ok
+test context::externalize::tests::test_helper_module_generation ... ok
+test context::externalize::tests::test_repl_setup_code ... ok
+test context::externalize::tests::test_root_prompt_generation ... ok
+test context::externalize::tests::test_size_tracker ... ok
+test context::types::tests::test_last_messages ... ok
+test context::types::tests::test_message_creation ... ok
+test context::types::tests::test_message_with_metadata ... ok
+test context::types::tests::test_session_context ... ok
+test context::types::tests::test_spans_multiple_directories ... ok
+test context::types::tests::test_tool_output ... ok
+test dp_integration::commands::tests::test_command_result ... ok
+test dp_integration::commands::tests::test_extract_spec_arg ... ok
+test dp_integration::commands::tests::test_parse_coverage_command ... ok
+test dp_integration::commands::tests::test_parse_list_command ... ok
+test dp_integration::commands::tests::test_parse_review_command ... ok
+test dp_integration::commands::tests::test_parse_show_command ... ok
+test dp_integration::commands::tests::test_parse_verify_command ... ok
+test dp_integration::coverage::tests::test_coverage_tracker ... ok
+test dp_integration::coverage::tests::test_extract_specs_from_markdown ... ok
+test dp_integration::coverage::tests::test_extract_test_traces ... ok
+test dp_integration::coverage::tests::test_extract_theorems_from_lean ... ok
+test dp_integration::proof_status::tests::test_proof_evidence_status_update ... ok
+test dp_integration::proof_status::tests::test_proof_statistics ... ok
+test dp_integration::proof_status::tests::test_scan_lean_content ... ok
+test dp_integration::review::tests::test_critical_specs_fail ... ok
+test dp_integration::review::tests::test_critical_specs_pass ... ok
+test dp_integration::review::tests::test_formalization_coverage_fail ... ok
+test dp_integration::review::tests::test_formalization_coverage_pass ... ok
+test dp_integration::review::tests::test_review_issue_builder ... ok
+test dp_integration::review::tests::test_sorry_blocking ... ok
+test dp_integration::review::tests::test_sorry_non_blocking ... ok
+test dp_integration::review::tests::test_strict_config ... ok
+test dp_integration::types::tests::test_coverage_summary ... ok
+test dp_integration::types::tests::test_proof_status ... ok
+test dp_integration::types::tests::test_spec_coverage_status ... ok
+test dp_integration::types::tests::test_spec_id_format ... ok
+test dp_integration::types::tests::test_spec_id_parse ... ok
+test dp_integration::types::tests::test_theorem_info ... ok
+test epistemic::claims::tests::test_basic_extraction ... ok
+test epistemic::claims::tests::test_category_classification ... ok
+test epistemic::claims::tests::test_empty_input ... ok
+test epistemic::claims::tests::test_evidence_linking ... ok
+test epistemic::claims::tests::test_hedged_claims ... ok
+test epistemic::claims::tests::test_high_specificity_filter ... ok
+test epistemic::claims::tests::test_meta_commentary_skip ... ok
+test epistemic::claims::tests::test_sentence_splitting ... ok
+test epistemic::claims::tests::test_short_claims_filtered ... ok
+test epistemic::claims::tests::test_skip_questions ... ok
+test epistemic::claims::tests::test_specificity_estimation ... ok
+test epistemic::kl::tests::test_aggregate_bits ... ok
+test epistemic::kl::tests::test_aggregate_with_correlation ... ok
+test epistemic::kl::tests::test_bernoulli_kl_asymmetric ... ok
+test epistemic::kl::tests::test_bernoulli_kl_extreme ... ok
+test epistemic::kl::tests::test_bernoulli_kl_positive ... ok
+test epistemic::kl::tests::test_bernoulli_kl_same_distribution ... ok
+test epistemic::kl::tests::test_binary_entropy ... ok
+test epistemic::kl::tests::test_jeffreys_symmetric ... ok
+test epistemic::kl::tests::test_jensen_shannon_bounded ... ok
+test epistemic::kl::tests::test_jensen_shannon_symmetric ... ok
+test epistemic::kl::tests::test_kl_interval ... ok
+test epistemic::kl::tests::test_kl_interval_bounds_valid ... ok
+test epistemic::kl::tests::test_kl_interval_contains_estimate ... ok
+test epistemic::kl::tests::test_mutual_information ... ok
+test epistemic::kl::tests::test_required_bits ... ok
+test epistemic::kl::tests::test_surprise ... ok
+test epistemic::memory_gate::tests::test_config_presets ... ok
+test epistemic::memory_gate::tests::test_gate_stats ... ok
+test epistemic::memory_gate::tests::test_requires_verification ... ok
+test epistemic::memory_gate::tests::test_threshold_gate_hedge_words ... ok
+test epistemic::memory_gate::tests::test_threshold_gate_low_confidence ... ok
+test epistemic::memory_gate::tests::test_threshold_gate_universal_claim ... ok
+test epistemic::proptest::tests::budget_gap_is_difference ... ok
+test epistemic::proptest::tests::confidence_is_bounded ... ok
+test epistemic::proptest::tests::cross_entropy_geq_entropy ... ok
+test epistemic::proptest::tests::entropy_at_half_is_one_bit ... ok
+test epistemic::proptest::tests::entropy_bits_conversion_is_correct ... ok
+test epistemic::proptest::tests::entropy_is_non_negative ... ok
+test epistemic::proptest::tests::entropy_is_symmetric ... ok
+test epistemic::proptest::tests::entropy_maximized_at_half ... ok
+test epistemic::proptest::tests::grounding_status_consistent_with_gap ... ok
+test epistemic::proptest::tests::is_grounded_matches_gap ... ok
+test epistemic::proptest::tests::js_is_bounded ... ok
+test epistemic::proptest::tests::js_is_symmetric ... ok
+test epistemic::proptest::tests::js_is_zero_for_identical ... ok
+test epistemic::proptest::tests::kl_bits_conversion_is_correct ... ok
+test epistemic::proptest::tests::kl_divergence_is_non_negative ... ok
+test epistemic::proptest::tests::kl_divergence_is_zero_for_identical ... ok
+test epistemic::proptest::tests::kl_equals_cross_minus_entropy ... ok
+test epistemic::proptest::tests::kl_interval_bounds_are_valid ... ok
+test epistemic::proptest::tests::kl_interval_estimate_matches_direct ... ok
+test epistemic::proptest::tests::kl_is_asymmetric ... ok
+test epistemic::proptest::tests::kl_positive_when_different ... ok
+test epistemic::proptest::tests::more_samples_reduce_uncertainty ... ok
+test epistemic::proptest::tests::observed_bits_uses_kl ... ok
+test epistemic::proptest::tests::probability_from_samples_has_valid_bounds ... ok
+test epistemic::proptest::tests::probability_point_has_no_uncertainty ... ok
+test epistemic::scrubber::tests::test_aggressive_scrub ... ok
+test epistemic::scrubber::tests::test_custom_pattern ... ok
+test epistemic::scrubber::tests::test_empty_scrub ... ok
+test epistemic::scrubber::tests::test_items_by_type ... ok
+test epistemic::scrubber::tests::test_p0_prompt_creation ... error: test failed, to rerun pass `--lib`
+
+Caused by:
+  process didn't exit successfully: `/Users/rand/src/loop/rlm-core/target/debug/deps/rlm_core-03e7e08dcec83f0e --test-threads=1` (signal: 15, SIGTERM: termination signal)
