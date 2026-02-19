@@ -72,7 +72,7 @@ Required validation:
 - VG-LA-001 seam-critical compatibility tests.
 - VG-LA-002 full-suite snapshot (advisory while `loop-agent` is under active development).
 - D-014 defines objective criteria for future promotion of `VG-LA-002` from advisory to release-blocking.
-- D-016 records candidate-tuple satisfaction of those criteria; canonical landing is tracked separately.
+- D-016 records candidate-tuple satisfaction of those criteria; D-018 records clean-clone canonical stabilization evidence on `loop-agent@30c1fa`.
 
 ## Consumer C: `io-rflx`
 

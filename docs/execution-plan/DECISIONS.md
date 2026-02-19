@@ -221,7 +221,7 @@ Use this file for architecture and contract decisions that affect more than one 
 
 ## D-016 `VG-LA-002` Promotion Criteria Satisfied on Candidate Tuple
 
-- Status: Accepted
+- Status: Superseded (by D-018)
 - Date: 2026-02-19
 - Context: loop-8th produced three consecutive green `VG-LA-002` runs on committed candidate tuple `f2aeb18` in `/tmp/loop-agent-clean` (`867 passed` each run).
 - Decision:
@@ -242,11 +242,26 @@ Use this file for architecture and contract decisions that affect more than one 
 - Until canonical `loop-agent` stabilization is declared, compatibility claims must use `clean_clone_committed` tuple mode only.
 - Required gate evidence for `VG-LA-001` and advisory snapshots for `VG-LA-002` must run from a clean clone checked out at committed canonical SHA.
 - Canonical working-tree runs may be used for local triage, but they do not qualify as compatibility-claim evidence.
-- Policy can be lifted only after `loop-5va` canonical landing and rerun evidence is complete with a clean canonical working tree.
+- Policy can be lifted only by explicit decision update after canonical committed tuple stability is verified and canonical working-tree drift risk is cleared.
 - Consequences:
 - Prevents tuple evidence drift from uncommitted or untracked canonical changes.
 - Keeps cadence packets reproducible and auditable across sessions/agents.
 - Makes the boundary between diagnostic and claim-grade evidence explicit.
+- Impacted tasks/gates: loop-5va, Ops-Weekly, VG-LA-001, VG-LA-002, VG-CONTRACT-001.
+
+## D-018 `loop-agent` Canonical Stabilization Supersedes Candidate-Landing Objective
+
+- Status: Accepted
+- Date: 2026-02-19
+- Context: `loop-5va` originally targeted landing candidate commit `f2aeb18` into canonical `loop-agent`. Canonical advanced independently to committed SHA `30c1fa`, and clean-clone tuple validation on that canonical SHA reports `VG-LA-001: 30 passed` and advisory `VG-LA-002: 936 passed`.
+- Decision:
+- Treat canonical committed tuple `30c1fa` as the active stabilized baseline for `loop-agent` compatibility claims.
+- Mark the candidate-landing objective from `loop-5va` as superseded by newer canonical committed history plus fresh clean-clone evidence.
+- Keep D-017 claim-source policy active until canonical working-tree drift risk is cleared or explicitly re-scoped.
+- Consequences:
+- Avoids unnecessary cherry-pick/landing work against stale candidate history.
+- Reanchors support policy and gate claims on the latest validated committed canonical tuple.
+- Preserves reproducibility by requiring clean-clone claim runs despite canonical local working-tree churn.
 - Impacted tasks/gates: loop-5va, Ops-Weekly, VG-LA-001, VG-LA-002, VG-CONTRACT-001.
 
 ## Update Rule

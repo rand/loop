@@ -19,7 +19,7 @@ Single source of truth for execution tasks and dependencies.
 
 | Rank | Task ID | Status | Why Next |
 |---|---|---|---|
-| 1 | loop-5va | in_progress | Land committed candidate tuple into canonical loop-agent repo and refresh baseline evidence (D-017 requires clean-clone committed tuple mode until landing stabilizes) |
+| 1 | loop-5va | done | Candidate-landing objective superseded by canonical committed tuple `30c1fa` validated in clean-clone mode (`VG-LA-001` + advisory `VG-LA-002` both green); D-017 remains active for claim-source policy |
 
 ## M0 Tasks (Foundation and Contracts)
 

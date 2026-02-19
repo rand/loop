@@ -33,4 +33,4 @@ Implement and document temporary policy D-017: use committed clean-clone tuples 
 ## Notes
 
 - No heavy cross-repo gates were executed in this step to preserve machine stability.
-- Canonical landing/rerun remains tracked under `loop-5va`.
+- Canonical reconciliation and validation are captured in `loop-5va-validation-summary.md`.

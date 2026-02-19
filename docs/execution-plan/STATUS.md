@@ -33,7 +33,7 @@ Last updated: 2026-02-19
 | F6 | Cross-repo coupling risk | `rlm-claude-code` is hard-coupled and vendored; other consumers are active integration targets | M4 |
 | F7 | Full `rlm-core` test suite had multiple failures | Resolved by M1-T05 targeted triage + full gate rerun (`M1-T05-VG-LOOP-CORE-001-r3.txt`) | M1 |
 | F8 | Prior OOM event during parallel execution | Safe mode activated with serialized heavy commands and memory admission checks | Program-wide |
-| F9 | `loop-agent` full-suite stability recovered on candidate committed tuple | `VG-LA-002` reached `867 passed, 0 failed` for 3 consecutive committed candidate snapshots (`f2aeb18`); D-016 accepted candidate-scope promotion evidence, and D-017 now constrains claim-grade evidence to clean-clone committed tuples until canonical landing stabilizes | M4/M6 |
+| F9 | `loop-agent` full-suite stability is now demonstrated on committed canonical tuple | Candidate tuple `f2aeb18` satisfied D-014/D-015 evidence, and clean-clone validation on canonical `30c1fa` reports `VG-LA-001: 30 passed` and `VG-LA-002: 936 passed`; D-017 remains active for claim-source hygiene | M4/M6 |
 | F10 | No executable performance gate harness for REPL startup/batch throughput | Resolved by M5-T01 (`run_m5_perf_harness.sh` + VG-PERF artifacts) | M5 |
 | F11 | Efficacy scenario suite lacked explicit mixed batch and fallback-non-submit coverage | Resolved by M5-T02 scenario matrix + targeted tests (`45 passed`) | M5 |
 | F12 | No baseline-vs-candidate performance/efficacy rollup report | Resolved by M5-T03 comparative analysis report with regression check | M5 |
@@ -43,8 +43,7 @@ Last updated: 2026-02-19
 | ID | Blocker | Impact | Exit Condition |
 |---|---|---|---|
 | B5 | Memory safety risk under parallel heavy workloads | Can crash machine and lose session state | D-007 controls enforced + safe wrapper used for all heavy commands |
-| B7 | Committed `loop-agent` candidate tuple is not yet landed in canonical consumer tree | Delays converting candidate evidence into canonical consumer compatibility baseline | Apply committed candidate into `/Users/rand/src/loop-agent` canonical state and rerun cadence packet (tracked in `loop-5va`) |
-| B8 | Canonical `loop-agent` working tree may drift from claim-grade tuple state during active development | Can produce non-reproducible compatibility claims if canonical working tree is used directly | Enforce D-017 clean-clone committed tuple policy until `loop-5va` stabilization evidence is complete |
+| B8 | Canonical `loop-agent` working tree may drift from claim-grade tuple state during active development | Can produce non-reproducible compatibility claims if canonical working tree is used directly | Enforce D-017 clean-clone committed tuple policy until canonical working tree is clean or policy is explicitly updated |
 
 ## Resolved This Session
 
@@ -81,20 +80,20 @@ Last updated: 2026-02-19
 | R29 | loop-8th eliminated local `VG-LA-002` failures (3 consecutive green snapshots) and added D-015 committed-tuple promotion guardrail | `evidence/2026-02-19/milestone-M6/loop-8th-validation-summary.md` |
 | R30 | loop-8th completed D-014+D-015 evidence sequence on committed candidate tuple `f2aeb18` (3/3 green) | `evidence/2026-02-19/milestone-M6/loop-8th-VG-LA-002-sequence.md` |
 | R31 | Enforced D-017 policy in cadence tooling: `loop-agent` compatibility claims now run from clean-clone committed tuple mode only | `evidence/2026-02-19/milestone-M6/loop-5va-clean-clone-policy-summary.md` |
+| R32 | loop-5va canonical reconciliation completed: clean-clone tuple on canonical `30c1fa` is green for seam and full-suite snapshots (`30 passed`, `936 passed`) and supersedes candidate-landing objective | `evidence/2026-02-19/milestone-M6/loop-5va-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
 | P0 | Ops-Weekly | Run compatibility/spec/contract cadence per `MAINTENANCE-CADENCE.md` |
-| P1 | loop-5va | Land committed loop-agent candidate tuple into canonical branch and rerun cadence gates |
 
 ## Consumer Readiness Snapshot
 
 | Consumer | Coupling Type | Readiness | Principal Risk |
 |---|---|---|---|
 | `rlm-claude-code` | Hard runtime + build-time vendoring | Medium | API drift and schema/locking behavior changes |
-| `loop-agent` | Architectural target with first seam contract defined | Medium | Full-suite instability and pending adapter implementation work |
+| `loop-agent` | Architectural target with first seam contract defined | Medium | Canonical working-tree drift vs claim-grade tuple source while active development continues |
 | `io-rflx` | Contract-defined interoperability target | Medium | Adapter fixtures and benchmark calibration remain to be implemented |
 
 ## Session Handoff Template

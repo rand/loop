@@ -54,7 +54,7 @@ Define the first concrete runtime integration seam between `loop-agent` and `loo
 - Non-green `VG-LA-002` runs require explicit failure-category triage artifacts.
 - Promotion to release-blocking requires three consecutive green snapshots.
 - D-015 requires those promotion snapshots to be tied to committed consumer tuple state.
-- D-016 records criteria satisfaction for candidate tuple `f2aeb18`; canonical consumer landing still pending.
+- D-016 records criteria satisfaction for candidate tuple `f2aeb18`; D-018 records canonical committed tuple stabilization evidence on `30c1fa`.
 
 ## Minimal Integration Harness Plan
 
