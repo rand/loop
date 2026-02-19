@@ -125,50 +125,51 @@ impl TaskComplexitySignals {
     }
 
     /// Get human-readable list of active signals.
+    /// Uses snake_case format to match Python test expectations.
     pub fn active_signals(&self) -> Vec<&'static str> {
         let mut signals = Vec::new();
 
         if self.references_multiple_files {
-            signals.push("multi-file reference");
+            signals.push("multi_file");
         }
         if self.requires_cross_context_reasoning {
-            signals.push("cross-context reasoning");
+            signals.push("cross_context");
         }
         if self.involves_temporal_reasoning {
-            signals.push("temporal reasoning");
+            signals.push("temporal");
         }
         if self.asks_about_patterns {
-            signals.push("pattern analysis");
+            signals.push("pattern_search");
         }
         if self.debugging_task {
             signals.push("debugging");
         }
         if self.requires_exhaustive_search {
-            signals.push("exhaustive search");
+            signals.push("exhaustive_search");
         }
         if self.security_review_task {
-            signals.push("security review");
+            signals.push("security_review");
         }
         if self.architecture_analysis {
-            signals.push("architecture analysis");
+            signals.push("architecture_analysis");
         }
         if self.user_wants_thorough {
-            signals.push("user: thorough");
+            signals.push("user_thorough");
         }
         if self.user_wants_fast {
-            signals.push("user: fast");
+            signals.push("user_fast");
         }
         if self.context_has_multiple_domains {
-            signals.push("multi-domain context");
+            signals.push("multi_domain");
         }
         if self.recent_tool_outputs_large {
-            signals.push("large tool outputs");
+            signals.push("large_outputs");
         }
         if self.files_span_multiple_modules {
-            signals.push("multi-module files");
+            signals.push("multi_module");
         }
         if self.previous_turn_was_confused {
-            signals.push("previous confusion");
+            signals.push("prior_confusion");
         }
         if self.task_is_continuation {
             signals.push("continuation");
@@ -228,7 +229,8 @@ pub struct PatternClassifier {
 impl Default for PatternClassifier {
     fn default() -> Self {
         Self {
-            activation_threshold: 3,
+            // Threshold of 2 matches Python implementation behavior
+            activation_threshold: 2,
             force_activation: false,
         }
     }
@@ -241,7 +243,8 @@ static MULTI_FILE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static CROSS_CONTEXT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)(how\s+(does|do|is|are)|relationship|connect|interact|depend|flow|between|across)")
+    // Matches "why X when Y", "how does X", relationship queries, etc.
+    Regex::new(r"(?i)(why\b.*\b(when|if|given|since)|how\s+(does|do|is|are)|relationship|connect|interact|depend|flow|between|across|what\b.*\b(cause|led\s+to|result))")
         .expect("invalid regex")
 });
 
@@ -251,7 +254,8 @@ static TEMPORAL_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static PATTERN_ANALYSIS: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)(pattern|structure|architecture|design|organize|layout|convention|idiom)")
+    // Matches "find places where", "search for X where", pattern queries, etc.
+    Regex::new(r"(?i)((find|search|locate|grep)\b.*\b(where|that|which)|how\s+many|list\s+(all|every)|pattern|structure|architecture|design|organize|layout|convention|idiom)")
         .expect("invalid regex")
 });
 
@@ -362,23 +366,16 @@ impl PatternClassifier {
         let active = signals.active_signals();
 
         if score >= self.activation_threshold {
+            // Format reason to match Python test expectations
             let reason = if active.is_empty() {
-                format!("Score {} >= threshold {}", score, self.activation_threshold)
+                format!("complexity_score:{}", score)
             } else {
-                format!(
-                    "Score {} >= threshold {} (signals: {})",
-                    score,
-                    self.activation_threshold,
-                    active.join(", ")
-                )
+                format!("complexity_score:{}:{}", score, active.join("+"))
             };
             ActivationDecision::activate(reason, score, signals)
         } else {
-            let reason = format!(
-                "Score {} < threshold {} - direct response preferred",
-                score, self.activation_threshold
-            );
-            ActivationDecision::skip(reason, score, signals)
+            // Return "simple_task" to match Python test expectations
+            ActivationDecision::skip("simple_task", score, signals)
         }
     }
 }
@@ -470,7 +467,7 @@ mod tests {
 
         let active = signals.active_signals();
         assert!(active.contains(&"debugging"));
-        assert!(active.contains(&"architecture analysis"));
+        assert!(active.contains(&"architecture_analysis"));
     }
 
     #[test]

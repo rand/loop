@@ -217,31 +217,68 @@ impl EvidenceScrubber {
             self.config.placeholder.clone()
         };
 
-        while let Some(cap) = self.code_block_re.find(text) {
-            let content = cap.as_str().to_string();
+        // Collect matches first, then replace in reverse index order.
+        // This avoids re-matching newly inserted placeholders.
+        let matches: Vec<(usize, usize, String)> = self
+            .code_block_re
+            .find_iter(text)
+            .map(|m| (m.start(), m.end(), m.as_str().to_string()))
+            .collect();
+
+        for (start, end, content) in matches.into_iter().rev() {
             if content.len() >= self.config.min_length {
                 items.push(ScrubbedItem {
                     content,
                     item_type: ScrubTarget::Code,
-                    start: cap.start(),
-                    end: cap.end(),
+                    start,
+                    end,
                 });
-                *text = format!(
-                    "{}{}{}",
-                    &text[..cap.start()],
-                    placeholder,
-                    &text[cap.end()..]
-                );
-            } else {
-                break; // No more matches
+                *text = format!("{}{}{}", &text[..start], placeholder, &text[end..]);
             }
         }
 
+        items.reverse();
         items
     }
 
     fn scrub_inline_code(&self, text: &mut String) -> Vec<ScrubbedItem> {
-        self.scrub_pattern(text, &self.inline_code_re, "code")
+        let mut items = Vec::new();
+
+        // Avoid matching inside fenced code blocks (```...```), which should
+        // preserve structure when configured.
+        let matches: Vec<(usize, usize, String)> = self
+            .inline_code_re
+            .find_iter(text)
+            .filter_map(|m| {
+                let before = text[..m.start()].chars().next_back();
+                let after = text[m.end()..].chars().next();
+                if before == Some('`') || after == Some('`') {
+                    None
+                } else {
+                    Some((m.start(), m.end(), m.as_str().to_string()))
+                }
+            })
+            .collect();
+
+        for (start, end, content) in matches.into_iter().rev() {
+            if content.len() >= self.config.min_length {
+                items.push(ScrubbedItem {
+                    content,
+                    item_type: ScrubTarget::Code,
+                    start,
+                    end,
+                });
+                *text = format!(
+                    "{}{}{}",
+                    &text[..start],
+                    self.config.placeholder,
+                    &text[end..]
+                );
+            }
+        }
+
+        items.reverse();
+        items
     }
 
     fn scrub_tool_outputs(&self, text: &mut String) -> Vec<ScrubbedItem> {
