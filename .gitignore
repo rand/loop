@@ -1,1 +1,17 @@
 rlm-core-derive/target/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Generated local reasoning traces
+.reasoning_logs/
+rlm-core/.reasoning_logs/
+
+# Accidental literal placeholder path created by agent tooling
+${CLAUDE_PLUGIN_ROOT}/
+
+# Python cache artifacts
+**/__pycache__/
