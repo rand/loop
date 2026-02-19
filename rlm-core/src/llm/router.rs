@@ -842,7 +842,7 @@ mod tests {
     fn test_dual_model_config_aggressive() {
         let config = DualModelConfig::aggressive();
         assert_eq!(config.root_model.id, "claude-3-opus-20240229");
-        assert_eq!(config.recursive_model.id, "claude-3-haiku-20240307");
+        assert_eq!(config.recursive_model.id, "claude-3-5-haiku-20241022");
         assert_eq!(config.switch_strategy, SwitchStrategy::Depth { depth: 1 });
     }
 
@@ -929,7 +929,7 @@ mod tests {
 
         // Depth 1+: recursive model
         let model = config.select_model(1, 0, None);
-        assert_eq!(model.id, "claude-3-haiku-20240307");
+        assert_eq!(model.id, "claude-3-5-haiku-20241022");
     }
 
     #[test]
@@ -946,7 +946,7 @@ mod tests {
         // At depth 1, should use recursive model
         let context = RoutingContext::new().with_depth(1);
         let decision = router.route_rlm("Extract entities", &context, &config, 0);
-        assert_eq!(decision.model.id, "claude-3-haiku-20240307");
+        assert_eq!(decision.model.id, "claude-3-5-haiku-20241022");
         assert!(decision.reason.contains("recursive"));
     }
 

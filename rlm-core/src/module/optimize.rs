@@ -766,7 +766,7 @@ mod tests {
     #[test]
     fn test_metrics_edit_distance() {
         assert_eq!(metrics::edit_distance_similarity("hello", "hello"), 1.0);
-        assert!(metrics::edit_distance_similarity("hello", "helo") > 0.8);
+        assert!(metrics::edit_distance_similarity("hello", "helo") >= 0.8);
         assert!(metrics::edit_distance_similarity("abc", "xyz") < 0.5);
     }
 

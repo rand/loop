@@ -1,0 +1,67 @@
+name: rlm-core feature matrix
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "rlm-core/**"
+      - ".github/workflows/rlm-core-feature-matrix.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "rlm-core/**"
+      - ".github/workflows/rlm-core-feature-matrix.yml"
+
+concurrency:
+  group: rlm-core-feature-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cargo-check-matrix:
+    name: "${{ matrix.vg_id }} :: ${{ matrix.label }}"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - vg_id: VG-LOOP-BUILD-001
+            label: default profile
+            cargo_args: ""
+          - vg_id: VG-LOOP-BUILD-002
+            label: no default features
+            cargo_args: "--no-default-features"
+          - vg_id: VG-LOOP-BUILD-003
+            label: gemini profile
+            cargo_args: "--no-default-features --features gemini"
+
+    defaults:
+      run:
+        working-directory: rlm-core
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            rlm-core
+            rlm-core-derive
+
+      - name: Run cargo check (${{ matrix.vg_id }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Running ${{ matrix.vg_id }} (${{ matrix.label }})"
+          if [[ -n "${{ matrix.cargo_args }}" ]]; then
+            cargo check --locked ${{ matrix.cargo_args }}
+          else
+            cargo check --locked
+          fi

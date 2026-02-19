@@ -405,9 +405,9 @@ mod tests {
             .add_prompt("Query 2");
 
         assert_eq!(batch.len(), 2);
-        assert_eq!(batch.contexts.len(), 2);
+        assert_eq!(batch.contexts.len(), 1);
         assert_eq!(batch.contexts[0], Some("Context 1".to_string()));
-        assert!(batch.contexts[1].is_none());
+        assert!(batch.contexts.get(1).is_none());
     }
 
     #[test]

@@ -1010,7 +1010,7 @@ mod tests {
         let html = trace.to_html(HtmlConfig::default());
 
         assert!(html.contains("<!DOCTYPE html>"));
-        assert!(html.contains("d3.js"));
+        assert!(html.contains("d3.v7.min.js"));
         assert!(html.contains("Reasoning Trace Visualization"));
         assert!(html.contains("const graphData"));
     }

@@ -5,7 +5,9 @@ use chrono::Utc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::RwLock;
 
 use crate::error::{Error, Result};
@@ -73,6 +75,23 @@ impl ClientConfig {
     }
 }
 
+fn build_http_client(timeout_secs: u64) -> Client {
+    let timeout = Duration::from_secs(timeout_secs);
+
+    // Some sandboxed macOS environments can panic during proxy auto-detection
+    // in reqwest's default client builder. Fall back to no-proxy in that case.
+    match catch_unwind(AssertUnwindSafe(|| {
+        Client::builder().timeout(timeout).build()
+    })) {
+        Ok(Ok(client)) => client,
+        Ok(Err(_)) | Err(_) => Client::builder()
+            .no_proxy()
+            .timeout(timeout)
+            .build()
+            .expect("Failed to create HTTP client"),
+    }
+}
+
 /// Anthropic Claude client.
 pub struct AnthropicClient {
     config: ClientConfig,
@@ -84,10 +103,7 @@ impl AnthropicClient {
     const API_VERSION: &'static str = "2023-06-01";
 
     pub fn new(config: ClientConfig) -> Self {
-        let http = Client::builder()
-            .timeout(std::time::Duration::from_secs(config.timeout_secs))
-            .build()
-            .expect("Failed to create HTTP client");
+        let http = build_http_client(config.timeout_secs);
 
         Self { config, http }
     }
@@ -297,10 +313,7 @@ impl OpenAIClient {
     const DEFAULT_BASE_URL: &'static str = "https://api.openai.com";
 
     pub fn new(config: ClientConfig) -> Self {
-        let http = Client::builder()
-            .timeout(std::time::Duration::from_secs(config.timeout_secs))
-            .build()
-            .expect("Failed to create HTTP client");
+        let http = build_http_client(config.timeout_secs);
 
         Self { config, http }
     }
@@ -578,10 +591,7 @@ impl GoogleClient {
     const DEFAULT_BASE_URL: &'static str = "https://generativelanguage.googleapis.com";
 
     pub fn new(config: ClientConfig) -> Self {
-        let http = Client::builder()
-            .timeout(std::time::Duration::from_secs(config.timeout_secs))
-            .build()
-            .expect("Failed to create HTTP client");
+        let http = build_http_client(config.timeout_secs);
 
         Self { config, http }
     }

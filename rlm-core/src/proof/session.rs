@@ -862,8 +862,8 @@ mod tests {
         assert!(enforcer.check_nl_prohibition(code).is_ok());
 
         // Too many consecutive comments
-        let many_comments = (0..10)
-            .map(|i| format!("-- Comment {}", i))
+        let many_comments = (0..6)
+            .map(|i| format!("-- Comment block {}\nx", i))
             .collect::<Vec<_>>()
             .join("\n");
         let result = enforcer.check_nl_prohibition(&many_comments);

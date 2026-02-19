@@ -149,16 +149,14 @@ pub unsafe extern "C" fn rlm_has_feature(feature_name: *const c_char) -> i32 {
 /// The returned string must be freed with `rlm_string_free()`.
 #[no_mangle]
 pub extern "C" fn rlm_available_features() -> *mut c_char {
-    let mut features = Vec::new();
-
-    #[cfg(feature = "gemini")]
-    features.push("gemini");
-
-    #[cfg(feature = "adversarial")]
-    features.push("adversarial");
-
-    #[cfg(feature = "python")]
-    features.push("python");
+    let features: &[&str] = &[
+        #[cfg(feature = "gemini")]
+        "gemini",
+        #[cfg(feature = "adversarial")]
+        "adversarial",
+        #[cfg(feature = "python")]
+        "python",
+    ];
 
     let features_str = features.join(",");
     match CString::new(features_str) {
@@ -520,6 +518,34 @@ mod tests {
         assert!(
             features_str.is_empty()
                 || features_str.split(',').all(|f| ["gemini", "adversarial", "python"].contains(&f))
+        );
+
+        unsafe { rlm_string_free(features) };
+    }
+
+    #[test]
+    fn test_available_features_matches_has_feature_contract() {
+        let features = rlm_available_features();
+        assert!(!features.is_null());
+        let features_str = unsafe { CStr::from_ptr(features).to_str().unwrap() };
+        let available_from_list: Vec<&str> = if features_str.is_empty() {
+            Vec::new()
+        } else {
+            features_str.split(',').collect()
+        };
+
+        let known = ["gemini", "adversarial", "python"];
+        let mut expected: Vec<&str> = Vec::new();
+        for feature in known {
+            let name = std::ffi::CString::new(feature).unwrap();
+            if unsafe { rlm_has_feature(name.as_ptr()) } == 1 {
+                expected.push(feature);
+            }
+        }
+
+        assert_eq!(
+            available_from_list, expected,
+            "available features list should match rlm_has_feature() contract"
         );
 
         unsafe { rlm_string_free(features) };
