@@ -2,7 +2,7 @@
 
 > Parallel LLM query execution in REPL
 
-**Status**: Draft
+**Status**: Partially implemented (component-level; end-to-end REPL integration pending)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-1d2
@@ -13,6 +13,15 @@
 
 Implement parallel batched LLM queries in the REPL, enabling efficient processing of multiple prompts simultaneously (e.g., for map-reduce patterns over context chunks).
 
+## Implementation Snapshot (2026-02-19)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-26.01 Batched helper naming/shape | Implemented (helper-level) | `rlm-core/python/rlm_repl/helpers.py`, `rlm-core/python/rlm_repl/sandbox.py` |
+| SPEC-26.02 Rust batch execution primitives | Implemented | `rlm-core/src/llm/batch.rs` |
+| SPEC-26.03 Advanced rate-limit/retry policy | Planned | No provider-specific rate-limit/backoff implementation in `rlm-core/src/llm/batch.rs` |
+| SPEC-26.04 Partial-failure result handling | Implemented (data model level) | `BatchQueryResult`, `BatchedQueryResults` helpers + tests in `rlm-core/src/llm/batch.rs` |
+
 ## Requirements
 
 ### SPEC-26.01: Batched Query Function
@@ -20,12 +29,12 @@ Implement parallel batched LLM queries in the REPL, enabling efficient processin
 Python interface for batched queries.
 
 ```python
-def llm_query_batched(
+def llm_batch(
     prompts: list[str],
     contexts: list[str] | None = None,
     max_parallel: int = 5,
     model: str | None = None,
-) -> list[str]:
+) -> DeferredOperation:
     """
     Execute multiple LLM queries in parallel.
 
@@ -36,13 +45,13 @@ def llm_query_batched(
         model: Model to use (default: recursive model from config)
 
     Returns:
-        List of responses in same order as prompts
+        DeferredOperation that resolves to batched query results
 
     Raises:
         BatchedQueryError: If all queries fail
 
     Example:
-        >>> results = llm_query_batched([
+        >>> results = llm_batch([
         ...     "Summarize section 1",
         ...     "Summarize section 2",
         ...     "Summarize section 3"
@@ -52,16 +61,19 @@ def llm_query_batched(
     """
 ```
 
+Compatibility policy:
+- Canonical REPL helper: `llm_batch`
+- Compatibility alias: `llm_query_batched` (deprecated; emits warning)
+
 **Behavior**:
-- Queries execute in parallel up to max_parallel
-- Results returned in original order
-- Individual failures don't abort batch
-- Failed queries return error string in result
+- Helper emits deferred operation type `llm_batch`
+- `max_parallel` is passed through in operation params
+- Canonical helper name is `llm_batch`; alias `llm_query_batched` is supported
 
 **Acceptance Criteria**:
-- [ ] Function available in REPL sandbox
-- [ ] Parallel execution works
-- [ ] Order preserved in results
+- [x] Function available in REPL sandbox
+- [x] Compatibility alias available during migration window
+- [ ] End-to-end REPL-host execution path for `LLM_BATCH` validated in integration tests
 
 ### SPEC-26.02: Rust-Side Implementation
 
@@ -147,9 +159,10 @@ impl ReplHandle {
 ```
 
 **Acceptance Criteria**:
-- [ ] Semaphore controls concurrency
-- [ ] Results collected in order
-- [ ] Errors captured per-query
+- [x] Semaphore controls concurrency
+- [x] Results collected in order
+- [x] Errors captured per-query
+- [ ] Direct `ReplHandle` orchestration integration remains pending
 
 ### SPEC-26.03: Concurrency Control
 
@@ -201,9 +214,9 @@ pub struct RetryConfig {
 - Distribute requests over time if needed
 
 **Acceptance Criteria**:
-- [ ] Rate limits respected
-- [ ] Exponential backoff on errors
-- [ ] Hard limit on parallelism
+- [ ] Rate limits respected (planned)
+- [ ] Exponential backoff on errors (planned)
+- [x] Basic max-parallel clamping present
 
 ### SPEC-26.04: Error Handling
 
@@ -263,9 +276,9 @@ impl BatchedLLMResponse {
 ```
 
 **Acceptance Criteria**:
-- [ ] Partial results available
-- [ ] Error details preserved
-- [ ] Success/failure counts accurate
+- [x] Partial results available
+- [x] Error details preserved
+- [x] Success/failure counts accurate
 
 ---
 
@@ -277,7 +290,7 @@ impl BatchedLLMResponse {
 # Summarize multiple sections
 sections = [context[i:i+1000] for i in range(0, len(context), 1000)]
 prompts = [f"Summarize: {s}" for s in sections]
-summaries = llm_query_batched(prompts)
+summaries = llm_batch(prompts)
 ```
 
 ### Map-Reduce Pattern
@@ -285,7 +298,7 @@ summaries = llm_query_batched(prompts)
 ```python
 # Map: Extract facts from each file
 facts_prompts = [f"Extract facts from:\n{content}" for content in files.values()]
-facts_list = llm_query_batched(facts_prompts, max_parallel=10)
+facts_list = llm_batch(facts_prompts, max_parallel=10)
 
 # Reduce: Combine facts
 combined = "\n".join(facts_list)
@@ -295,7 +308,7 @@ final = llm_query(f"Synthesize these facts:\n{combined}")
 ### With Error Handling
 
 ```python
-results = llm_query_batched(prompts)
+results = llm_batch(prompts)
 errors = [(i, r) for i, r in enumerate(results) if r.startswith("[Error]")]
 if errors:
     print(f"Warning: {len(errors)} queries failed")
@@ -309,18 +322,17 @@ if errors:
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `test_batch_basic` | Basic batched query | SPEC-26.01 |
-| `test_batch_order` | Results in order | SPEC-26.01 |
-| `test_batch_parallel` | Parallel execution | SPEC-26.02 |
-| `test_batch_semaphore` | Concurrency limit | SPEC-26.03 |
-| `test_batch_partial_fail` | Partial failure | SPEC-26.04 |
-| `test_batch_all_fail` | All queries fail | SPEC-26.04 |
-| `test_batch_rate_limit` | Rate limiting | SPEC-26.03 |
+| `llm::batch::tests::test_batched_query_creation` | Batched query construction | SPEC-26.01 |
+| `llm::batch::tests::test_batched_query_with_context` | Context shape behavior | SPEC-26.01 |
+| `llm::batch::tests::test_batched_results_ordering` | Results preserved in index order | SPEC-26.02 |
+| `llm::batch::tests::test_batched_results_errors` | Partial-failure/error detail handling | SPEC-26.04 |
+| `llm::batch::tests::test_max_parallel_bounds` | Basic parallelism clamping | SPEC-26.03 |
+| Gap: end-to-end REPL batch execution | Host integration behavior | SPEC-26.01, SPEC-26.02 |
 
 ---
 
 ## References
 
-- [DSPy llm_query_batched](https://github.com/stanfordnlp/dspy/blob/main/dspy/predict/rlm.py)
-- Existing REPL: `src/repl.rs`
-- Existing LLM Client: `src/llm/client.rs`
+- [DSPy llm_query_batched](https://github.com/stanfordnlp/dspy/blob/main/dspy/predict/rlm.py) (naming inspiration)
+- Existing REPL bridge: `rlm-core/src/repl.rs`
+- Existing batch primitives: `rlm-core/src/llm/batch.rs`

@@ -9,9 +9,24 @@ from rlm_repl.deferred import (
     OperationType,
     PendingOperationError,
 )
-from rlm_repl.helpers import peek, search, count_tokens, truncate, extract_code_blocks
-from rlm_repl.protocol import ExecuteRequest, ExecuteResponse, JsonRpcRequest, JsonRpcError
-from rlm_repl.sandbox import Sandbox, SandboxError, CompilationError
+from rlm_repl.helpers import (
+    count_tokens,
+    extract_code_blocks,
+    llm_batch,
+    llm_query_batched,
+    peek,
+    search,
+    truncate,
+)
+from rlm_repl.main import ReplServer
+from rlm_repl.protocol import (
+    ErrorCode,
+    ExecuteRequest,
+    ExecuteResponse,
+    JsonRpcError,
+    JsonRpcRequest,
+)
+from rlm_repl.sandbox import CompilationError, Sandbox, SandboxError
 
 
 class TestDeferredOperations:
@@ -123,6 +138,29 @@ console.log('hi')
         assert "def foo" in blocks[0]["code"]
         assert blocks[1]["language"] == "javascript"
 
+    def test_llm_batch_helper_params(self):
+        op = llm_batch(
+            prompts=["q1", "q2"],
+            contexts=["c1", "c2"],
+            max_parallel=7,
+            model="test-model",
+            max_tokens=321,
+        )
+        assert isinstance(op, DeferredOperation)
+        assert op.operation_type == OperationType.LLM_BATCH
+        assert op.params["prompts"] == ["q1", "q2"]
+        assert op.params["contexts"] == ["c1", "c2"]
+        assert op.params["max_parallel"] == 7
+        assert op.params["model"] == "test-model"
+        assert op.params["max_tokens"] == 321
+
+    def test_llm_query_batched_alias_deprecated(self):
+        with pytest.warns(DeprecationWarning):
+            op = llm_query_batched(["q1"], max_parallel=3)
+        assert isinstance(op, DeferredOperation)
+        assert op.operation_type == OperationType.LLM_BATCH
+        assert op.params["max_parallel"] == 3
+
 
 class TestProtocol:
     """Tests for JSON-RPC protocol types."""
@@ -156,6 +194,272 @@ class TestProtocol:
         error = JsonRpcError.execution_error("test")
         assert error.code == -32000
         assert error.message == "test"
+
+
+class TestReplServer:
+    """Tests for JSON-RPC method handling in ReplServer."""
+
+    @staticmethod
+    def _signature_params():
+        return {
+            "output_fields": [
+                {
+                    "name": "answer",
+                    "field_type": {"type": "string"},
+                    "description": "Final answer",
+                    "prefix": None,
+                    "required": True,
+                    "default": None,
+                }
+            ],
+            "signature_name": "AnswerSig",
+        }
+
+    def test_register_and_clear_signature(self):
+        server = ReplServer()
+
+        register_req = JsonRpcRequest(
+            method="register_signature", params=self._signature_params(), id=1
+        )
+        register_resp = server.handle_request(register_req)
+
+        assert register_resp is not None
+        assert register_resp.error is None
+        assert register_resp.result["success"] is True
+        assert register_resp.result["signature_registered"] is True
+        assert register_resp.result["replaced"] is False
+        assert server.signature_registration is not None
+
+        clear_req = JsonRpcRequest(method="clear_signature", params={}, id=2)
+        clear_resp = server.handle_request(clear_req)
+
+        assert clear_resp is not None
+        assert clear_resp.error is None
+        assert clear_resp.result["success"] is True
+        assert clear_resp.result["cleared"] is True
+        assert server.signature_registration is None
+
+    def test_clear_signature_is_idempotent(self):
+        server = ReplServer()
+
+        clear_req = JsonRpcRequest(method="clear_signature", params={}, id=1)
+        clear_resp = server.handle_request(clear_req)
+
+        assert clear_resp is not None
+        assert clear_resp.error is None
+        assert clear_resp.result["success"] is True
+        assert clear_resp.result["cleared"] is False
+
+    def test_register_signature_invalid_params(self):
+        server = ReplServer()
+
+        invalid_req = JsonRpcRequest(
+            method="register_signature", params={"signature_name": "MissingFields"}, id=1
+        )
+        resp = server.handle_request(invalid_req)
+
+        assert resp is not None
+        assert resp.error is not None
+        assert resp.error.code == ErrorCode.INVALID_PARAMS
+
+    def test_status_reports_signature_registration(self):
+        server = ReplServer()
+
+        status_req = JsonRpcRequest(method="status", params={}, id=1)
+        status_resp = server.handle_request(status_req)
+        assert status_resp is not None
+        assert status_resp.error is None
+        assert status_resp.result["signature_registered"] is False
+
+        register_req = JsonRpcRequest(
+            method="register_signature", params=self._signature_params(), id=2
+        )
+        server.handle_request(register_req)
+
+        status_after_req = JsonRpcRequest(method="status", params={}, id=3)
+        status_after_resp = server.handle_request(status_after_req)
+        assert status_after_resp is not None
+        assert status_after_resp.error is None
+        assert status_after_resp.result["signature_registered"] is True
+
+    def test_submit_without_signature_returns_validation_error(self):
+        server = ReplServer()
+
+        req = JsonRpcRequest(
+            method="execute",
+            params={"code": "SUBMIT({'answer': 'test'})"},
+            id=1,
+        )
+        resp = server.handle_request(req)
+
+        assert resp is not None
+        assert resp.error is None
+        assert resp.result["success"] is False
+        assert resp.result["error_type"] == "SubmitValidationError"
+        submit_result = resp.result["submit_result"]
+        assert submit_result["status"] == "validation_error"
+        assert submit_result["errors"][0]["error_type"] == "no_signature_registered"
+
+    def test_submit_with_registered_signature_success(self):
+        server = ReplServer()
+        server.handle_request(
+            JsonRpcRequest(method="register_signature", params=self._signature_params(), id=1)
+        )
+
+        req = JsonRpcRequest(
+            method="execute",
+            params={"code": "SUBMIT({'answer': 'test'})"},
+            id=2,
+        )
+        resp = server.handle_request(req)
+
+        assert resp is not None
+        assert resp.error is None
+        assert resp.result["success"] is True
+        submit_result = resp.result["submit_result"]
+        assert submit_result["status"] == "success"
+        assert submit_result["outputs"]["answer"] == "test"
+
+    def test_submit_missing_field_returns_structured_error(self):
+        server = ReplServer()
+        server.handle_request(
+            JsonRpcRequest(method="register_signature", params=self._signature_params(), id=1)
+        )
+
+        req = JsonRpcRequest(
+            method="execute",
+            params={"code": "SUBMIT({})"},
+            id=2,
+        )
+        resp = server.handle_request(req)
+
+        assert resp is not None
+        assert resp.error is None
+        assert resp.result["success"] is False
+        submit_result = resp.result["submit_result"]
+        assert submit_result["status"] == "validation_error"
+        assert submit_result["errors"][0]["error_type"] == "missing_field"
+        assert submit_result["errors"][0]["field"] == "answer"
+
+    def test_submit_type_mismatch_returns_structured_error(self):
+        server = ReplServer()
+        server.handle_request(
+            JsonRpcRequest(method="register_signature", params=self._signature_params(), id=1)
+        )
+
+        req = JsonRpcRequest(
+            method="execute",
+            params={"code": "SUBMIT({'answer': 42})"},
+            id=2,
+        )
+        resp = server.handle_request(req)
+
+        assert resp is not None
+        assert resp.error is None
+        assert resp.result["success"] is False
+        submit_result = resp.result["submit_result"]
+        assert submit_result["status"] == "validation_error"
+        assert submit_result["errors"][0]["error_type"] == "type_mismatch"
+        assert submit_result["errors"][0]["field"] == "answer"
+
+    def test_multiple_submit_calls_return_structured_error(self):
+        server = ReplServer()
+        server.handle_request(
+            JsonRpcRequest(method="register_signature", params=self._signature_params(), id=1)
+        )
+
+        code = """
+try:
+    SUBMIT({'answer': 'first'})
+except BaseException:
+    pass
+SUBMIT({'answer': 'second'})
+"""
+        req = JsonRpcRequest(
+            method="execute",
+            params={"code": code},
+            id=2,
+        )
+        resp = server.handle_request(req)
+
+        assert resp is not None
+        assert resp.error is None
+        assert resp.result["success"] is False
+        submit_result = resp.result["submit_result"]
+        assert submit_result["status"] == "validation_error"
+        assert submit_result["errors"][0]["error_type"] == "multiple_submits"
+        assert submit_result["errors"][0]["count"] == 2
+
+    def test_execute_without_submit_when_signature_registered(self):
+        server = ReplServer()
+        server.handle_request(JsonRpcRequest(method="reset", params={}, id=0))
+        server.handle_request(
+            JsonRpcRequest(method="register_signature", params=self._signature_params(), id=1)
+        )
+
+        req = JsonRpcRequest(
+            method="execute",
+            params={"code": "value = 123\nvalue"},
+            id=2,
+        )
+        resp = server.handle_request(req)
+
+        assert resp is not None
+        assert resp.error is None
+        assert resp.result["success"] is True
+        assert resp.result["submit_result"] is None
+        value_resp = server.handle_request(
+            JsonRpcRequest(method="get_variable", params={"name": "value"}, id=3)
+        )
+        assert value_resp is not None
+        assert value_resp.error is None
+        assert value_resp.result == 123
+
+    def test_llm_batch_mixed_success_failure_resolution(self):
+        server = ReplServer()
+        server.handle_request(JsonRpcRequest(method="reset", params={}, id=0))
+
+        create_req = JsonRpcRequest(
+            method="execute",
+            params={"code": "op = llm_batch(['q1', 'q2'])"},
+            id=1,
+        )
+        create_resp = server.handle_request(create_req)
+
+        assert create_resp is not None
+        assert create_resp.error is None
+        assert create_resp.result["success"] is True
+        pending = create_resp.result["pending_operations"]
+        assert len(pending) >= 1
+        op_id = pending[-1]
+
+        mixed_payload = [
+            {"status": "success", "value": "answer-1"},
+            {"status": "error", "value": "timeout"},
+        ]
+        resolve_req = JsonRpcRequest(
+            method="resolve_operation",
+            params={"operation_id": op_id, "result": mixed_payload},
+            id=2,
+        )
+        resolve_resp = server.handle_request(resolve_req)
+        assert resolve_resp is not None
+        assert resolve_resp.error is None
+        assert resolve_resp.result["success"] is True
+
+        read_req = JsonRpcRequest(method="execute", params={"code": "resolved = op.get()"}, id=3)
+        read_resp = server.handle_request(read_req)
+        assert read_resp is not None
+        assert read_resp.error is None
+        assert read_resp.result["success"] is True
+        resolved_resp = server.handle_request(
+            JsonRpcRequest(method="get_variable", params={"name": "resolved"}, id=4)
+        )
+        assert resolved_resp is not None
+        assert resolved_resp.error is None
+        resolved = resolved_resp.result
+        assert resolved[0]["status"] == "success"
+        assert resolved[1]["status"] == "error"
 
 
 class TestSandbox:
@@ -235,6 +539,13 @@ class TestDeferredInSandbox:
         result = sandbox.get_variable("result")
         assert isinstance(result, DeferredOperation)
         assert result.operation_type == OperationType.SUMMARIZE
+
+    def test_llm_query_batched_alias_available(self):
+        sandbox = Sandbox()
+        sandbox.execute("result = llm_query_batched(['q1', 'q2'])")
+        result = sandbox.get_variable("result")
+        assert isinstance(result, DeferredOperation)
+        assert result.operation_type == OperationType.LLM_BATCH
 
     def test_accessing_pending_raises(self):
         sandbox = Sandbox()

@@ -124,6 +124,12 @@ class ExecuteResponse(BaseModel):
     pending_operations: list[str] = Field(
         default_factory=list, description="IDs of pending deferred operations"
     )
+    submit_result: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "Result of SUBMIT call if execution used typed-signature submission"
+        ),
+    )
 
 
 class GetVariableRequest(BaseModel):
@@ -146,6 +152,17 @@ class ResolveOperationRequest(BaseModel):
     result: Any
 
 
+class RegisterSignatureRequest(BaseModel):
+    """Request to register output signature metadata for SUBMIT validation."""
+
+    output_fields: list[dict[str, Any]] = Field(
+        ..., description="Output field specifications"
+    )
+    signature_name: str | None = Field(
+        default=None, description="Optional signature label for diagnostics"
+    )
+
+
 class VariablesResponse(BaseModel):
     """Response listing available variables."""
 
@@ -160,4 +177,5 @@ class StatusResponse(BaseModel):
     ready: bool
     pending_operations: int
     variables_count: int
+    signature_registered: bool = False
     memory_usage_bytes: int | None = None

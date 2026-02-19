@@ -16,8 +16,8 @@ use crate::signature::{FieldSpec, SubmitResult, SignatureRegistration};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Write};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::io::{BufRead, BufReader, Read, Write};
+use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -108,7 +108,8 @@ pub struct ReplStatus {
 pub struct ReplConfig {
     /// Path to the Python executable (default: "python3")
     pub python_path: String,
-    /// Path to the rlm-repl package (default: looks in standard locations)
+    /// Optional directory added to `PYTHONPATH` for importing `rlm_repl`.
+    /// Useful in development when running from source checkout.
     pub repl_package_path: Option<String>,
     /// Timeout for REPL operations in milliseconds
     pub timeout_ms: u64,
@@ -142,6 +143,12 @@ pub struct ReplHandle {
 impl ReplHandle {
     /// Spawn a new REPL subprocess.
     pub fn spawn(config: ReplConfig) -> Result<Self> {
+        let startup_context = format!(
+            "python_path='{}', entrypoint='-m rlm_repl', repl_package_path='{}'",
+            config.python_path,
+            config.repl_package_path.as_deref().unwrap_or("<none>")
+        );
+
         let mut cmd = Command::new(&config.python_path);
         cmd.arg("-m").arg("rlm_repl");
 
@@ -159,7 +166,9 @@ impl ReplHandle {
         }
 
         let mut child = cmd.spawn().map_err(|e| {
-            Error::SubprocessComm(format!("Failed to spawn REPL subprocess: {}", e))
+            Error::SubprocessComm(format!(
+                "Failed to spawn REPL subprocess ({startup_context}): {e}"
+            ))
         })?;
 
         let stdin = child.stdin.take().ok_or_else(|| {
@@ -169,37 +178,82 @@ impl ReplHandle {
         let stdout = child.stdout.take().ok_or_else(|| {
             Error::SubprocessComm("Failed to get stdout handle".to_string())
         })?;
+        let mut stderr = child.stderr.take().ok_or_else(|| {
+            Error::SubprocessComm("Failed to get stderr handle".to_string())
+        })?;
 
-        let stdout = BufReader::new(stdout);
+        let mut stdout = BufReader::new(stdout);
 
-        let mut handle = Self {
+        // Wait for ready message
+        if let Err(err) = Self::wait_for_ready(
+            &mut child,
+            &mut stdout,
+            &mut stderr,
+            &startup_context,
+        ) {
+            // Ensure we do not leak a subprocess when startup fails.
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(err);
+        }
+
+        Ok(Self {
             child,
             stdin,
             stdout,
             next_id: 1,
             config,
-        };
-
-        // Wait for ready message
-        handle.wait_for_ready()?;
-
-        Ok(handle)
+        })
     }
 
-    fn wait_for_ready(&mut self) -> Result<()> {
+    fn wait_for_ready(
+        child: &mut Child,
+        stdout: &mut BufReader<ChildStdout>,
+        stderr: &mut ChildStderr,
+        startup_context: &str,
+    ) -> Result<()> {
         let mut line = String::new();
-        self.stdout.read_line(&mut line).map_err(|e| {
-            Error::SubprocessComm(format!("Failed to read ready message: {}", e))
+        let read_bytes = stdout.read_line(&mut line).map_err(|e| {
+            Error::SubprocessComm(format!(
+                "Failed to read ready message ({startup_context}): {e}"
+            ))
         })?;
 
+        if read_bytes == 0 {
+            let mut stderr_output = String::new();
+            if matches!(child.try_wait(), Ok(Some(_))) {
+                let _ = stderr.read_to_string(&mut stderr_output);
+            }
+
+            let stderr_output = stderr_output.trim();
+            let stderr_excerpt: String = stderr_output.chars().take(500).collect();
+            let truncated = stderr_output.chars().count() > 500;
+            let stderr_detail = if stderr_excerpt.is_empty() {
+                String::new()
+            } else if truncated {
+                format!("; stderr: {stderr_excerpt}...")
+            } else {
+                format!("; stderr: {stderr_excerpt}")
+            };
+
+            return Err(Error::SubprocessComm(
+                format!(
+                    "REPL subprocess exited before sending ready message ({startup_context}){stderr_detail}"
+                ),
+            ));
+        }
+
         let msg: Value = serde_json::from_str(&line).map_err(|e| {
-            Error::SubprocessComm(format!("Invalid ready message: {}", e))
+            Error::SubprocessComm(format!(
+                "Invalid ready message ({startup_context}): {e}; payload={}",
+                line.trim()
+            ))
         })?;
 
         if msg.get("method") != Some(&Value::String("ready".to_string())) {
             return Err(Error::SubprocessComm(format!(
-                "Expected ready message, got: {}",
-                line
+                "Expected ready message ({startup_context}), got: {}",
+                line.trim()
             )));
         }
 
@@ -474,6 +528,29 @@ pub trait ReplEnvironment: Send + Sync {
 mod tests {
     use super::*;
 
+    fn local_repl_config() -> ReplConfig {
+        let mut config = ReplConfig::default();
+        let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+
+        // Prefer the project-local virtualenv if present.
+        let local_python3 = manifest_dir.join("python/.venv/bin/python3");
+        let local_python = manifest_dir.join("python/.venv/bin/python");
+        if local_python3.exists() {
+            config.python_path = local_python3.to_string_lossy().into_owned();
+        } else if local_python.exists() {
+            config.python_path = local_python.to_string_lossy().into_owned();
+        }
+
+        // Use local package path in development so `python -m rlm_repl` works
+        // without requiring global installation.
+        let local_package = manifest_dir.join("python");
+        if local_package.exists() {
+            config.repl_package_path = Some(local_package.to_string_lossy().into_owned());
+        }
+
+        config
+    }
+
     #[test]
     fn test_repl_config_default() {
         let config = ReplConfig::default();
@@ -493,9 +570,186 @@ mod tests {
     #[test]
     #[ignore = "requires Python environment with rlm-repl installed"]
     fn test_repl_spawn() {
-        let config = ReplConfig::default();
-        let handle = ReplHandle::spawn(config);
-        assert!(handle.is_ok());
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start in dev or packaged mode");
+        assert!(handle.is_alive());
+
+        let status = handle.status().expect("expected status call to succeed");
+        assert!(status.ready);
+
+        handle.shutdown().unwrap();
+    }
+
+    #[test]
+    fn test_repl_spawn_error_includes_context() {
+        let mut config = ReplConfig::default();
+        config.python_path = "/definitely/missing/python3".to_string();
+
+        let err = match ReplHandle::spawn(config) {
+            Ok(_) => panic!("spawn should fail when python path is invalid"),
+            Err(err) => err,
+        };
+        let msg = err.to_string();
+
+        assert!(msg.contains("Failed to spawn REPL subprocess"));
+        assert!(msg.contains("python_path='/definitely/missing/python3'"));
+        assert!(msg.contains("entrypoint='-m rlm_repl'"));
+    }
+
+    #[test]
+    #[ignore = "requires Python environment with rlm-repl installed"]
+    fn test_submit_result_roundtrip_success() {
+        use crate::signature::{FieldType, SubmitResult};
+
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start");
+
+        handle
+            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .expect("signature registration should succeed");
+
+        let exec = handle
+            .execute("SUBMIT({'answer': 'ok'})")
+            .expect("execute should succeed");
+
+        assert!(exec.success);
+        let submit = exec.submit_result.expect("submit_result should be present");
+        match submit {
+            SubmitResult::Success { outputs, .. } => {
+                assert_eq!(outputs.get("answer"), Some(&serde_json::json!("ok")));
+            }
+            other => panic!("expected success submit result, got {:?}", other),
+        }
+
+        handle.shutdown().unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires Python environment with rlm-repl installed"]
+    fn test_submit_result_roundtrip_validation_error() {
+        use crate::signature::{FieldType, SubmitError, SubmitResult};
+
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start");
+
+        handle
+            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .expect("signature registration should succeed");
+
+        let exec = handle
+            .execute("SUBMIT({})")
+            .expect("execute should return structured validation result");
+
+        assert!(!exec.success);
+        let submit = exec.submit_result.expect("submit_result should be present");
+        match submit {
+            SubmitResult::ValidationError { errors, .. } => {
+                assert!(!errors.is_empty());
+                assert!(matches!(
+                    errors[0],
+                    SubmitError::MissingField { .. }
+                ));
+            }
+            other => panic!("expected validation error submit result, got {:?}", other),
+        }
+
+        handle.shutdown().unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires Python environment with rlm-repl installed"]
+    fn test_submit_result_roundtrip_no_signature() {
+        use crate::signature::{SubmitError, SubmitResult};
+
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start");
+
+        let exec = handle
+            .execute("SUBMIT({'answer': 'x'})")
+            .expect("execute should return structured validation result");
+
+        assert!(!exec.success);
+        let submit = exec.submit_result.expect("submit_result should be present");
+        match submit {
+            SubmitResult::ValidationError { errors, .. } => {
+                assert!(!errors.is_empty());
+                assert!(matches!(errors[0], SubmitError::NoSignatureRegistered));
+            }
+            other => panic!("expected validation error submit result, got {:?}", other),
+        }
+
+        handle.shutdown().unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires Python environment with rlm-repl installed"]
+    fn test_submit_result_roundtrip_type_mismatch() {
+        use crate::signature::{FieldType, SubmitError, SubmitResult};
+
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start");
+
+        handle
+            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .expect("signature registration should succeed");
+
+        let exec = handle
+            .execute("SUBMIT({'answer': 42})")
+            .expect("execute should return structured validation result");
+
+        assert!(!exec.success);
+        let submit = exec.submit_result.expect("submit_result should be present");
+        match submit {
+            SubmitResult::ValidationError { errors, .. } => {
+                assert!(!errors.is_empty());
+                assert!(matches!(
+                    errors[0],
+                    SubmitError::TypeMismatch { .. }
+                ));
+            }
+            other => panic!("expected validation error submit result, got {:?}", other),
+        }
+
+        handle.shutdown().unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires Python environment with rlm-repl installed"]
+    fn test_submit_result_roundtrip_multiple_submits() {
+        use crate::signature::{FieldType, SubmitError, SubmitResult};
+
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start");
+
+        handle
+            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .expect("signature registration should succeed");
+
+        let code = r#"
+try:
+    SUBMIT({'answer': 'first'})
+except BaseException:
+    pass
+SUBMIT({'answer': 'second'})
+"#;
+        let exec = handle
+            .execute(code)
+            .expect("execute should return structured validation result");
+
+        assert!(!exec.success);
+        let submit = exec.submit_result.expect("submit_result should be present");
+        match submit {
+            SubmitResult::ValidationError { errors, .. } => {
+                assert!(!errors.is_empty());
+                assert!(matches!(
+                    errors[0],
+                    SubmitError::MultipleSubmits { count: 2 }
+                ));
+            }
+            other => panic!("expected validation error submit result, got {:?}", other),
+        }
+
+        handle.shutdown().unwrap();
     }
 
     #[test]

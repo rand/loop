@@ -2,7 +2,7 @@
 
 > Graceful output extraction when execution limits reached
 
-**Status**: Draft
+**Status**: Partially implemented (`signature::fallback` primitives implemented; orchestrator wiring pending)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-tua
@@ -13,6 +13,16 @@
 ## Overview
 
 Implement DSPy-style fallback extraction that forces output extraction when max_iterations is reached without a SUBMIT call. This ensures the orchestrator always returns structured output even when the REPL execution doesn't cleanly terminate.
+
+## Implementation Snapshot (2026-02-19)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-27.01 Fallback trigger checks | Implemented | `FallbackExtractor::should_trigger` in `rlm-core/src/signature/fallback.rs` |
+| SPEC-27.02 Extraction context capture | Implemented (shape differs from draft structs) | `ReplHistory`, variable capture, and prompt builders in `rlm-core/src/signature/fallback.rs` |
+| SPEC-27.03 Extraction prompt | Implemented | `FallbackExtractor::extraction_prompt` |
+| SPEC-27.04 Execution result model | Implemented | `ExecutionResult` and confidence helpers in `rlm-core/src/signature/fallback.rs` |
+| Orchestrator loop wiring | Planned | No direct `run_with_fallback` orchestrator integration path yet |
 
 ## Requirements
 
@@ -83,9 +93,9 @@ pub enum FallbackReason {
 ```
 
 **Acceptance Criteria**:
-- [ ] All trigger conditions checked
-- [ ] SUBMIT bypasses fallback
-- [ ] Reason captured for logging
+- [x] All trigger conditions checked
+- [x] SUBMIT bypasses fallback
+- [x] Reason captured for logging
 
 ### SPEC-27.02: Extract Signature
 
@@ -139,9 +149,9 @@ impl<S: Signature> Predict<S> {
 ```
 
 **Acceptance Criteria**:
-- [ ] All history captured
-- [ ] Variables serialized
-- [ ] Output fields from signature
+- [x] History captured for extraction prompt
+- [x] Variables serialized for prompt context
+- [x] Output fields derived from signature metadata
 
 ### SPEC-27.03: Extraction Prompt
 
@@ -213,9 +223,9 @@ impl<S: Signature> Predict<S> {
 ```
 
 **Acceptance Criteria**:
-- [ ] Prompt includes all context
-- [ ] Schema generated from signature
-- [ ] Notes field for partial extractions
+- [x] Prompt includes history + variable context
+- [x] Schema generated from signature field metadata
+- [x] Notes/confidence extraction fields are supported
 
 ### SPEC-27.04: Fallback Result
 
@@ -305,15 +315,17 @@ impl<S: Signature> Predict<S> {
 ```
 
 **Acceptance Criteria**:
-- [ ] Three result variants
-- [ ] Confidence calculated
-- [ ] Partial outputs preserved on failure
+- [x] Three result variants
+- [x] Confidence calculated
+- [x] Partial outputs preserved on failure
 
 ---
 
 ## Integration
 
 ### With Orchestrator
+
+Status: Planned. The following orchestration loop is target architecture and is not currently wired as-is.
 
 ```rust
 impl Orchestrator {
@@ -396,14 +408,15 @@ impl Orchestrator {
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `test_trigger_max_iterations` | Trigger at max iterations | SPEC-27.01 |
-| `test_trigger_max_llm_calls` | Trigger at max LLM calls | SPEC-27.01 |
-| `test_trigger_timeout` | Trigger at timeout | SPEC-27.01 |
-| `test_no_trigger_on_submit` | No fallback if SUBMIT called | SPEC-27.01 |
-| `test_extraction_prompt` | Prompt generation | SPEC-27.03 |
-| `test_extraction_success` | Successful extraction | SPEC-27.04 |
-| `test_extraction_partial` | Partial extraction | SPEC-27.04 |
-| `test_confidence_calculation` | Confidence scoring | SPEC-27.04 |
+| `signature::fallback::tests::test_should_trigger` | Trigger behavior for limits/submitted state | SPEC-27.01 |
+| `signature::fallback::tests::test_extraction_prompt` | Prompt generation includes required context | SPEC-27.03 |
+| `signature::fallback::tests::test_parse_extraction_response` | Successful JSON extraction path | SPEC-27.04 |
+| `signature::fallback::tests::test_parse_extraction_response_markdown` | Markdown-wrapped JSON extraction path | SPEC-27.04 |
+| `signature::fallback::tests::test_parse_extraction_response_failure` | Extraction failure handling | SPEC-27.04 |
+| `signature::fallback::tests::test_execution_result_submitted` | Submitted result semantics | SPEC-27.04 |
+| `signature::fallback::tests::test_execution_result_extracted` | Extracted result semantics | SPEC-27.04 |
+| `signature::fallback::tests::test_execution_result_failed` | Failed result semantics | SPEC-27.04 |
+| Gap: orchestrator fallback loop integration tests | End-to-end orchestration wiring | Integration section |
 
 ---
 
@@ -411,4 +424,4 @@ impl Orchestrator {
 
 - [DSPy RLM extract_fallback](https://github.com/stanfordnlp/dspy/blob/main/dspy/predict/rlm.py)
 - SPEC-20: Typed Signatures (prerequisite)
-- Existing orchestrator: `src/orchestrator.rs`
+- Existing fallback runtime: `rlm-core/src/signature/fallback.rs`

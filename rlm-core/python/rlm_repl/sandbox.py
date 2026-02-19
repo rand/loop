@@ -42,6 +42,56 @@ class CompilationError(Exception):
     pass
 
 
+class SubmitSignal(BaseException):
+    """Internal control-flow signal to terminate execution after SUBMIT()."""
+
+
+def _serialize_submit_value(value: Any) -> Any:
+    """Serialize values to JSON-compatible structures for submit payloads."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_serialize_submit_value(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _serialize_submit_value(v) for k, v in value.items()}
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    if hasattr(value, "__dict__"):
+        return {
+            k: _serialize_submit_value(v)
+            for k, v in value.__dict__.items()
+            if not k.startswith("_")
+        }
+    return str(value)
+
+
+def _preview_value(value: Any, limit: int = 100) -> str:
+    """Create a bounded preview string for validation errors."""
+    text = repr(value)
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
+
+
+def _type_name(value: Any) -> str:
+    """Get the normalized type name used in validation errors."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    return type(value).__name__
+
+
 # Safe subset of builtins
 SAFE_BUILTINS = {
     **safe_builtins,
@@ -245,6 +295,9 @@ class Sandbox:
                      Uses global registry if not provided.
         """
         self.registry = registry or get_registry()
+        self.signature_registration: dict[str, Any] | None = None
+        self._submit_result: dict[str, Any] | None = None
+        self._submit_count = 0
         self.globals: dict[str, Any] = {}
         self.locals: dict[str, Any] = {}
         self._setup_environment()
@@ -273,12 +326,14 @@ class Sandbox:
         self.globals["summarize"] = helpers.summarize
         self.globals["llm"] = helpers.llm
         self.globals["llm_batch"] = helpers.llm_batch
+        self.globals["llm_query_batched"] = helpers.llm_query_batched
         self.globals["map_reduce"] = helpers.map_reduce
         self.globals["verify_claim"] = helpers.verify_claim
         self.globals["audit_reasoning"] = helpers.audit_reasoning
         self.globals["count_tokens"] = helpers.count_tokens
         self.globals["truncate"] = helpers.truncate
         self.globals["extract_code_blocks"] = helpers.extract_code_blocks
+        self.globals["SUBMIT"] = self._submit
 
         # Expose DeferredOperation for type checking
         self.globals["DeferredOperation"] = DeferredOperation
@@ -308,6 +363,213 @@ class Sandbox:
         except SyntaxError as e:
             raise CompilationError(f"Syntax error: {e}")
 
+    def set_signature_registration(self, registration: dict[str, Any] | None) -> None:
+        """Set signature metadata used for SUBMIT validation."""
+        self.signature_registration = registration
+
+    def clear_signature_registration(self) -> None:
+        """Clear signature metadata used for SUBMIT validation."""
+        self.signature_registration = None
+
+    def consume_submit_result(self) -> dict[str, Any] | None:
+        """Return and clear the latest submit result for current execution."""
+        result = self._submit_result
+        self._submit_result = None
+        return result
+
+    def _reset_submit_state(self) -> None:
+        self._submit_result = None
+        self._submit_count = 0
+
+    def _submit(self, outputs: Any) -> None:
+        """SUBMIT callable exposed to sandboxed code."""
+        serialized_outputs = _serialize_submit_value(outputs)
+        self._submit_count += 1
+
+        if self._submit_count > 1:
+            self._submit_result = {
+                "status": "validation_error",
+                "errors": [
+                    {
+                        "error_type": "multiple_submits",
+                        "count": self._submit_count,
+                    }
+                ],
+                "original_outputs": serialized_outputs,
+            }
+            raise SubmitSignal()
+
+        if self.signature_registration is None:
+            self._submit_result = {
+                "status": "validation_error",
+                "errors": [{"error_type": "no_signature_registered"}],
+                "original_outputs": serialized_outputs,
+            }
+            raise SubmitSignal()
+
+        errors = self._validate_submit_outputs(serialized_outputs)
+        if errors:
+            self._submit_result = {
+                "status": "validation_error",
+                "errors": errors,
+                "original_outputs": serialized_outputs,
+            }
+        else:
+            self._submit_result = {
+                "status": "success",
+                "outputs": serialized_outputs,
+            }
+        raise SubmitSignal()
+
+    def _validate_submit_outputs(self, outputs: Any) -> list[dict[str, Any]]:
+        errors: list[dict[str, Any]] = []
+
+        if not isinstance(outputs, dict):
+            return [
+                {
+                    "error_type": "validation_failed",
+                    "field": "",
+                    "reason": "SUBMIT outputs must be an object",
+                }
+            ]
+
+        output_fields = self.signature_registration.get("output_fields", [])
+        for field_spec in output_fields:
+            field_name = field_spec.get("name", "")
+            field_type = field_spec.get("field_type", {"type": "custom", "value": "unknown"})
+            required = field_spec.get("required", True)
+
+            if required and field_name not in outputs:
+                errors.append(
+                    {
+                        "error_type": "missing_field",
+                        "field": field_name,
+                        "expected_type": field_type,
+                    }
+                )
+                continue
+
+            if field_name in outputs:
+                self._validate_field_value(field_name, field_type, outputs[field_name], errors)
+
+        return errors
+
+    def _validate_field_value(
+        self,
+        field_name: str,
+        field_type: dict[str, Any],
+        value: Any,
+        errors: list[dict[str, Any]],
+    ) -> None:
+        type_tag = field_type.get("type")
+
+        if type_tag == "string":
+            if not isinstance(value, str):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+            return
+
+        if type_tag == "integer":
+            if not isinstance(value, int) or isinstance(value, bool):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+            return
+
+        if type_tag == "float":
+            if (not isinstance(value, (int, float))) or isinstance(value, bool):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+            return
+
+        if type_tag == "boolean":
+            if not isinstance(value, bool):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+            return
+
+        if type_tag == "enum":
+            allowed = field_type.get("value", [])
+            if not isinstance(value, str):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+            elif value not in allowed:
+                errors.append(
+                    {
+                        "error_type": "enum_invalid",
+                        "field": field_name,
+                        "value": value,
+                        "allowed": allowed,
+                    }
+                )
+            return
+
+        if type_tag == "list":
+            inner_type = field_type.get("value", {"type": "custom", "value": "unknown"})
+            if not isinstance(value, list):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+                return
+            for index, item in enumerate(value):
+                self._validate_field_value(
+                    f"{field_name}[{index}]",
+                    inner_type,
+                    item,
+                    errors,
+                )
+            return
+
+        if type_tag == "object":
+            nested_fields = field_type.get("value", [])
+            if not isinstance(value, dict):
+                self._append_type_mismatch(errors, field_name, field_type, value)
+                return
+            for nested in nested_fields:
+                nested_name = nested.get("name", "")
+                nested_type = nested.get("field_type", {"type": "custom", "value": "unknown"})
+                nested_required = nested.get("required", True)
+                nested_path = f"{field_name}.{nested_name}" if nested_name else field_name
+
+                if nested_required and nested_name not in value:
+                    errors.append(
+                        {
+                            "error_type": "missing_field",
+                            "field": nested_path,
+                            "expected_type": nested_type,
+                        }
+                    )
+                    continue
+
+                if nested_name in value:
+                    self._validate_field_value(
+                        nested_path,
+                        nested_type,
+                        value[nested_name],
+                        errors,
+                    )
+            return
+
+        if type_tag == "custom":
+            return
+
+        errors.append(
+            {
+                "error_type": "validation_failed",
+                "field": field_name,
+                "reason": f"Unknown field type: {type_tag}",
+            }
+        )
+
+    @staticmethod
+    def _append_type_mismatch(
+        errors: list[dict[str, Any]],
+        field_name: str,
+        expected_type: dict[str, Any],
+        value: Any,
+    ) -> None:
+        errors.append(
+            {
+                "error_type": "type_mismatch",
+                "field": field_name,
+                "expected": expected_type,
+                "got": _type_name(value),
+                "value_preview": _preview_value(value),
+            }
+        )
+
     def execute(
         self,
         code: str,
@@ -327,6 +589,7 @@ class Sandbox:
             SandboxError: If code violates sandbox restrictions
             PendingOperationError: If code accesses a pending deferred operation
         """
+        self._reset_submit_state()
         compiled = self.compile(code)
 
         stdout_capture = StringIO() if capture_output else None
@@ -340,8 +603,12 @@ class Sandbox:
                 sys.stdout = stdout_capture  # type: ignore
                 sys.stderr = stderr_capture  # type: ignore
 
-            # Execute the code
-            exec(compiled, self.globals, self.locals)
+            # Execute the code.
+            # SUBMIT() raises SubmitSignal to terminate execution intentionally.
+            try:
+                exec(compiled, self.globals, self.locals)
+            except SubmitSignal:
+                pass
 
             # Get the result (last expression value, if any)
             result = self.locals.get("_", None)
@@ -395,12 +662,14 @@ class Sandbox:
                 "summarize",
                 "llm",
                 "llm_batch",
+                "llm_query_batched",
                 "map_reduce",
                 "verify_claim",
                 "audit_reasoning",
                 "count_tokens",
                 "truncate",
                 "extract_code_blocks",
+                "SUBMIT",
             }
         )
 
@@ -413,4 +682,5 @@ class Sandbox:
     def clear(self) -> None:
         """Clear all user variables."""
         self.locals.clear()
+        self._reset_submit_state()
         self._setup_environment()

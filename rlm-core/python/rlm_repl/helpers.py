@@ -10,6 +10,7 @@ by the host process.
 from __future__ import annotations
 
 import re
+import warnings
 from typing import Any, Sequence
 
 from rlm_repl.deferred import DeferredOperation, OperationType, get_registry
@@ -242,6 +243,7 @@ def llm(
 def llm_batch(
     prompts: Sequence[str],
     contexts: Sequence[str] | None = None,
+    max_parallel: int = 5,
     model: str | None = None,
     max_tokens: int = 1024,
 ) -> DeferredOperation:
@@ -250,6 +252,7 @@ def llm_batch(
     Args:
         prompts: List of prompts
         contexts: Optional list of contexts (same length as prompts)
+        max_parallel: Maximum concurrent queries (default 5)
         model: Optional model override
         max_tokens: Maximum response tokens per call
 
@@ -264,9 +267,36 @@ def llm_batch(
         params={
             "prompts": list(prompts),
             "contexts": list(contexts) if contexts else None,
+            "max_parallel": max_parallel,
             "model": model,
             "max_tokens": max_tokens,
         },
+    )
+
+
+def llm_query_batched(
+    prompts: Sequence[str],
+    contexts: Sequence[str] | None = None,
+    max_parallel: int = 5,
+    model: str | None = None,
+    max_tokens: int = 1024,
+) -> DeferredOperation:
+    """Compatibility alias for llm_batch().
+
+    Deprecated:
+        Use `llm_batch(...)` instead.
+    """
+    warnings.warn(
+        "llm_query_batched() is deprecated; use llm_batch() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return llm_batch(
+        prompts=prompts,
+        contexts=contexts,
+        max_parallel=max_parallel,
+        model=model,
+        max_tokens=max_tokens,
     )
 
 

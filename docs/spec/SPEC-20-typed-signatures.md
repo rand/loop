@@ -2,7 +2,7 @@
 
 > DSPy-inspired typed signatures for rlm-core
 
-**Status**: Draft
+**Status**: In progress (runtime protocol implemented through M2-T04)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Tasks**: loop-d75, loop-jqo, loop-9l6, loop-bzz
@@ -190,7 +190,7 @@ Errors at compile time for invalid signatures.
 Python REPL function for structured output termination.
 
 ```python
-# In REPL sandbox
+# In REPL sandbox (rlm_repl.sandbox.Sandbox._submit)
 def SUBMIT(outputs: dict) -> NoReturn:
     """
     Terminate execution and return validated outputs.
@@ -198,8 +198,10 @@ def SUBMIT(outputs: dict) -> NoReturn:
     Args:
         outputs: Dictionary matching signature output fields
 
-    Raises:
-        SubmitError: If validation fails
+    Behavior:
+        - Validates against active signature registration
+        - Stores structured submit_result payload
+        - Terminates current execution via internal control-flow signal
     """
 ```
 
@@ -207,7 +209,7 @@ def SUBMIT(outputs: dict) -> NoReturn:
 1. SUBMIT() immediately terminates current execution
 2. Validates all required output fields present
 3. Validates field types match signature
-4. Returns SubmitResult to Rust orchestrator
+4. Includes `submit_result` in execute response to Rust orchestrator
 
 **Acceptance Criteria**:
 - [ ] SUBMIT() terminates execution immediately
@@ -221,9 +223,19 @@ Detailed SUBMIT semantics.
 ```rust
 pub enum SubmitResult {
     /// Successful submission with validated outputs
-    Success(serde_json::Value),
+    Success {
+        outputs: serde_json::Value,
+        metrics: Option<SubmitMetrics>,
+    },
     /// Validation failed
-    ValidationError(Vec<ValidationError>),
+    ValidationError {
+        errors: Vec<SubmitError>,
+        original_outputs: Option<serde_json::Value>,
+    },
+    /// Execution completed without SUBMIT
+    NotSubmitted {
+        reason: String,
+    },
 }
 ```
 
@@ -280,7 +292,7 @@ impl SubmitError {
 
 ### SPEC-20.10: REPL Protocol Extension
 
-JSON-RPC protocol for signature registration and SUBMIT.
+JSON-RPC protocol for signature registration and execute-response submit payload.
 
 ```json
 // Register signature before execution
@@ -296,24 +308,42 @@ JSON-RPC protocol for signature registration and SUBMIT.
     "id": 1
 }
 
-// SUBMIT call from Python
+// Optional signature cleanup
 {
     "jsonrpc": "2.0",
-    "method": "submit",
-    "params": {
-        "outputs": {
-            "vulnerabilities": ["SQL injection"],
-            "severity": "high"
+    "method": "clear_signature",
+    "params": null,
+    "id": 2
+}
+
+// Execute response carrying SUBMIT result
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "success": true,
+        "result": null,
+        "stdout": "",
+        "stderr": "",
+        "error": null,
+        "error_type": null,
+        "execution_time_ms": 12.3,
+        "pending_operations": [],
+        "submit_result": {
+            "status": "success",
+            "outputs": {
+                "vulnerabilities": ["SQL injection"],
+                "severity": "high"
+            }
         }
     },
-    "id": 2
+    "id": 3
 }
 ```
 
 **Acceptance Criteria**:
 - [ ] `register_signature` method implemented
-- [ ] `submit` method implemented
-- [ ] REPL Python side uses JSON-RPC for SUBMIT
+- [ ] `clear_signature` method implemented
+- [ ] Execute responses include optional `submit_result` payload for SUBMIT outcomes
 
 ### SPEC-20.11: Module Trait
 
@@ -418,13 +448,17 @@ where
 
 | Component | Location |
 |-----------|----------|
-| Signature trait | `src/signature/mod.rs` |
-| FieldSpec, FieldType | `src/signature/types.rs` |
-| Validation | `src/signature/validation.rs` |
-| Derive macro | `rlm-core-derive/src/signature.rs` |
-| Module trait | `src/module/mod.rs` |
-| Predict wrapper | `src/module/predict.rs` |
-| REPL SUBMIT | `python/rlm_repl/submit.py` |
+| Signature trait | `rlm-core/src/signature/mod.rs` |
+| FieldSpec, FieldType | `rlm-core/src/signature/types.rs` |
+| Validation | `rlm-core/src/signature/validation.rs` |
+| SUBMIT result/error types | `rlm-core/src/signature/submit.rs` |
+| Derive macro | `rlm-core-derive/src/lib.rs` |
+| Module trait | `rlm-core/src/module/mod.rs` |
+| Predict wrapper | `rlm-core/src/module/predict.rs` |
+| REPL SUBMIT runtime | `rlm-core/python/rlm_repl/sandbox.py` |
+| REPL protocol handlers | `rlm-core/python/rlm_repl/main.py` |
+| REPL protocol schema | `rlm-core/python/rlm_repl/protocol.py` |
+| Rust REPL client bridge | `rlm-core/src/repl.rs` |
 
 ---
 
@@ -432,15 +466,13 @@ where
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `test_signature_derive_basic` | Basic derive macro usage | SPEC-20.04 |
-| `test_signature_derive_all_types` | All field types | SPEC-20.05 |
-| `test_signature_validation_missing` | Missing required field | SPEC-20.03 |
-| `test_signature_validation_type` | Type mismatch | SPEC-20.03 |
-| `test_submit_success` | Successful SUBMIT | SPEC-20.07 |
-| `test_submit_missing_field` | SUBMIT with missing field | SPEC-20.09 |
-| `test_submit_type_mismatch` | SUBMIT with wrong type | SPEC-20.09 |
-| `test_module_compose` | Module composition | SPEC-20.13 |
-| `test_predict_few_shot` | Predict with demonstrations | SPEC-20.12 |
+| `signature::tests::derive_tests::*` | Derive macro and signature behavior | SPEC-20.04, SPEC-20.05 |
+| `signature::validation::tests::*` | Validation behavior and error paths | SPEC-20.03, SPEC-20.09 |
+| `signature::submit::tests::*` | SubmitResult/SubmitError serialization and semantics | SPEC-20.08, SPEC-20.09 |
+| `tests/test_repl.py::TestReplServer::test_submit_*` | Python SUBMIT scenarios (success + validation failures) | SPEC-20.07, SPEC-20.09, SPEC-20.10 |
+| `repl::tests::test_submit_result_roundtrip_*` (ignored) | Rust/Python end-to-end submit_result roundtrip scenarios | SPEC-20.08, SPEC-20.10 |
+| `module::compose::tests::*` | Module composition/name generation scaffolding | SPEC-20.13 |
+| `module::predict::tests::*` | Predict wrapper behavior and prompt/input formatting | SPEC-20.12 |
 
 ---
 

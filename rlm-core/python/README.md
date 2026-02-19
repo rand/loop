@@ -19,6 +19,9 @@ offering safe code execution with RLM-specific helper functions.
 ```bash
 # Run as subprocess
 python -m rlm_repl
+
+# Script entrypoint (equivalent)
+rlm-repl
 ```
 
 The REPL communicates via JSON-RPC over stdin/stdout. See the protocol module
@@ -31,6 +34,8 @@ Available in the REPL sandbox:
 - `peek(data, start, end)` - View slice of data
 - `search(data, pattern, regex=False)` - Search for patterns
 - `llm(prompt, context=None)` - Make LLM call (deferred)
+- `llm_batch(prompts, contexts=None, max_parallel=5, model=None, max_tokens=1024)` - Parallel LLM calls (deferred)
+- `llm_query_batched(...)` - Compatibility alias for `llm_batch` (deprecated)
 - `summarize(data, max_tokens=500)` - Summarize data (deferred)
 - `find_relevant(data, query, top_k=5)` - Semantic search (deferred)
 
