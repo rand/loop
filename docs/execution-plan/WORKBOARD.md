@@ -17,7 +17,7 @@ Owner: Orchestrator thread
 | Orchestrator | Steady-state governance + safe-mode enforcement | in_progress | M0-M6 complete; cadence execution is now active |
 | Lane A | M3 closure maintenance | paused | M3-T01 through M3-T04 completed |
 | Lane B | M1/M2 maintenance (read-only) | paused | No heavy commands |
-| Lane C | Ops-Weekly cadence + tuple refresh | in_progress | `loop-5va` reconciled on canonical committed tuple `30c1fa`; keep D-017 clean-clone policy active while canonical working tree remains dirty |
+| Lane C | Ops-Weekly cadence + tuple refresh | in_progress | `loop-5va` reconciled on canonical committed tuple `30c1fa`; keep D-017 clean-clone policy active while canonical working tree remains dirty; current cadence no-go is `VG-RFLX-001` permission blocker (B9) |
 
 ## Next Queue by Lane
 

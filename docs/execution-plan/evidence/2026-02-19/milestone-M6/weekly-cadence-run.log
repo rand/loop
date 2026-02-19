@@ -1,9 +1,12 @@
 weekly cadence packet starting
-date: UTC 2026-02-19 20:41:08
+date: UTC 2026-02-19 21:01:30
 evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6
 pipeline_evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4
-loop_min_available_mib: 4096
+loop_min_available_mib: 3072
 run_la_full_snapshot: 1
+loop_agent_tuple_policy: committed_clean_clone_only
+loop_agent_canonical_dir: /Users/rand/src/loop-agent
+loop_agent_clean_clone_dir: /tmp/loop-agent-clean-cadence
 
 tuple snapshot captured: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-tuples.txt
 

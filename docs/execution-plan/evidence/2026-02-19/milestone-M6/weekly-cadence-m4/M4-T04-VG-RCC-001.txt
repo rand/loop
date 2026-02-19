@@ -1,14 +1,18 @@
-safe_run: heavy command admitted (available=5032MiB, threshold=4096MiB)
-ImportError while loading conftest '/Users/rand/src/rlm-claude-code/tests/conftest.py'.
-tests/conftest.py:55: in <module>
-    from src.config import RLMConfig
-src/__init__.py:18: in <module>
-    from .auto_activation import AutoActivator, check_auto_activation
-src/auto_activation.py:20: in <module>
-    from .complexity_classifier import (
-src/complexity_classifier.py:12: in <module>
-    import rlm_core
-rlm_core/__init__.py:72: in <module>
-    raise ImportError(_msg) from _e
-E   ImportError: rlm_core native extension is not available. This typically means the Rust library was not compiled for your platform. Install from a pre-built wheel: pip install rlm-claude-code
-E   Original error: No module named 'rlm_core.rlm_core'
+safe_run: heavy command admitted (available=3488MiB, threshold=3072MiB)
+============================= test session starts ==============================
+platform darwin -- Python 3.12.11, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/rand/src/rlm-claude-code
+configfile: pyproject.toml
+plugins: anyio-4.12.1, benchmark-5.2.3, asyncio-1.3.0, hypothesis-6.150.0, cov-7.0.0, syrupy-5.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 204 items
+
+tests/unit/test_memory_store.py ........................................ [ 19%]
+........................................................................ [ 54%]
+...........................                                              [ 68%]
+tests/unit/test_complexity_classifier.py ........................        [ 79%]
+tests/unit/test_smart_router.py ........................................ [ 99%]
+.                                                                        [100%]
+
+============================= 204 passed in 1.43s ==============================

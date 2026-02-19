@@ -1,4 +1,4 @@
-safe_run: heavy command admitted (available=5015MiB, threshold=4096MiB)
+safe_run: heavy command admitted (available=3650MiB, threshold=3072MiB)
 error: failed to open: /Users/rand/src/io-rflx/target/debug/.cargo-lock
 
 Caused by:

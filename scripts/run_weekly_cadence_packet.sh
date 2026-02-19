@@ -133,20 +133,20 @@ VG_RCC_STATUS="unknown"
 VG_LA_STATUS="unknown"
 VG_RFLX_STATUS="unknown"
 if [[ -f "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" ]]; then
-  VG_RCC_STATUS="$(rg 'VG-RCC-001' "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" | sed -E 's/.*VG-RCC-001`: ([a-z_]+).*/\1/' | head -n 1)"
-  VG_LA_STATUS="$(rg 'VG-LA-001' "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" | sed -E 's/.*VG-LA-001`: ([a-z_]+).*/\1/' | head -n 1)"
-  VG_RFLX_STATUS="$(rg 'VG-RFLX-001' "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" | sed -E 's/.*VG-RFLX-001`: ([a-z_]+).*/\1/' | head -n 1)"
+  VG_RCC_STATUS="$(rg 'VG-RCC-001' "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" | sed -E 's/.*VG-RCC-001`: ([a-z_]+).*/\1/' | head -n 1 || true)"
+  VG_LA_STATUS="$(rg 'VG-LA-001' "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" | sed -E 's/.*VG-LA-001`: ([a-z_]+).*/\1/' | head -n 1 || true)"
+  VG_RFLX_STATUS="$(rg 'VG-RFLX-001' "$PIPELINE_EVIDENCE_DIR/M4-T04-pipeline-summary.md" | sed -E 's/.*VG-RFLX-001`: ([a-z_]+).*/\1/' | head -n 1 || true)"
 fi
 
 RCC_NOTE="none"
 if [[ -f "$PIPELINE_EVIDENCE_DIR/M4-T04-VG-RCC-001.txt" ]]; then
-  RCC_NOTE="$(rg -n 'ImportError|error:|failed|Operation not permitted' "$PIPELINE_EVIDENCE_DIR/M4-T04-VG-RCC-001.txt" | head -n 1 | sed 's/^[0-9]*://')"
+  RCC_NOTE="$(rg -n 'ImportError|error:|failed|Operation not permitted' "$PIPELINE_EVIDENCE_DIR/M4-T04-VG-RCC-001.txt" | head -n 1 | sed 's/^[0-9]*://' || true)"
   RCC_NOTE="${RCC_NOTE:-none}"
 fi
 
 RFLX_NOTE="none"
 if [[ -f "$PIPELINE_EVIDENCE_DIR/M4-T04-VG-RFLX-001.txt" ]]; then
-  RFLX_NOTE="$(rg -n 'error:|failed|Operation not permitted' "$PIPELINE_EVIDENCE_DIR/M4-T04-VG-RFLX-001.txt" | head -n 1 | sed 's/^[0-9]*://')"
+  RFLX_NOTE="$(rg -n 'error:|failed|Operation not permitted' "$PIPELINE_EVIDENCE_DIR/M4-T04-VG-RFLX-001.txt" | head -n 1 | sed 's/^[0-9]*://' || true)"
   RFLX_NOTE="${RFLX_NOTE:-none}"
 fi
 
@@ -195,7 +195,7 @@ $(cat "$TUPLE_TXT")
 ## Policy Notes
 
 - Full-suite \`VG-LA-002\` promotion criteria are governed by D-014.
-- `loop-agent` claim-grade tuple evidence is restricted to clean-clone committed mode while D-017 is active.
+- \`loop-agent\` claim-grade tuple evidence is restricted to clean-clone committed mode while D-017 is active.
 - This packet is intended for weekly cadence review and release-readiness context updates.
 EOF
 
