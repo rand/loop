@@ -10,11 +10,18 @@
 use crate::complexity::{ActivationDecision, TaskComplexitySignals};
 use crate::context::SessionContext;
 use crate::error::Result;
+use crate::signature::{
+    ExecutionLimits, ExecutionResult, FallbackExtractor, FallbackTrigger, ReplHistory, Signature,
+    SubmitResult,
+};
 use crate::trajectory::TrajectoryEvent;
 use async_trait::async_trait;
 use futures::Stream;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
 use std::pin::Pin;
+use std::time::Instant;
 
 /// Result of a recursive RLM sub-call.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -245,6 +252,192 @@ impl OrchestratorBuilder {
     }
 }
 
+/// Single execution step consumed by [`FallbackLoop`].
+#[derive(Debug, Clone, Default)]
+pub struct FallbackLoopStep {
+    /// Code executed in this step.
+    pub code: String,
+    /// Number of LLM calls made during this step.
+    pub llm_calls: usize,
+    /// Captured stdout from the step.
+    pub stdout: String,
+    /// Captured stderr from the step.
+    pub stderr: String,
+    /// Optional SUBMIT result produced by the step.
+    pub submit_result: Option<SubmitResult>,
+    /// Full variable snapshot after the step.
+    pub variables: HashMap<String, Value>,
+}
+
+impl FallbackLoopStep {
+    /// Create a new step with code content.
+    pub fn new(code: impl Into<String>) -> Self {
+        Self {
+            code: code.into(),
+            ..Self::default()
+        }
+    }
+
+    /// Set the number of LLM calls recorded for this step.
+    pub fn with_llm_calls(mut self, llm_calls: usize) -> Self {
+        self.llm_calls = llm_calls;
+        self
+    }
+
+    /// Set the captured stdout for this step.
+    pub fn with_stdout(mut self, stdout: impl Into<String>) -> Self {
+        self.stdout = stdout.into();
+        self
+    }
+
+    /// Set the captured stderr for this step.
+    pub fn with_stderr(mut self, stderr: impl Into<String>) -> Self {
+        self.stderr = stderr.into();
+        self
+    }
+
+    /// Set the SUBMIT result for this step.
+    pub fn with_submit_result(mut self, submit_result: SubmitResult) -> Self {
+        self.submit_result = Some(submit_result);
+        self
+    }
+
+    /// Set the variable snapshot for this step.
+    pub fn with_variables(mut self, variables: HashMap<String, Value>) -> Self {
+        self.variables = variables;
+        self
+    }
+}
+
+/// Minimal fallback-aware execution loop used by orchestrator integrations.
+///
+/// This wires SPEC-27 fallback trigger checks into an iterative runtime path:
+/// - successful `SUBMIT` exits with `ExecutionResult::Submitted`
+/// - submit validation failures terminate without fallback extraction
+/// - max-iteration / max-llm-call / timeout limits trigger fallback extraction
+pub struct FallbackLoop<S: Signature> {
+    extractor: FallbackExtractor<S>,
+    limits: ExecutionLimits,
+}
+
+impl<S: Signature> FallbackLoop<S> {
+    /// Create a fallback loop with default extractor configuration.
+    pub fn new(limits: ExecutionLimits) -> Self {
+        Self {
+            extractor: FallbackExtractor::new(),
+            limits,
+        }
+    }
+
+    /// Create a fallback loop with a custom extractor.
+    pub fn with_extractor(limits: ExecutionLimits, extractor: FallbackExtractor<S>) -> Self {
+        Self { extractor, limits }
+    }
+
+    /// Run the loop until SUBMIT success, fallback extraction, or terminal failure.
+    pub fn run<NextStep, ExtractResponse>(
+        &self,
+        mut next_step: NextStep,
+        mut extract_response: ExtractResponse,
+    ) -> Result<ExecutionResult<S::Outputs>>
+    where
+        NextStep: FnMut() -> Result<Option<FallbackLoopStep>>,
+        ExtractResponse: FnMut(&str, FallbackTrigger) -> Result<String>,
+    {
+        let mut history = ReplHistory::new();
+        let mut variables = HashMap::new();
+        let started = Instant::now();
+
+        loop {
+            history.total_time_ms = started.elapsed().as_millis() as u64;
+            if let Some(trigger) = self.extractor.should_trigger(&history, &self.limits) {
+                return self.extract_with_trigger(&history, &variables, trigger, &mut extract_response);
+            }
+
+            let Some(step) = next_step()? else {
+                return Ok(ExecutionResult::failed(
+                    "Execution ended before SUBMIT and before fallback trigger",
+                    FallbackTrigger::Manual,
+                ));
+            };
+
+            let timestamp_ms = started.elapsed().as_millis() as u64;
+            self.record_step(&mut history, &step, timestamp_ms);
+            variables = step.variables;
+
+            if let Some(submit_result) = step.submit_result {
+                match submit_result {
+                    SubmitResult::Success { outputs, .. } => {
+                        let parsed = match serde_json::from_value(outputs) {
+                            Ok(parsed) => parsed,
+                            Err(err) => {
+                                return Ok(ExecutionResult::failed(
+                                    format!(
+                                        "SUBMIT outputs failed signature decode: {}",
+                                        err
+                                    ),
+                                    FallbackTrigger::Manual,
+                                ));
+                            }
+                        };
+                        return Ok(ExecutionResult::submitted(parsed));
+                    }
+                    SubmitResult::ValidationError { errors, .. } => {
+                        let joined = errors
+                            .into_iter()
+                            .map(|e| e.to_string())
+                            .collect::<Vec<_>>()
+                            .join("; ");
+                        return Ok(ExecutionResult::failed(
+                            format!("SUBMIT validation failed: {}", joined),
+                            FallbackTrigger::Manual,
+                        ));
+                    }
+                    SubmitResult::NotSubmitted { reason } => {
+                        history.add_error(format!("SUBMIT not called: {}", reason), timestamp_ms);
+                    }
+                }
+            }
+
+            history.total_time_ms = started.elapsed().as_millis() as u64;
+            if let Some(trigger) = self.extractor.should_trigger(&history, &self.limits) {
+                return self.extract_with_trigger(&history, &variables, trigger, &mut extract_response);
+            }
+        }
+    }
+
+    fn record_step(&self, history: &mut ReplHistory, step: &FallbackLoopStep, timestamp_ms: u64) {
+        history.add_code(step.code.clone(), timestamp_ms);
+
+        if !step.stdout.trim().is_empty() {
+            history.add_output(step.stdout.clone(), timestamp_ms);
+        }
+
+        if !step.stderr.trim().is_empty() {
+            history.add_error(step.stderr.clone(), timestamp_ms);
+        }
+
+        for _ in 0..step.llm_calls {
+            history.add_llm_query("[orchestrator llm call]", timestamp_ms);
+        }
+    }
+
+    fn extract_with_trigger<ExtractResponse>(
+        &self,
+        history: &ReplHistory,
+        variables: &HashMap<String, Value>,
+        trigger: FallbackTrigger,
+        extract_response: &mut ExtractResponse,
+    ) -> Result<ExecutionResult<S::Outputs>>
+    where
+        ExtractResponse: FnMut(&str, FallbackTrigger) -> Result<String>,
+    {
+        let prompt = self.extractor.extraction_prompt(history, variables);
+        let response = extract_response(&prompt, trigger)?;
+        Ok(self.extractor.parse_extraction_response(&response, trigger))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -304,5 +497,162 @@ mod tests {
             ExecutionMode::Balanced.typical_budget_usd()
                 < ExecutionMode::Thorough.typical_budget_usd()
         );
+    }
+
+    mod fallback {
+        use super::*;
+        use crate::signature::{FieldSpec, FieldType, SubmitError};
+        use serde::{Deserialize, Serialize};
+        use serde_json::json;
+        use std::collections::VecDeque;
+
+        #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+        struct TestOutputs {
+            answer: String,
+        }
+
+        struct TestSignature;
+
+        impl Signature for TestSignature {
+            type Inputs = ();
+            type Outputs = TestOutputs;
+
+            fn instructions() -> &'static str {
+                "Test"
+            }
+
+            fn input_fields() -> Vec<FieldSpec> {
+                Vec::new()
+            }
+
+            fn output_fields() -> Vec<FieldSpec> {
+                vec![FieldSpec::new("answer", FieldType::String)]
+            }
+        }
+
+        #[test]
+        fn test_submit_success_bypasses_fallback_extraction() {
+            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(1, 1, 1));
+            let mut steps = VecDeque::from(vec![
+                FallbackLoopStep::new("SUBMIT({'answer': 'done'})")
+                    .with_submit_result(SubmitResult::success(json!({"answer": "done"}))),
+            ]);
+
+            let mut fallback_called = false;
+            let result = loop_runner
+                .run(
+                    || Ok(steps.pop_front()),
+                    |_prompt, _trigger| {
+                        fallback_called = true;
+                        Ok("{\"answer\":\"fallback\",\"_confidence\":0.1}".to_string())
+                    },
+                )
+                .unwrap();
+
+            assert!(result.is_submitted());
+            assert_eq!(result.outputs().unwrap().answer, "done");
+            assert!(!fallback_called);
+        }
+
+        #[test]
+        fn test_max_iterations_triggers_fallback_extraction() {
+            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(1, 10, 60_000));
+            let mut vars = HashMap::new();
+            vars.insert("answer".to_string(), json!("from_vars"));
+
+            let mut steps = VecDeque::from(vec![
+                FallbackLoopStep::new("x = 'from_vars'").with_variables(vars),
+            ]);
+
+            let result = loop_runner
+                .run(
+                    || Ok(steps.pop_front()),
+                    |prompt, trigger| {
+                        assert_eq!(trigger, FallbackTrigger::MaxIterations);
+                        assert!(prompt.contains("x = 'from_vars'"));
+                        assert!(prompt.contains("from_vars"));
+                        Ok("{\"answer\":\"from_vars\",\"_confidence\":0.8}".to_string())
+                    },
+                )
+                .unwrap();
+
+            match result {
+                ExecutionResult::Extracted { trigger_reason, .. } => {
+                    assert_eq!(trigger_reason, FallbackTrigger::MaxIterations);
+                }
+                other => panic!("expected extracted fallback result, got {:?}", other),
+            }
+        }
+
+        #[test]
+        fn test_max_llm_calls_triggers_fallback_extraction() {
+            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 1, 60_000));
+            let mut steps = VecDeque::from(vec![
+                FallbackLoopStep::new("LLM_QUERY('hello')").with_llm_calls(1),
+            ]);
+
+            let result = loop_runner
+                .run(
+                    || Ok(steps.pop_front()),
+                    |_prompt, trigger| {
+                        assert_eq!(trigger, FallbackTrigger::MaxLLMCalls);
+                        Ok("{\"answer\":\"llm_limit\",\"_confidence\":0.6}".to_string())
+                    },
+                )
+                .unwrap();
+
+            match result {
+                ExecutionResult::Extracted { trigger_reason, .. } => {
+                    assert_eq!(trigger_reason, FallbackTrigger::MaxLLMCalls);
+                }
+                other => panic!("expected extracted fallback result, got {:?}", other),
+            }
+        }
+
+        #[test]
+        fn test_timeout_triggers_fallback_before_step_execution() {
+            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 10, 0));
+
+            let result = loop_runner
+                .run(
+                    || panic!("timeout-triggered fallback should not request a step"),
+                    |_prompt, trigger| {
+                        assert_eq!(trigger, FallbackTrigger::Timeout);
+                        Ok("{\"answer\":\"timeout\",\"_confidence\":0.7}".to_string())
+                    },
+                )
+                .unwrap();
+
+            match result {
+                ExecutionResult::Extracted { trigger_reason, .. } => {
+                    assert_eq!(trigger_reason, FallbackTrigger::Timeout);
+                }
+                other => panic!("expected extracted fallback result, got {:?}", other),
+            }
+        }
+
+        #[test]
+        fn test_submit_validation_error_is_terminal_without_fallback() {
+            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 10, 60_000));
+            let mut steps = VecDeque::from(vec![
+                FallbackLoopStep::new("SUBMIT({})").with_submit_result(SubmitResult::validation_error(vec![
+                    SubmitError::NoSignatureRegistered,
+                ])),
+            ]);
+
+            let mut fallback_called = false;
+            let result = loop_runner
+                .run(
+                    || Ok(steps.pop_front()),
+                    |_prompt, _trigger| {
+                        fallback_called = true;
+                        Ok("{\"answer\":\"unexpected\",\"_confidence\":0.2}".to_string())
+                    },
+                )
+                .unwrap();
+
+            assert!(result.is_failed());
+            assert!(!fallback_called);
+        }
     }
 }

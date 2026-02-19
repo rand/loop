@@ -70,7 +70,7 @@ pub use module::{
     chain_direct, BootstrapFewShot, Chain, Demonstration, Example, Module, ModuleConfig,
     OptimizationStats, OptimizedModule, Optimizer, ParallelVec, Predict, PredictConfig, Predictor,
 };
-pub use orchestrator::Orchestrator;
+pub use orchestrator::{FallbackLoop, FallbackLoopStep, Orchestrator};
 pub use repl::{ExecuteResult, ReplConfig, ReplHandle, ReplPool};
 pub use topos::{
     IndexBuilder, LeanRef, Link, LinkIndex, LinkType, ToposClient, ToposClientConfig, ToposRef,

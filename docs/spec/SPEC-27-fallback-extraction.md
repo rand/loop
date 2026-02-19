@@ -2,7 +2,7 @@
 
 > Graceful output extraction when execution limits reached
 
-**Status**: Partially implemented (`signature::fallback` primitives implemented; orchestrator wiring pending)
+**Status**: Implemented in `rlm-core` runtime primitives (`orchestrator::FallbackLoop` + `signature::fallback`), with adapter-level adoption tracked separately in milestone sequencing
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-tua
@@ -22,7 +22,7 @@ Implement DSPy-style fallback extraction that forces output extraction when max_
 | SPEC-27.02 Extraction context capture | Implemented (shape differs from draft structs) | `ReplHistory`, variable capture, and prompt builders in `rlm-core/src/signature/fallback.rs` |
 | SPEC-27.03 Extraction prompt | Implemented | `FallbackExtractor::extraction_prompt` |
 | SPEC-27.04 Execution result model | Implemented | `ExecutionResult` and confidence helpers in `rlm-core/src/signature/fallback.rs` |
-| Orchestrator loop wiring | Planned | No direct `run_with_fallback` orchestrator integration path yet |
+| Orchestrator loop wiring | Implemented (runtime helper path) | `FallbackLoop` + fallback trigger tests in `rlm-core/src/orchestrator.rs` |
 
 ## Requirements
 
@@ -325,7 +325,7 @@ impl<S: Signature> Predict<S> {
 
 ### With Orchestrator
 
-Status: Planned. The following orchestration loop is target architecture and is not currently wired as-is.
+Status: Implemented as reusable runtime wiring in `orchestrator::FallbackLoop`. The pseudocode below remains target-shape architecture guidance.
 
 ```rust
 impl Orchestrator {
@@ -416,7 +416,7 @@ impl Orchestrator {
 | `signature::fallback::tests::test_execution_result_submitted` | Submitted result semantics | SPEC-27.04 |
 | `signature::fallback::tests::test_execution_result_extracted` | Extracted result semantics | SPEC-27.04 |
 | `signature::fallback::tests::test_execution_result_failed` | Failed result semantics | SPEC-27.04 |
-| Gap: orchestrator fallback loop integration tests | End-to-end orchestration wiring | Integration section |
+| `orchestrator::tests::fallback::*` | Orchestrator runtime-loop trigger + submit-bypass wiring | Integration section |
 
 ---
 

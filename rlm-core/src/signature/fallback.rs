@@ -123,6 +123,15 @@ impl<O> ExecutionResult<O> {
         }
     }
 
+    /// Get fallback trigger information when available.
+    pub fn trigger(&self) -> Option<FallbackTrigger> {
+        match self {
+            Self::Submitted(_) => None,
+            Self::Extracted { trigger_reason, .. } => Some(*trigger_reason),
+            Self::Failed { trigger, .. } => Some(*trigger),
+        }
+    }
+
     /// Map the outputs to a new type.
     pub fn map<U, F: FnOnce(O) -> U>(self, f: F) -> ExecutionResult<U> {
         match self {
@@ -800,5 +809,19 @@ Here is the extracted data:
 
         assert!(mapped.is_submitted());
         assert_eq!(mapped.outputs(), Some(&"42".to_string()));
+    }
+
+    #[test]
+    fn test_execution_result_trigger_accessor() {
+        let submitted: ExecutionResult<i32> = ExecutionResult::submitted(1);
+        assert_eq!(submitted.trigger(), None);
+
+        let extracted: ExecutionResult<i32> =
+            ExecutionResult::extracted(2, 0.7, FallbackTrigger::MaxIterations);
+        assert_eq!(extracted.trigger(), Some(FallbackTrigger::MaxIterations));
+
+        let failed: ExecutionResult<i32> =
+            ExecutionResult::failed("x", FallbackTrigger::Timeout);
+        assert_eq!(failed.trigger(), Some(FallbackTrigger::Timeout));
     }
 }

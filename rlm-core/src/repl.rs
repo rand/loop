@@ -83,6 +83,25 @@ pub struct ExecuteResult {
     pub submit_result: Option<SubmitResult>,
 }
 
+impl ExecuteResult {
+    /// Convert this result into a fallback-loop step for orchestrator wiring.
+    pub fn into_fallback_loop_step(
+        self,
+        code: impl Into<String>,
+        llm_calls: usize,
+        variables: HashMap<String, Value>,
+    ) -> crate::orchestrator::FallbackLoopStep {
+        crate::orchestrator::FallbackLoopStep {
+            code: code.into(),
+            llm_calls,
+            stdout: self.stdout,
+            stderr: self.stderr,
+            submit_result: self.submit_result,
+            variables,
+        }
+    }
+}
+
 /// A pending deferred operation that needs to be resolved.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PendingOperation {
@@ -800,6 +819,34 @@ SUBMIT({'answer': 'second'})
         let json = serde_json::to_string(&result).unwrap();
         // submit_result should be skipped when None
         assert!(!json.contains("submit_result"));
+    }
+
+    #[test]
+    fn test_execute_result_into_fallback_loop_step() {
+        use crate::signature::SubmitResult;
+
+        let result = ExecuteResult {
+            success: true,
+            result: None,
+            stdout: "out".to_string(),
+            stderr: "err".to_string(),
+            error: None,
+            error_type: None,
+            execution_time_ms: 10.0,
+            pending_operations: vec!["op1".to_string()],
+            submit_result: Some(SubmitResult::success(serde_json::json!({"answer": "ok"}))),
+        };
+
+        let mut vars = HashMap::new();
+        vars.insert("answer".to_string(), serde_json::json!("ok"));
+        let step = result.into_fallback_loop_step("SUBMIT({'answer': 'ok'})", 2, vars.clone());
+
+        assert_eq!(step.code, "SUBMIT({'answer': 'ok'})");
+        assert_eq!(step.llm_calls, 2);
+        assert_eq!(step.stdout, "out");
+        assert_eq!(step.stderr, "err");
+        assert_eq!(step.variables, vars);
+        assert!(matches!(step.submit_result, Some(SubmitResult::Success { .. })));
     }
 
     #[test]

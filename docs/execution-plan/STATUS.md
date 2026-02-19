@@ -89,13 +89,14 @@ Last updated: 2026-02-19
 | R35 | Published dp-codex-aligned M7 execution tranche with sequenced task cards and explicit gate matrix extensions | `evidence/2026-02-19/milestone-M7/M7-dp-decompose-context1024.json` |
 | R36 | Opened Beads execution epic `loop-bih` with child tasks `loop-bih.1`..`loop-bih.10` to track M7 implementation across sessions | `bd show loop-bih` |
 | R37 | Integrated crash-session recovery bundles in audited commit trains (REPL/SUBMIT/batch, stabilization, behavior adjustments) with evidence-backed validation and residue cleanup | `evidence/2026-02-19/milestone-M7/recovery-integration-summary.md` |
+| R38 | Implemented SPEC-27 runtime fallback-loop wiring (`orchestrator::FallbackLoop`) with deterministic trigger coverage and submit/fallback efficacy revalidation artifacts | `evidence/2026-02-19/milestone-M7/M7-T02-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
 | P0 | M7-T01 (`loop-bih.1`) | Complete remaining SPEC-26 host-orchestration closure after recovered REPL/helper integration (`G-001`) |
-| P0 | M7-T02 (`loop-bih.2`) | Close SPEC-27 orchestrator fallback wiring gap (`G-002`) |
+| P0 | M7-T02 (`loop-bih.2`) | Finalize SPEC-27 closure bookkeeping after runtime fallback-loop implementation and gate evidence landing (`G-002`) |
 | P0 | M7-T03 (`loop-bih.3`) | Complete SPEC-20 typed-signature parity (enum + input validation) |
 | P1 | M7-T04 (`loop-bih.4`) | Integrate dual-model orchestration behavior (SPEC-21) |
 | P1 | M7-T05 (`loop-bih.5`) | Remove proof-engine placeholders and persist learning/session behavior (SPEC-22) |
