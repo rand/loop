@@ -14,21 +14,22 @@ Owner: Orchestrator thread
 
 | Lane | Current Assignment | Status | Notes |
 |---|---|---|---|
-| Orchestrator | Steady-state governance + safe-mode enforcement | in_progress | M0-M6 complete; cadence execution is now active |
-| Lane A | M3 closure maintenance | paused | M3-T01 through M3-T04 completed |
-| Lane B | M1/M2 maintenance (read-only) | paused | No heavy commands |
-| Lane C | Ops-Weekly cadence + tuple refresh | in_progress | `loop-5va` reconciled on canonical committed tuple `30c1fa`; keep D-017 clean-clone policy active while canonical working tree remains dirty; latest weekly cadence required gates are green |
+| Orchestrator | M7 tranche orchestration + safe-mode enforcement | in_progress | M7 plan published; execute task cards sequentially with evidence-first closure |
+| Lane A | M7 core runtime closure (`M7-T01`..`M7-T08`) | active | Start with `M7-T01` (`loop-bih.1`); one heavy task at a time |
+| Lane B | M7 docs/governance reconciliation prep (`M7-T10`) | paused | Read-only until orchestrator activates after implementation tasks |
+| Lane C | Ops-Weekly cadence + M7 interop follow-up (`M7-T09`) | in_progress | Keep D-017 clean-clone policy active; run cadence between M7 heavy tasks as admission allows |
 
 ## Next Queue by Lane
 
-- Lane A: maintenance only
-- Lane B: maintenance only
-- Lane C: ongoing Ops-Weekly cadence
+- Lane A: `M7-T01` (`loop-bih.1`) -> `M7-T02` (`loop-bih.2`) -> `M7-T03` (`loop-bih.3`)
+- Lane B: prepare SPEC status reconciliation checklist for `M7-T10`
+- Lane C: continue Ops-Weekly cadence; stage `M7-T09` fixture/calibration prerequisites
 
 ## Lane Activation Rules
 
-- Lane C may run heavy commands via wrapper.
-- Lane A/B remain read-only until orchestrator explicitly marks them active.
+- Lane A is primary heavy lane for M7 implementation tasks.
+- Lane C may run heavy commands only when Lane A is idle.
+- Lane B remains read-only until orchestrator explicitly marks it active.
 - Never run heavy commands concurrently across lanes.
 
 ## Handoff Intake Checklist (Orchestrator)

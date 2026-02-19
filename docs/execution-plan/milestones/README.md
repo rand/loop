@@ -9,4 +9,4 @@ Use one milestone file per active session.
 - `M4.md`: Consumer integration tracks
 - `M5.md`: Performance and efficacy validation
 - `M6.md`: Rollout and governance
-
+- `M7.md`: Spec completion and integration hardening

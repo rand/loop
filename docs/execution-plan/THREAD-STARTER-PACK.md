@@ -37,8 +37,8 @@ Read:
 2) /Users/rand/src/loop/docs/execution-plan/LANE-MAP.md
 3) /Users/rand/src/loop/docs/execution-plan/safe-mode/SAFETY-POLICY.md
 4) /Users/rand/src/loop/docs/execution-plan/safe-mode/SAFE-START-CHECKLIST.md
-5) /Users/rand/src/loop/docs/execution-plan/milestones/M1.md
-6) /Users/rand/src/loop/docs/execution-plan/milestones/M2.md
+5) /Users/rand/src/loop/docs/execution-plan/milestones/M7.md
+6) /Users/rand/src/loop/docs/execution-plan/VALIDATION-MATRIX.md
 7) Assigned task IDs from orchestrator
 
 Rules:
@@ -63,10 +63,15 @@ You are Lane B worker.
 Read:
 1) /Users/rand/src/loop/docs/execution-plan/ORCHESTRATION.md
 2) /Users/rand/src/loop/docs/execution-plan/LANE-MAP.md
-3) /Users/rand/src/loop/docs/execution-plan/milestones/M3.md
+3) /Users/rand/src/loop/docs/execution-plan/milestones/M7.md
 4) /Users/rand/src/loop/docs/spec/SPEC-20-typed-signatures.md
-5) /Users/rand/src/loop/docs/spec/SPEC-26-batched-queries.md
-6) /Users/rand/src/loop/docs/spec/SPEC-27-fallback-extraction.md
+5) /Users/rand/src/loop/docs/spec/SPEC-21-dual-model-optimization.md
+6) /Users/rand/src/loop/docs/spec/SPEC-22-proof-protocol.md
+7) /Users/rand/src/loop/docs/spec/SPEC-23-graph-visualization.md
+8) /Users/rand/src/loop/docs/spec/SPEC-24-bootstrap-optimizer.md
+9) /Users/rand/src/loop/docs/spec/SPEC-25-context-externalization.md
+10) /Users/rand/src/loop/docs/spec/SPEC-26-batched-queries.md
+11) /Users/rand/src/loop/docs/spec/SPEC-27-fallback-extraction.md
 
 Rules:
 - In standby mode: analysis/read-only only.
@@ -88,7 +93,8 @@ Read:
 1) /Users/rand/src/loop/docs/execution-plan/ORCHESTRATION.md
 2) /Users/rand/src/loop/docs/execution-plan/LANE-MAP.md
 3) /Users/rand/src/loop/docs/execution-plan/contracts/CONSUMER-INTEGRATION.md
-4) /Users/rand/src/loop/docs/execution-plan/milestones/M4.md
+4) /Users/rand/src/loop/docs/execution-plan/contracts/IO-RFLX-INTEROP-CONTRACT.md
+5) /Users/rand/src/loop/docs/execution-plan/milestones/M7.md
 
 Consumer repos:
 - /Users/rand/src/rlm-claude-code
@@ -119,4 +125,3 @@ Safety events (if any):
 Remaining blockers:
 Recommended next task:
 ```
-

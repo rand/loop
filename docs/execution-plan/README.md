@@ -13,14 +13,14 @@ Safe mode is the default operating profile on this machine due prior memory exha
 - Small-batch: execute one task card at a time, not one milestone at a time.
 - Reproducibility: every gate has a deterministic command and pass criteria.
 
-## Current Reality (2026-02-18 Baseline)
+## Current Reality (2026-02-19 Post-M6 + M7 Planning)
 
-- `rlm-core` default build is broken in `src/ffi/mod.rs` (`Vec::new()` inference issue under feature cfg).
-- Rust REPL client expects `register_signature` / `clear_signature` and `submit_result`; Python JSON-RPC server does not currently implement these paths.
-- Rust spawns REPL via `python -m rlm_repl`, but Python package only defines script entrypoint (`rlm-repl`) and no `rlm_repl.__main__`.
-- SPEC/API drift exists for batched queries (`llm_query_batched` in spec vs `llm_batch` in runtime helper) and SPEC-20 file locations.
-- `rlm-core` full gemini-profile regression run currently reports multiple failing tests across several subsystems.
-- `rlm-claude-code` is a hard consumer (vendored submodule, runtime imports); `loop-agent` and `io-rflx` are active integration targets.
+- M0-M6 remediation/governance milestones are complete with evidence.
+- SPEC-20..27 still contain implementation gaps or partial integrations requiring runtime closure.
+- Open gap IDs from traceability artifact: `G-001` (`LLM_BATCH` end-to-end runtime integration) and `G-002` (orchestrator fallback wiring).
+- `loop-agent` and `io-rflx` remain active integration targets; compatibility claims must follow D-017 clean-clone committed-tuple policy.
+- Safe mode remains mandatory due prior OOM history; heavy command concurrency stays at 1.
+- M7 is the active completion tranche, with task-level gate definitions in `VALIDATION-MATRIX.md`.
 
 ## File Map
 
@@ -63,8 +63,9 @@ Reference files:
 - `M4`: Consumer integration tracks
 - `M5`: Performance and efficacy validation
 - `M6`: Rollout and steady-state governance
+- `M7`: Spec completion and integration hardening
 
-Milestone details live in `docs/execution-plan/milestones/M0.md` through `docs/execution-plan/milestones/M6.md`.
+Milestone details live in `docs/execution-plan/milestones/M0.md` through `docs/execution-plan/milestones/M7.md`.
 
 ## Agent Context Strategy
 

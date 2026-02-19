@@ -6,21 +6,29 @@ This map defines lane ownership and safe-mode activation rules.
 
 Default on this machine:
 
-- Lane C: active execution lane (heavy work allowed via wrapper)
-- Lane A: read-only maintenance only
-- Lane B: read-only maintenance only
+- Lane A: active execution lane for M7 runtime closure (heavy work allowed via wrapper)
+- Lane B: read-only by default (docs/governance lane)
+- Lane C: cadence + consumer lane (heavy work only when Lane A is idle)
 
-Lane A/B can run heavy commands only when orchestrator explicitly marks them active in `WORKBOARD.md`.
+Lane A is the default heavy lane for M7; Lane B and Lane C may run heavy commands only when orchestrator explicitly marks them active in `WORKBOARD.md`.
 
-## Lane A - M3 Maintenance (Standby)
+## Lane A - M7 Core Runtime Closure (Active)
 
 Scope:
 
-- post-completion fixes for `M1`, `M2`, `M3` only (regression-only)
+- `M7-T01` through `M7-T08`
+- Core runtime/spec closure in `rlm-core` and `rlm-core/python`
 
 Task order:
 
-1. Regression-only reopen tasks as needed
+1. `M7-T01` SPEC-26 batch runtime closure
+2. `M7-T02` SPEC-27 fallback wiring
+3. `M7-T03` SPEC-20 typed-signature parity
+4. `M7-T04` SPEC-21 dual-model integration
+5. `M7-T05` SPEC-22 proof closure
+6. `M7-T06` SPEC-23 visualization closure
+7. `M7-T07` SPEC-24 optimizer closure
+8. `M7-T08` SPEC-25 context externalization closure
 
 Primary file areas:
 
@@ -29,47 +37,40 @@ Primary file areas:
 - `/Users/rand/src/loop/docs/spec/`
 - `/Users/rand/src/loop/docs/execution-plan/`
 
-## Lane B - M1/M2 Maintenance (Standby)
+## Lane B - M7 Docs/Governance Reconciliation (Standby)
 
 Scope:
 
-- post-completion fixes for `M1`, `M2` only (regression-only)
+- `M7-T10` spec/governance reconciliation
+- documentation-only maintenance and traceability refreshes
 
 Task order:
 
-1. M1/M2 regressions only, if reopened by validation
+1. Prep reconciliation checklist while Lane A executes runtime tasks
+2. Execute `M7-T10` after `M7-T09` completion
 
 Primary file areas:
 
-- `/Users/rand/src/loop/rlm-core/src/`
-- `/Users/rand/src/loop/rlm-core/python/`
+- `/Users/rand/src/loop/docs/spec/`
+- `/Users/rand/src/loop/docs/execution-plan/`
 
 Start condition:
 
-- Lane A blocked or waiting on external input.
+- Lane A has completed implementation-heavy tasks or is blocked.
 - Orchestrator marks Lane B active in `WORKBOARD.md`.
 
-## Lane C - Consumer Integration (Active)
+## Lane C - Consumer Cadence and Interop Follow-up (Conditional)
 
 Scope:
 
-- `M4` consumer integration tracks
-- `M5` benchmark/efficacy prep
-- `M6` release governance prep
-- Post-M6 steady-state compatibility/spec governance cadence
+- Ongoing Ops-Weekly compatibility cadence
+- `M7-T09` io-rflx adapter fixture + calibration task
 
 Task order:
 
-1. `M4-T01`
-2. `M4-T02`
-3. `M4-T03`
-4. `M4-T04`
-5. `M5-T01` (prep)
-6. `M5-T02` (prep)
-7. `M6-T01`
-8. `M6-T02`
-9. `M6-T03`
-10. cadence-driven maintenance runs
+1. Ops-Weekly cadence runs (steady-state)
+2. `M7-T09` once `M7-T08` is done
+3. Resume cadence ownership after M7 closure
 
 Primary file areas:
 
@@ -80,9 +81,8 @@ Primary file areas:
 
 Start condition:
 
-- M3 closure complete.
-- Decisions D-001..D-007 accepted.
-- Orchestrator marks Lane C active in `WORKBOARD.md`.
+- Lane A is idle or explicitly paused.
+- Orchestrator marks Lane C heavy execution window in `WORKBOARD.md`.
 
 ## Orchestrator-Only Files
 

@@ -11,15 +11,25 @@ Single source of truth for execution tasks and dependencies.
 
 ## Lane Assignment
 
-- Lane A: `M3` maintenance only (standby/read-only by default)
-- Lane B: `M1`, `M2` maintenance only (standby/read-only by default)
-- Lane C: `M4`, `M5`, `M6` (active heavy lane in safe mode)
+- Lane A: `M7-T01`..`M7-T08` core runtime/spec closure (active heavy lane in safe mode)
+- Lane B: M7 spec/governance reconciliation (`M7-T10`) and documentation-only maintenance
+- Lane C: consumer cadence + `M7-T09` interop fixture/calibration track
 
 ## Priority Queue (Execution Order)
 
 | Rank | Task ID | Status | Why Next |
 |---|---|---|---|
-| 1 | loop-5va | done | Candidate-landing objective superseded by canonical committed tuple `30c1fa` validated in clean-clone mode (`VG-LA-001` + advisory `VG-LA-002` both green); D-017 remains active for claim-source policy |
+| 1 | M7-T01 (`loop-bih.1`) | todo | Closes G-001 (`LLM_BATCH` end-to-end runtime gap) and unblocks fallback/proof follow-ons |
+| 2 | M7-T02 (`loop-bih.2`) | todo | Closes G-002 orchestrator fallback wiring gap and stabilizes fallback-dependent efficacy behavior |
+| 3 | M7-T03 (`loop-bih.3`) | todo | Restores typed-signature parity required by SPEC-20 acceptance and downstream contracts |
+| 4 | M7-T04 (`loop-bih.4`) | todo | Completes dual-model orchestration integration before proof/optimizer refinements |
+| 5 | M7-T05 (`loop-bih.5`) | todo | Removes proof-engine placeholder paths that currently block full SPEC-22 closure |
+| 6 | M7-T06 (`loop-bih.6`) | todo | Brings visualization runtime/API surfaces to SPEC-23 parity |
+| 7 | M7-T07 (`loop-bih.7`) | todo | Completes optimizer contract and removes known TODO behavior in optimize paths |
+| 8 | M7-T08 (`loop-bih.8`) | todo | Resolves context externalization prompt contract drift (SPEC-25) |
+| 9 | M7-T09 (`loop-bih.9`) | todo | Delivers deferred `io-rflx` fixtures/calibration needed for active integration posture |
+| 10 | M7-T10 (`loop-bih.10`) | todo | Reconciles spec status/governance after implementation closure |
+| 11 | Ops-Weekly | in_progress | Continue steady-state compatibility cadence while M7 executes |
 
 ## M0 Tasks (Foundation and Contracts)
 
@@ -84,3 +94,18 @@ Single source of truth for execution tasks and dependencies.
 | M6-T01 Publish compatibility matrix and support policy | done | M4-T04 | VG-CONTRACT-001 | Version/support table for loop and consumers |
 | M6-T02 Define release/rollback playbook for integration changes | done | M6-T01 | VG-CONTRACT-001 | Rollout checklist with rollback triggers |
 | M6-T03 Establish steady-state maintenance cadence and ownership | done | M6-T02 | VG-CONTRACT-001 | Governance section in plan docs |
+
+## M7 Tasks (Spec Completion and Integration Hardening)
+
+| Task ID | Status | Depends On | Required Gates | Deliverable |
+|---|---|---|---|---|
+| M7-T01 SPEC-26 `LLM_BATCH` end-to-end runtime closure (`loop-bih.1`) | todo | M6-T03 | VG-LOOP-BATCH-001, VG-LOOP-REPL-001, VG-EFFICACY-001 | Rust-host + Python REPL batched path integration with deterministic tests |
+| M7-T02 SPEC-27 orchestrator fallback wiring (`loop-bih.2`) | todo | M7-T01 | VG-LOOP-FALLBACK-001, VG-EFFICACY-001, VG-LOOP-SIG-001 | Fallback extraction triggered and validated in orchestrator runtime loop |
+| M7-T03 SPEC-20 typed-signature parity completion (`loop-bih.3`) | todo | M7-T02 | VG-LOOP-SIG-002, VG-LOOP-SIG-001, VG-EFFICACY-001 | Enum/input-validation parity and deterministic pre-exec errors |
+| M7-T04 SPEC-21 dual-model orchestration integration (`loop-bih.4`) | todo | M7-T03 | VG-LOOP-DUAL-001, VG-LOOP-CORE-001, VG-PERF-002 | Orchestrator-applied dual-model routing with tiered accounting |
+| M7-T05 SPEC-22 proof protocol execution closure (`loop-bih.5`) | todo | M7-T04 | VG-LOOP-PROOF-001, VG-EFFICACY-001 | Proof engine placeholder removal and persistence coverage |
+| M7-T06 SPEC-23 graph visualization integration closure (`loop-bih.6`) | todo | M7-T05 | VG-LOOP-VIZ-001, VG-DOC-SPEC-002 | Visualization export/integration parity with explicit fixtures |
+| M7-T07 SPEC-24 bootstrap optimizer parity closure (`loop-bih.7`) | todo | M7-T06 | VG-LOOP-OPT-001, VG-EFFICACY-001, VG-PERF-003 | Reasoning capture + persistence + metric alignment |
+| M7-T08 SPEC-25 context externalization contract closure (`loop-bih.8`) | todo | M7-T07 | VG-LOOP-CONTEXT-001, VG-LOOP-REPL-001, VG-DOC-SPEC-002 | Runtime prompt/guide behavior aligned with SPEC-25 |
+| M7-T09 `io-rflx` adapter fixtures + calibration delivery (`loop-bih.9`) | todo | M7-T08 | VG-RFLX-001, VG-RFLX-002, VG-PERF-003, VG-CONTRACT-001 | Roundtrip fixture set and calibration policy/evidence |
+| M7-T10 spec/governance reconciliation and promotion (`loop-bih.10`) | todo | M7-T09 | VG-DOC-SPEC-002, VG-CONTRACT-001, VG-RCC-001, VG-LA-001, VG-RFLX-001 | SPEC-20..27 status reconciliation with refreshed traceability and support claims |

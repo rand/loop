@@ -16,6 +16,7 @@ This matrix defines mandatory validation gates for milestone completion.
 - For M6 rollout tasks, `VG-CONTRACT-001` evidence must cite release class selection, no-go criteria, and rollback tuple procedure references.
 - For M6 cadence tasks, `VG-CONTRACT-001` evidence must cite explicit ownership assignments and recurring schedule definitions.
 - For `VG-LA-002` promotion claims, evidence must be tied to committed consumer SHA state (D-015), not a dirty working tree.
+- For M7 gates, evidence must map each gate result to a specific M7 task ID (`M7-T01`..`M7-T10`).
 
 ## Core Loop Gates
 
@@ -28,12 +29,21 @@ This matrix defines mandatory validation gates for milestone completion.
 | VG-LOOP-REPL-001 | Python REPL unit tests | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core/python && uv run pytest -q'` | All tests pass | `.../VG-LOOP-REPL-001.txt` |
 | VG-LOOP-REPL-002 | Rust ignored REPL spawn integration | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini test_repl_spawn -- --ignored'` | Test passes | `.../VG-LOOP-REPL-002.txt` |
 | VG-LOOP-CORE-001 | Full `rlm-core` regression | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini'` | No failing tests | `.../VG-LOOP-CORE-001.txt` |
+| VG-LOOP-BATCH-001 | End-to-end `LLM_BATCH` runtime path (Rust host + Python REPL) | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop && (cd rlm-core && cargo test --no-default-features --features gemini test_llm_batch) && (cd rlm-core/python && uv run pytest -q tests/test_repl.py -k llm_batch)'` | Rust and Python targeted batch-path suites pass | `.../VG-LOOP-BATCH-001.txt` |
+| VG-LOOP-FALLBACK-001 | Orchestrator fallback extraction runtime behavior | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini fallback::'` | Fallback trigger and extraction orchestration tests pass | `.../VG-LOOP-FALLBACK-001.txt` |
+| VG-LOOP-SIG-002 | Typed-signature parity (enum and pre-exec input validation) | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini signature:: && cargo test --no-default-features --features gemini predict::'` | New typed-signature parity scenarios pass with deterministic errors | `.../VG-LOOP-SIG-002.txt` |
+| VG-LOOP-DUAL-001 | Dual-model routing applied in orchestration paths | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini route_rlm'` | Routing decisions and tiered-cost accounting tests pass | `.../VG-LOOP-DUAL-001.txt` |
+| VG-LOOP-PROOF-001 | Proof protocol execution and persistence behavior | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini proof::'` | Proof-engine integration tests pass with no placeholder-only paths | `.../VG-LOOP-PROOF-001.txt` |
+| VG-LOOP-VIZ-001 | Graph visualization export/integration surfaces | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini visualize::'` | Visualization exports and integration fixtures pass | `.../VG-LOOP-VIZ-001.txt` |
+| VG-LOOP-OPT-001 | Bootstrap optimizer parity and persistence | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini optimize::'` | Optimizer reasoning/persistence/metric tests pass | `.../VG-LOOP-OPT-001.txt` |
+| VG-LOOP-CONTEXT-001 | Context externalization prompt contract and helpers | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini externalize::'` | Prompt contract and helper guidance tests pass | `.../VG-LOOP-CONTEXT-001.txt` |
 
 ## Spec and Contract Gates
 
 | VG ID | Scope | Command / Method | Pass Criteria | Evidence Artifact |
 |---|---|---|---|---|
 | VG-DOC-SPEC-001 | SPEC-20/26/27 alignment | Manual checklist against runtime interfaces | No unresolved spec/runtime drift items | `.../VG-DOC-SPEC-001.md` |
+| VG-DOC-SPEC-002 | SPEC-20..27 completion/status reconciliation | Manual checklist against implementation snapshots + M7 evidence map | Status/acceptance fields reflect runtime truth and unresolved gaps are explicitly tracked | `.../VG-DOC-SPEC-002.md` |
 | VG-CONTRACT-001 | Consumer contract consistency | Review `docs/execution-plan/contracts/CONSUMER-INTEGRATION.md` against current implementations | No unresolved contract ambiguities for active milestone | `.../VG-CONTRACT-001.md` |
 
 ## Cross-Repo Consumer Gates
@@ -44,6 +54,7 @@ This matrix defines mandatory validation gates for milestone completion.
 | VG-LA-001 | `loop-agent` seam-critical compatibility subset | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd <loop_agent_tuple_dir> && <pytest_cmd> -q tests/test_router.py tests/test_trajectory.py tests/test_set_backend_propagation.py tests/test_sensitivity_wiring.py'` | All seam-critical tests pass; claim-grade evidence must run from clean-clone committed tuple mode (D-017) | `.../VG-LA-001.txt` |
 | VG-LA-002 | `loop-agent` full-suite health snapshot (advisory unless promoted by D-014) | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd <loop_agent_tuple_dir> && <pytest_cmd> -q'` | Snapshot captured and failures triaged in evidence; promotion to blocking requires D-014 criteria; claim-grade evidence must run from clean-clone committed tuple mode (D-017) | `.../VG-LA-002.txt` |
 | VG-RFLX-001 | `io-rflx` core compile baseline | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/io-rflx && cargo check -p rflx-core'` | Exit code 0; contract evidence cites interop schema version | `.../VG-RFLX-001.txt` |
+| VG-RFLX-002 | `io-rflx` interop fixture roundtrip and calibration checks | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/io-rflx && cargo test -p rflx-core interop_fixture'` | Fixture roundtrip tests pass and calibration evidence is captured | `.../VG-RFLX-002.txt` |
 
 ## Performance and Efficacy Gates
 
@@ -51,6 +62,7 @@ This matrix defines mandatory validation gates for milestone completion.
 |---|---|---|---|---|
 | VG-PERF-001 | REPL startup + execute latency | `LOOP_MIN_AVAILABLE_MIB=4096 /Users/rand/src/loop/scripts/run_m5_perf_harness.sh` | `M5-T01-VG-PERF-001.json` contains `"pass": true` and all latency regressions <= budget | `.../M5-T01-VG-PERF-001.json` |
 | VG-PERF-002 | Synthetic batched operation throughput | `LOOP_MIN_AVAILABLE_MIB=4096 /Users/rand/src/loop/scripts/run_m5_perf_harness.sh` | `M5-T01-VG-PERF-002.json` contains `"pass": true` with throughput regression <= budget and error-rate delta <= 0.01 | `.../M5-T01-VG-PERF-002.json` |
+| VG-PERF-003 | M7 comparative overhead guardrail (batch/fallback/interop calibration) | `LOOP_MIN_AVAILABLE_MIB=4096 /Users/rand/src/loop/scripts/run_m5_perf_harness.sh` plus `io-rflx` calibration artifact review | No new >10% regression vs M5 baselines on affected paths; calibration deltas documented | `.../VG-PERF-003.json` |
 | VG-EFFICACY-001 | Typed-SUBMIT correctness | Structured scenario suite from M2 | 100% pass on required validation scenarios | `.../VG-EFFICACY-001.md` |
 
 ## Minimum Gate Sets by Milestone
@@ -64,3 +76,4 @@ This matrix defines mandatory validation gates for milestone completion.
 | M4 | VG-RCC-001, VG-LA-001, VG-RFLX-001, VG-CONTRACT-001 |
 | M5 | VG-PERF-001, VG-PERF-002, VG-EFFICACY-001 |
 | M6 | VG-CONTRACT-001 plus applicable prior consumer gates for any tuple newly claimed as supported |
+| M7 | VG-LOOP-BATCH-001, VG-LOOP-FALLBACK-001, VG-LOOP-SIG-002, VG-LOOP-DUAL-001, VG-LOOP-PROOF-001, VG-LOOP-VIZ-001, VG-LOOP-OPT-001, VG-LOOP-CONTEXT-001, VG-RFLX-002, VG-PERF-003, VG-DOC-SPEC-002, VG-CONTRACT-001 plus applicable consumer tuple gates (`VG-RCC-001`, `VG-LA-001`, `VG-RFLX-001`) |
