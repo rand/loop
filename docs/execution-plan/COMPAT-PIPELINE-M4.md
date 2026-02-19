@@ -34,3 +34,4 @@ LOOP_MIN_AVAILABLE_MIB=4096 RUN_LA_FULL_SNAPSHOT=1 scripts/run_m4_compat_pipelin
 - `VG-LA-002` is advisory on active `loop-agent` branches (see D-009).
 - Evidence directory defaults to `docs/execution-plan/evidence/<today>/milestone-M4/`.
 - Override with `EVIDENCE_DATE` or full `EVIDENCE_DIR` when replaying.
+- `VG-RFLX-001` uses `RFLX_CARGO_TARGET_DIR` (default: `/tmp/io-rflx-cargo-target`) to avoid non-writable `target/` lock paths in shared/canonical repos.

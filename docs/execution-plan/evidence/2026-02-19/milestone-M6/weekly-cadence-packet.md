@@ -1,6 +1,6 @@
 # Weekly Cadence Packet
 Date: 2026-02-19
-Result: fail
+Result: pass
 Runner: `scripts/run_weekly_cadence_packet.sh`
 LOOP_MIN_AVAILABLE_MIB: `3072`
 RUN_LA_FULL_SNAPSHOT: `1`
@@ -15,7 +15,7 @@ RUN_LA_FULL_SNAPSHOT: `1`
 
 ```
 loop_branch=main
-loop_sha=60162365a6c6130d4bd93155ef9a8442b7ecd1ab
+loop_sha=1138a85685c9f7179889259508671fdd05462faa
 rlm_claude_code_branch=main
 rlm_claude_code_sha=54d88c085851fdc08028f3c1835527979645ffe5
 rlm_claude_code_vendor_loop= 6779cdbc970c70f3ce82a998d6dcda59cd171560 vendor/loop (heads/main)
@@ -35,13 +35,13 @@ loop_agent_canonical_dirty=1
 
 - `VG-RCC-001`: `pass` (`/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-RCC-001.txt`)
 - `VG-LA-001`: `pass` (`/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-LA-001.txt`)
-- `VG-RFLX-001`: `fail` (`/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-RFLX-001.txt`)
-- `VG-LA-002` advisory snapshot: `936 passed in 23.38s`
+- `VG-RFLX-001`: `pass` (`/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-VG-RFLX-001.txt`)
+- `VG-LA-002` advisory snapshot: `936 passed in 23.40s`
 
 ## Gate Notes
 
 - `VG-RCC-001`: `none`
-- `VG-RFLX-001`: `error: failed to open: /Users/rand/src/io-rflx/target/debug/.cargo-lock`
+- `VG-RFLX-001`: `none`
 
 ## Policy Notes
 

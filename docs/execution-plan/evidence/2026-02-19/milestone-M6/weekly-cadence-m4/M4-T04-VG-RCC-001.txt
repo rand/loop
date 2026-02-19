@@ -1,4 +1,4 @@
-safe_run: heavy command admitted (available=3488MiB, threshold=3072MiB)
+safe_run: heavy command admitted (available=3586MiB, threshold=3072MiB)
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.11, pytest-9.0.2, pluggy-1.6.0
 benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
@@ -15,4 +15,4 @@ tests/unit/test_complexity_classifier.py ........................        [ 79%]
 tests/unit/test_smart_router.py ........................................ [ 99%]
 .                                                                        [100%]
 
-============================= 204 passed in 1.43s ==============================
+============================= 204 passed in 1.56s ==============================

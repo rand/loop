@@ -44,7 +44,6 @@ Last updated: 2026-02-19
 |---|---|---|---|
 | B5 | Memory safety risk under parallel heavy workloads | Can crash machine and lose session state | D-007 controls enforced + safe wrapper used for all heavy commands |
 | B8 | Canonical `loop-agent` working tree may drift from claim-grade tuple state during active development | Can produce non-reproducible compatibility claims if canonical working tree is used directly | Enforce D-017 clean-clone committed tuple policy until canonical working tree is clean or policy is explicitly updated |
-| B9 | `io-rflx` local cargo lock permissions block `VG-RFLX-001` in this environment | Weekly cadence packets can no-go on RFLX gate despite loop/loop-agent tuple health | Restore writable `target/debug/.cargo-lock` path or run cadence from an environment where `cargo check -p rflx-core` is permitted |
 
 ## Resolved This Session
 
@@ -82,7 +81,8 @@ Last updated: 2026-02-19
 | R30 | loop-8th completed D-014+D-015 evidence sequence on committed candidate tuple `f2aeb18` (3/3 green) | `evidence/2026-02-19/milestone-M6/loop-8th-VG-LA-002-sequence.md` |
 | R31 | Enforced D-017 policy in cadence tooling: `loop-agent` compatibility claims now run from clean-clone committed tuple mode only | `evidence/2026-02-19/milestone-M6/loop-5va-clean-clone-policy-summary.md` |
 | R32 | loop-5va canonical reconciliation completed: clean-clone tuple on canonical `30c1fa` is green for seam and full-suite snapshots (`30 passed`, `936 passed`) and supersedes candidate-landing objective | `evidence/2026-02-19/milestone-M6/loop-5va-validation-summary.md` |
-| R33 | loop-ljr executed refreshed weekly cadence packet after hardening packet parser (`set -e` safe `rg` parsing + heredoc quoting fix); current tuple now records `VG-RCC-001` and `VG-LA-*` pass with known `VG-RFLX-001` permission failure | `evidence/2026-02-19/milestone-M6/weekly-cadence-packet.md` |
+| R33 | loop-ljr executed refreshed weekly cadence packet after hardening packet parser (`set -e` safe `rg` parsing + heredoc quoting fix), surfacing environment blocker B9 on `VG-RFLX-001` | `evidence/2026-02-19/milestone-M6/weekly-cadence-packet.md` |
+| R34 | loop-e5u resolved B9 by isolating `io-rflx` cargo target output (`RFLX_CARGO_TARGET_DIR=/tmp/io-rflx-cargo-target`), restoring weekly cadence to full pass on required gates | `evidence/2026-02-19/milestone-M6/weekly-cadence-m4/M4-T04-pipeline-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 

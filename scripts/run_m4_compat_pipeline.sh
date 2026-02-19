@@ -14,6 +14,7 @@ SAFE_RUN="$ROOT_DIR/scripts/safe_run.sh"
 RCC_DIR="${RCC_DIR:-/Users/rand/src/rlm-claude-code}"
 LOOP_AGENT_DIR="${LOOP_AGENT_DIR:-/Users/rand/src/loop-agent}"
 IO_RFLX_DIR="${IO_RFLX_DIR:-/Users/rand/src/io-rflx}"
+RFLX_CARGO_TARGET_DIR="${RFLX_CARGO_TARGET_DIR:-/tmp/io-rflx-cargo-target}"
 
 EVIDENCE_DATE="${EVIDENCE_DATE:-$(date +%F)}"
 EVIDENCE_DIR_DEFAULT="$ROOT_DIR/docs/execution-plan/evidence/$EVIDENCE_DATE/milestone-M4"
@@ -40,7 +41,10 @@ echo "pipeline_strict: $PIPELINE_STRICT"
 echo "rcc_dir: $RCC_DIR"
 echo "loop_agent_dir: $LOOP_AGENT_DIR"
 echo "io_rflx_dir: $IO_RFLX_DIR"
+echo "rflx_cargo_target_dir: $RFLX_CARGO_TARGET_DIR"
 echo
+
+mkdir -p "$RFLX_CARGO_TARGET_DIR"
 
 if [[ -z "${RCC_PYTEST_CMD:-}" ]]; then
   if [[ -x "$RCC_DIR/.venv/bin/pytest" ]]; then
@@ -123,7 +127,7 @@ fi
 
 if run_gate \
   "VG-RFLX-001" \
-  "cd '$IO_RFLX_DIR' && cargo check -p rflx-core" \
+  "cd '$IO_RFLX_DIR' && CARGO_TARGET_DIR='$RFLX_CARGO_TARGET_DIR' cargo check -p rflx-core" \
   "$EVIDENCE_DIR/M4-T04-VG-RFLX-001.txt"; then
   VG_RFLX_STATUS="pass"
 else
