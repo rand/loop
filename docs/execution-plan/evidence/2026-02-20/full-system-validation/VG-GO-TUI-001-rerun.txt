@@ -1,0 +1,7 @@
+[VG-GO-TUI-001-rerun] running
+# github.com/rand/rlm-core/go/tui
+model.go:16:2: no required module provides package github.com/rand/rlm-core/go/rlmcore; to add it:
+	go get github.com/rand/rlm-core/go/rlmcore
+FAIL	github.com/rand/rlm-core/go/tui [setup failed]
+FAIL
+exit_code=1

@@ -1,0 +1,6 @@
+[VG-GO-RLMCORE-001] running
+# github.com/rand/rlm-core/go/rlmcore
+open /Users/rand/Library/Caches/go-build/d1/d1f23601983bb2f8b7b14038ede7fd2b1f0709d99ac07cb054b710bf10f7e7d9-a: operation not permitted
+FAIL	github.com/rand/rlm-core/go/rlmcore [setup failed]
+FAIL
+exit_code=1

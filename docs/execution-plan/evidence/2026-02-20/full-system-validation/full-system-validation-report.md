@@ -1,0 +1,78 @@
+# Full-System Validation Report
+Date: 2026-02-20
+Issue: `loop-8hi`
+Repository SHA: `1a389a519516f55b96eaa436197f83f444517bd5`
+
+## Objective
+Empirically validate end-to-end system behavior across intended loop use cases (not just static review), map execution to OODA flows, and identify/track remaining implementation or operational gaps.
+
+## Intended Jobs To Be Done
+1. Handle complex coding-analysis prompts by decomposing work recursively without losing context.
+2. Execute typed-signature module flows with deterministic validation and submit semantics.
+3. Route model usage cost-effectively (dual-model strategy) while preserving correctness.
+4. Recover structured outputs when execution limits are reached (fallback extraction).
+5. Persist and query memory/reasoning artifacts across sessions.
+6. Interoperate safely with active consumers (`rlm-claude-code`, `loop-agent`, `io-rflx`).
+
+## OODA Flow Mapping
+
+### Observe
+- Inputs captured through REPL/session context and externalized variables.
+- Evidence: `VG-LOOP-REPL-001-rerun.txt`, `VG-LOOP-CONTEXT-001.txt`.
+
+### Orient
+- Complexity/routing/signature analysis selects execution strategy.
+- Evidence: `VG-LOOP-SIG-001.txt`, `VG-LOOP-SIG-002.txt`, `VG-LOOP-DUAL-001.txt`.
+
+### Decide
+- Orchestrator decides recursion/batch/fallback/proof/optimizer actions under limits.
+- Evidence: `VG-LOOP-BATCH-001.txt`, `VG-LOOP-FALLBACK-001.txt`, `VG-LOOP-PROOF-001.txt`, `VG-LOOP-OPT-001.txt`.
+
+### Act
+- Executes REPL/model operations, emits outputs/visualizations, updates contracts/interop.
+- Evidence: `VG-LOOP-VIZ-001.txt`, `VG-RCC-001`/`VG-LA-001`/`VG-RFLX-001` via `weekly-cadence-m4/`, `VG-RFLX-002.txt`.
+
+## Gate Execution Summary
+
+### Core runtime gates
+- Pass: `VG-LOOP-BUILD-001/002/003`, `VG-LOOP-SIG-001`, `VG-LOOP-SIG-002`, `VG-LOOP-REPL-001` (rerun with sandbox cache), `VG-LOOP-REPL-002`, `VG-LOOP-CORE-001` (rerun), `VG-LOOP-BATCH-001`, `VG-LOOP-FALLBACK-001`, `VG-LOOP-DUAL-001`, `VG-LOOP-PROOF-001`, `VG-LOOP-VIZ-001`, `VG-LOOP-OPT-001`, `VG-LOOP-CONTEXT-001`.
+
+### Cross-repo/interop gates
+- Pass: `VG-RCC-001`, `VG-LA-001`, `VG-RFLX-001`, `VG-RFLX-002`.
+- Advisory snapshot: `VG-LA-002` pass (`1052 passed`).
+
+### Performance/efficacy gates
+- Pass: `VG-PERF-001`, `VG-PERF-002`, `VG-PERF-003`.
+- Throughput regression (budget <= 10%): `-8.2764%` (candidate faster).
+
+### Additional validation depth
+- Property-based tests: pass (`VG-PROPTEST-001`).
+- Python integration compatibility tests: pass (`VG-PY-INTEGRATION-001`).
+- Go scope: pass after compatibility fixes (`VG-GO-ALL-001-final`).
+
+### Governance toolchain
+- Fail (environmental): `VG-DP-ENFORCE-PRE-COMMIT`, `VG-DP-REVIEW`, `VG-DP-VERIFY`, `VG-DP-ENFORCE-PRE-PUSH`.
+- Root cause: `dp` executable missing in runtime environment (`No such file or directory`).
+
+## Fixes Landed During Validation
+1. Go integration hardening:
+- Added local module wiring for `rlmcore` in `/Users/rand/src/loop/rlm-core/go/go.mod`.
+- Updated TUI code/tests for current `rlmcore` trajectory APIs in:
+  - `/Users/rand/src/loop/rlm-core/go/tui/model.go`
+  - `/Users/rand/src/loop/rlm-core/go/tui/stream.go`
+  - `/Users/rand/src/loop/rlm-core/go/tui/model_test.go`
+
+2. Spec-agent runtime TODO closure:
+- Implemented intake-context persistence to memory store in `/Users/rand/src/loop/rlm-core/src/spec_agent/agent.rs`.
+- Added test coverage for persistence behavior.
+- Removed stale TODO alias note in `/Users/rand/src/loop/rlm-core/src/spec_agent/types.rs`.
+
+## Remaining Gaps (Tracked)
+1. `loop-7fk` (P1): integrate Claude Code adapter with real orchestrator execution (remove placeholder responses).
+2. `loop-3sj` (P1): bind MCP tool handlers to live adapter/memory services (remove placeholder handlers).
+3. `loop-xmy` (P2): reduce spec-agent generator TODO/sorry placeholders via completeness modes.
+4. `loop-rv2` (P2): bootstrap reproducible `dp` policy runtime so governance gates are executable locally.
+
+## Conclusion
+- End-to-end runtime behavior for core loop and active consumer interop paths is empirically validated and green on current SHA.
+- Two substantive implementation gaps and one governance-runtime blocker remain and are explicitly tracked with actionable issues under `loop-8hi`.

@@ -3,6 +3,7 @@ module github.com/rand/rlm-core/go
 go 1.21
 
 require (
+	github.com/rand/rlm-core/go/rlmcore v0.0.0
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
@@ -25,3 +26,5 @@ require (
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
 )
+
+replace github.com/rand/rlm-core/go/rlmcore => ./rlmcore

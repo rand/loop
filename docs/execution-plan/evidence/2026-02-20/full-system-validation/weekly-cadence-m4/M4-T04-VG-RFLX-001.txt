@@ -1,0 +1,2 @@
+safe_run: heavy command admitted (available=5735MiB, threshold=3072MiB)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.34s

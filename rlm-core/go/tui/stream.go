@@ -114,47 +114,47 @@ func (r *TrajectoryRecorder) Record(event *rlmcore.TrajectoryEvent) {
 
 // RlmStart records an RLM start event.
 func (r *TrajectoryRecorder) RlmStart(query string) {
-	r.Record(rlmcore.RlmStart(query))
+	r.Record(rlmcore.NewRLMStartEvent(query))
 }
 
 // Analyze records an analyze event.
 func (r *TrajectoryRecorder) Analyze(depth int, analysis string) {
-	r.Record(rlmcore.Analyze(depth, analysis))
+	r.Record(rlmcore.NewAnalyzeEvent(uint32(depth), analysis))
 }
 
 // ReplExec records a REPL execution event.
 func (r *TrajectoryRecorder) ReplExec(depth int, code string) {
-	r.Record(rlmcore.ReplExec(depth, code))
+	r.Record(rlmcore.NewREPLExecEvent(uint32(depth), code))
 }
 
 // Reason records a reasoning event.
 func (r *TrajectoryRecorder) Reason(depth int, reasoning string) {
-	r.Record(rlmcore.Reason(depth, reasoning))
+	r.Record(rlmcore.NewReasonEvent(uint32(depth), reasoning))
 }
 
 // FinalAnswer records a final answer event.
 func (r *TrajectoryRecorder) FinalAnswer(depth int, answer string) {
-	r.Record(rlmcore.FinalAnswer(depth, answer))
+	r.Record(rlmcore.NewFinalAnswerEvent(uint32(depth), answer))
 }
 
 // Error records an error event.
 func (r *TrajectoryRecorder) Error(depth int, errMsg string) {
-	r.Record(rlmcore.Error(depth, errMsg))
+	r.Record(rlmcore.NewErrorEvent(uint32(depth), errMsg))
 }
 
 // HallucinationFlag records a hallucination flag event.
 func (r *TrajectoryRecorder) HallucinationFlag(depth int, claim string) {
-	r.Record(rlmcore.HallucinationFlag(depth, claim))
+	r.Record(rlmcore.NewTrajectoryEvent(rlmcore.EventHallucinationFlag, uint32(depth), claim))
 }
 
 // VerifyStart records a verification start event.
 func (r *TrajectoryRecorder) VerifyStart(depth int, description string) {
-	r.Record(rlmcore.VerifyStart(depth, description))
+	r.Record(rlmcore.NewTrajectoryEvent(rlmcore.EventVerifyStart, uint32(depth), description))
 }
 
 // VerifyComplete records a verification complete event.
 func (r *TrajectoryRecorder) VerifyComplete(depth int, summary string) {
-	r.Record(rlmcore.VerifyComplete(depth, summary))
+	r.Record(rlmcore.NewTrajectoryEvent(rlmcore.EventVerifyComplete, uint32(depth), summary))
 }
 
 // Events returns all recorded events.
@@ -171,7 +171,12 @@ func (r *TrajectoryRecorder) Duration() time.Duration {
 func (r *TrajectoryRecorder) ExportJSON() []string {
 	result := make([]string, len(r.events))
 	for i, event := range r.events {
-		result[i] = event.ToJSON()
+		json, err := event.ToJSON()
+		if err != nil {
+			result[i] = ""
+			continue
+		}
+		result[i] = json
 	}
 	return result
 }

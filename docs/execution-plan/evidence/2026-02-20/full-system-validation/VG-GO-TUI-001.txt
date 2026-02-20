@@ -1,0 +1,6 @@
+[VG-GO-TUI-001] running
+# ./...
+pattern ./...: open /Users/rand/Library/Caches/go-build/bf/bf302a1d59931f56165b999ebf52814dabf8dbc8daa4a721a8fae36f87fdfcdd-a: operation not permitted
+FAIL	./... [setup failed]
+FAIL
+exit_code=1

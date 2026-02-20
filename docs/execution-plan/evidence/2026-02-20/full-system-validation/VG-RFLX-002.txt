@@ -1,0 +1,74 @@
+[VG-RFLX-002] running
+io-rflx interop fixtures: PASS
+fixtures_dir=/Users/rand/src/loop/docs/execution-plan/contracts/fixtures/io-rflx/io_rflx_interop.v0
+schema_version=io_rflx_interop.v0
+calibration_method=confidence_bucket_v1
+calibration_cases=4
+running io-rflx roundtrip test filter: provenance_serialization_roundtrip
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (/tmp/io-rflx-cargo-target/debug/deps/rflx_core-1e68ad94c963c26c)
+
+running 1 test
+test provenance::tests::provenance_serialization_roundtrip ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 494 filtered out; finished in 0.01s
+
+     Running tests/lean_verification_demo.rs (/tmp/io-rflx-cargo-target/debug/deps/lean_verification_demo-f43c2c71ff95aa2b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/vm2_lean_formalize_memory.rs (/tmp/io-rflx-cargo-target/debug/deps/vm2_lean_formalize_memory-fa73adf8f1f4e738)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s
+
+running io-rflx roundtrip test filter: jsonl_roundtrip
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (/tmp/io-rflx-cargo-target/debug/deps/rflx_core-1e68ad94c963c26c)
+
+running 1 test
+test trajectory::tests::jsonl_roundtrip ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 494 filtered out; finished in 0.01s
+
+     Running tests/lean_verification_demo.rs (/tmp/io-rflx-cargo-target/debug/deps/lean_verification_demo-f43c2c71ff95aa2b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/vm2_lean_formalize_memory.rs (/tmp/io-rflx-cargo-target/debug/deps/vm2_lean_formalize_memory-fa73adf8f1f4e738)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s
+
+running io-rflx roundtrip test filter: verification_result_serialization
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (/tmp/io-rflx-cargo-target/debug/deps/rflx_core-1e68ad94c963c26c)
+
+running 1 test
+test fill_verify::tests::verification_result_serialization ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 494 filtered out; finished in 0.00s
+
+     Running tests/lean_verification_demo.rs (/tmp/io-rflx-cargo-target/debug/deps/lean_verification_demo-f43c2c71ff95aa2b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/vm2_lean_formalize_memory.rs (/tmp/io-rflx-cargo-target/debug/deps/vm2_lean_formalize_memory-fa73adf8f1f4e738)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s
+
+VG-RFLX-002 fixture gate: PASS
+io_rflx_dir=/Users/rand/src/io-rflx
+rflx_cargo_target_dir=/tmp/io-rflx-cargo-target
+fixtures_dir=/Users/rand/src/loop/docs/execution-plan/contracts/fixtures/io-rflx/io_rflx_interop.v0
+exit_code=0

@@ -1,0 +1,15 @@
+{
+  "gate": "VG-PERF-002",
+  "budget_pct": 10.0,
+  "baseline_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/full-system-validation/M5-T01-baseline.json",
+  "candidate_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/full-system-validation/M5-T01-candidate.json",
+  "checks": {
+    "throughput_regression_pct": -8.276423986926362,
+    "error_rate_delta": 0.0
+  },
+  "baseline_throughput_ops_per_sec": 7169.123002679003,
+  "candidate_throughput_ops_per_sec": 7762.470018524983,
+  "baseline_error_rate": 0.0,
+  "candidate_error_rate": 0.0,
+  "pass": true
+}

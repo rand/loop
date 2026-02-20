@@ -1,0 +1,151 @@
+[VG-LOOP-SPEC-AGENT-001] running
+safe_run: heavy command admitted (available=5627MiB, threshold=3072MiB)
+   Compiling rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:654:13
+    |
+654 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: multiple fields are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             optional_list_field: Option<Vec<i32>>,
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+811 |             array_field: [i32; 2],
+    |             ^^^^^^^^^^^
+...
+814 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:835:13
+    |
+832 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+835 |             severity: String,
+    |             ^^^^^^^^
+...
+839 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 9 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 3 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.82s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 31 tests
+test spec_agent::agent::tests::test_spec_agent_config ... ok
+test spec_agent::generators::tests::test_infer_type ... ok
+test spec_agent::agent::tests::test_workflow_result_helpers ... ok
+test spec_agent::generators::tests::test_to_field_name ... ok
+test spec_agent::generators::tests::test_to_namespace ... ok
+test spec_agent::generators::tests::test_cross_ref_generator ... ok
+test spec_agent::generators::tests::test_topos_generator_basic ... ok
+test spec_agent::agent::tests::test_spec_agent_refine_no_questions ... ok
+test spec_agent::agent::tests::test_spec_agent_intake ... ok
+test spec_agent::generators::tests::test_lean_generator_basic ... ok
+test spec_agent::agent::tests::test_spec_agent_formalize ... ok
+test spec_agent::agent::tests::test_spec_agent_workflow ... ok
+test spec_agent::generators::tests::test_spec_generator_combined ... ok
+test spec_agent::parser::tests::test_extract_entities ... ok
+test spec_agent::parser::tests::test_detect_domains_api ... ok
+test spec_agent::parser::tests::test_to_pascal_case ... ok
+test spec_agent::parser::tests::test_to_snake_case ... ok
+test spec_agent::types::tests::test_config_builders ... ok
+test spec_agent::types::tests::test_formalization_level_includes ... ok
+test spec_agent::types::tests::test_spec_context_advance_phase ... ok
+test spec_agent::types::tests::test_spec_context_creation ... ok
+test spec_agent::types::tests::test_spec_domain_patterns ... ok
+test spec_agent::types::tests::test_spec_phase_navigation ... ok
+test spec_agent::parser::tests::test_detect_domains_security ... ok
+test spec_agent::generators::tests::test_lean_generator_with_contracts ... ok
+test spec_agent::parser::tests::test_parse_data_structure ... ok
+test spec_agent::parser::tests::test_generate_questions_for_ambiguities ... ok
+test spec_agent::parser::tests::test_parse_behavior ... ok
+test spec_agent::parser::tests::test_parse_constraint ... ok
+test spec_agent::parser::tests::test_find_ambiguities ... ok
+test spec_agent::agent::tests::test_spec_agent_intake_persists_context_to_memory ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 593 filtered out; finished in 0.05s
+
+exit_code=0

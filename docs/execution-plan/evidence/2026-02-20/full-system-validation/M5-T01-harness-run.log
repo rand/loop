@@ -1,0 +1,13 @@
+M5 perf harness run starting
+date: UTC 2026-02-20 02:21:22
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/full-system-validation
+loop_min_available_mib: 4096
+budget_pct: 10
+
+[harness:baseline] running...
+[harness:baseline] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/full-system-validation/M5-T01-baseline.json
+[harness:candidate] running...
+[harness:candidate] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/full-system-validation/M5-T01-candidate.json
+
+M5 perf harness run completed
+summary: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/full-system-validation/M5-T01-perf-summary.md

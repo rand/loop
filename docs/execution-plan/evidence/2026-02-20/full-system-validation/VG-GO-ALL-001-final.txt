@@ -1,0 +1,5 @@
+[VG-GO-ALL-001-final] running
+# github.com/rand/rlm-core/go/tui.test
+ld: warning: ignoring duplicate libraries: '-lrlm_core'
+ok  	github.com/rand/rlm-core/go/tui	(cached)
+exit_code=0

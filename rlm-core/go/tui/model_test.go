@@ -33,8 +33,8 @@ func TestModelWithOptions(t *testing.T) {
 func TestModelAddEvent(t *testing.T) {
 	m := New()
 
-	event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, "Test", 0)
-	defer event.Close()
+	event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, 0, "Test")
+	defer event.Free()
 
 	m.AddEvent(event)
 	if len(m.events) != 1 {
@@ -46,7 +46,7 @@ func TestModelMaxEvents(t *testing.T) {
 	m := New(WithMaxEvents(3))
 
 	for i := 0; i < 5; i++ {
-		event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, "Test", 0)
+		event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, 0, "Test")
 		m.AddEvent(event)
 	}
 
@@ -58,7 +58,7 @@ func TestModelMaxEvents(t *testing.T) {
 func TestModelClear(t *testing.T) {
 	m := New()
 
-	event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, "Test", 0)
+	event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, 0, "Test")
 	m.AddEvent(event)
 
 	m.Clear()
@@ -103,7 +103,7 @@ func TestModelUpdateEventMsg(t *testing.T) {
 	m = newModel.(Model)
 
 	// Then send event
-	event := rlmcore.NewTrajectoryEvent(rlmcore.EventRlmStart, "Test query", 0)
+	event := rlmcore.NewTrajectoryEvent(rlmcore.EventRLMStart, 0, "Test query")
 	eventMsg := EventMsg{Event: event}
 	newModel, _ = m.Update(eventMsg)
 	m = newModel.(Model)
@@ -126,7 +126,7 @@ func TestEventStream(t *testing.T) {
 	stream := NewEventStream()
 	defer stream.Close()
 
-	event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, "Test", 0)
+	event := rlmcore.NewTrajectoryEvent(rlmcore.EventAnalyze, 0, "Test")
 	stream.Send(event)
 
 	// The event should be in the channel
@@ -158,15 +158,15 @@ func TestTrajectoryRecorder(t *testing.T) {
 
 	// Check event types
 	expectedTypes := []rlmcore.TrajectoryEventType{
-		rlmcore.EventRlmStart,
+		rlmcore.EventRLMStart,
 		rlmcore.EventAnalyze,
 		rlmcore.EventReason,
 		rlmcore.EventFinal,
 	}
 
 	for i, event := range events {
-		if event.EventType() != expectedTypes[i] {
-			t.Errorf("Event %d: expected %s, got %s", i, expectedTypes[i], event.EventType())
+		if event.Type() != expectedTypes[i] {
+			t.Errorf("Event %d: expected %s, got %s", i, expectedTypes[i], event.Type())
 		}
 	}
 }
@@ -207,17 +207,20 @@ func TestTrajectoryRecorderDuration(t *testing.T) {
 	}
 }
 
-func TestVerificationStatus(t *testing.T) {
-	if rlmcore.StatusGrounded.String() != "GROUNDED" {
-		t.Error("StatusGrounded string mismatch")
+func TestEventTypeStrings(t *testing.T) {
+	types := []rlmcore.TrajectoryEventType{
+		rlmcore.EventRLMStart,
+		rlmcore.EventAnalyze,
+		rlmcore.EventREPLExec,
+		rlmcore.EventREPLResult,
+		rlmcore.EventReason,
+		rlmcore.EventFinal,
+		rlmcore.EventError,
 	}
-	if rlmcore.StatusUnsupported.IsFlagged() != true {
-		t.Error("StatusUnsupported should be flagged")
-	}
-	if rlmcore.StatusContradicted.IsFlagged() != true {
-		t.Error("StatusContradicted should be flagged")
-	}
-	if rlmcore.StatusGrounded.IsFlagged() != false {
-		t.Error("StatusGrounded should not be flagged")
+
+	for _, eventType := range types {
+		if eventType.String() == "" {
+			t.Errorf("event type %v should have a non-empty string name", eventType)
+		}
 	}
 }

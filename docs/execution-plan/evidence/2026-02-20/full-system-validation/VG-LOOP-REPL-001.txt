@@ -1,0 +1,5 @@
+[VG-LOOP-REPL-001] running
+safe_run: heavy command admitted (available=5893MiB, threshold=3072MiB)
+error: Failed to initialize cache at `/Users/rand/.cache/uv`
+  Caused by: failed to open file `/Users/rand/.cache/uv/sdists-v9/.git`: Operation not permitted (os error 1)
+exit_code=2

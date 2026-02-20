@@ -1,0 +1,12 @@
+[VG-LOOP-BUILD-002] running
+safe_run: heavy command admitted (available=5796MiB, threshold=3072MiB)
+    Checking hyper v1.8.1
+    Checking tower v0.5.3
+    Checking tokio-rustls v0.26.4
+    Checking tower-http v0.6.8
+    Checking hyper-util v0.1.19
+    Checking hyper-rustls v0.27.7
+    Checking reqwest v0.12.28
+    Checking rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.80s
+exit_code=0

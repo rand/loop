@@ -72,8 +72,7 @@ pub enum ApplicationDomain {
     Concurrency,
 }
 
-/// Type alias for backward compatibility.
-/// TODO: Refactor usages to ApplicationDomain.
+/// Legacy alias retained for backward compatibility.
 pub type SpecDomain = ApplicationDomain;
 
 impl ApplicationDomain {

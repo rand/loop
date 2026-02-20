@@ -10,7 +10,7 @@
 
 use crate::error::{Error, Result};
 use crate::lean::{LeanRepl, LeanReplConfig};
-use crate::memory::SqliteMemoryStore;
+use crate::memory::{Node, NodeType, SqliteMemoryStore, Tier};
 use crate::topos::ToposClient;
 
 use super::generators::SpecGenerator;
@@ -114,8 +114,8 @@ impl SpecAgent {
         }
 
         // Store the context if memory is available
-        if let Some(ref _memory) = self.memory {
-            // TODO: Persist context to memory
+        if let Some(ref memory) = self.memory {
+            self.persist_intake_context(memory, &ctx)?;
         }
 
         // Advance to refine phase
@@ -140,6 +140,29 @@ impl SpecAgent {
                     .next()
                     .cloned()
             })
+    }
+
+    /// Persist intake context snapshot into the configured memory store.
+    fn persist_intake_context(&self, memory: &SqliteMemoryStore, ctx: &SpecContext) -> Result<()> {
+        let serialized_context = serde_json::to_string(ctx).map_err(|err| {
+            Error::Internal(format!(
+                "Failed to serialize spec-agent intake context: {err}"
+            ))
+        })?;
+
+        let mut node = Node::new(NodeType::Experience, format!("Spec intake: {}", ctx.nl_input))
+            .with_subtype("spec_agent_intake")
+            .with_tier(Tier::Session)
+            .with_confidence(0.9)
+            .with_metadata("phase", serde_json::json!(ctx.phase))
+            .with_metadata("requirements_count", ctx.requirements.len() as u64)
+            .with_metadata("context_json", serialized_context);
+
+        if let Some(spec_name) = &self.spec_name {
+            node = node.with_metadata("spec_name", spec_name.clone());
+        }
+
+        memory.add_node(&node)
     }
 
     // =========================================================================
@@ -587,6 +610,7 @@ impl WorkflowResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::memory::{NodeQuery, NodeType};
 
     #[tokio::test]
     async fn test_spec_agent_intake() {
@@ -595,6 +619,31 @@ mod tests {
 
         assert_eq!(ctx.phase, SpecPhase::Refine);
         assert!(!ctx.requirements.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_spec_agent_intake_persists_context_to_memory() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join("spec-agent-memory.db");
+
+        let store = SqliteMemoryStore::open(&db_path).unwrap();
+        let mut agent = SpecAgent::minimal().with_memory(store);
+
+        let _ctx = agent
+            .intake("Order includes line items and requires approval")
+            .await
+            .unwrap();
+
+        let verify_store = SqliteMemoryStore::open(&db_path).unwrap();
+        let nodes = verify_store
+            .query_nodes(&NodeQuery::new().node_types(vec![NodeType::Experience]))
+            .unwrap();
+
+        assert!(
+            nodes.iter()
+                .any(|node| node.subtype.as_deref() == Some("spec_agent_intake")),
+            "expected at least one persisted spec_agent intake node"
+        );
     }
 
     #[tokio::test]

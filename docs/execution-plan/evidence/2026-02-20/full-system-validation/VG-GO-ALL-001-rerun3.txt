@@ -1,0 +1,9 @@
+[VG-GO-ALL-001-rerun3] running
+# github.com/rand/rlm-core/go/tui [github.com/rand/rlm-core/go/tui.test]
+tui/model_test.go:211:13: undefined: rlmcore.StatusGrounded
+tui/model_test.go:214:13: undefined: rlmcore.StatusUnsupported
+tui/model_test.go:217:13: undefined: rlmcore.StatusContradicted
+tui/model_test.go:220:13: undefined: rlmcore.StatusGrounded
+FAIL	github.com/rand/rlm-core/go/tui [build failed]
+FAIL
+exit_code=1

@@ -1,0 +1,5 @@
+[VG-LOOP-BUILD-003] running
+safe_run: heavy command admitted (available=5767MiB, threshold=3072MiB)
+    Checking rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.80s
+exit_code=0

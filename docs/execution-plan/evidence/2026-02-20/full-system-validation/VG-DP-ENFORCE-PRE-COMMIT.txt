@@ -1,0 +1,4 @@
+[VG-DP-ENFORCE-PRE-COMMIT] running
+error: Failed to spawn: `dp`
+  Caused by: No such file or directory (os error 2)
+exit_code=2

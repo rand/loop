@@ -1,0 +1,16 @@
+[VG-GO-ALL-001-rerun2] running
+# github.com/rand/rlm-core/go/tui [github.com/rand/rlm-core/go/tui.test]
+tui/model.go:322:33: cannot use depth (variable of type uint32) as int value in argument to strings.Repeat
+tui/model.go:329:21: event.EventType undefined (type *rlmcore.TrajectoryEvent has no field or method EventType)
+tui/model.go:354:15: undefined: rlmcore.EventRlmStart (but have EventRLMStart)
+tui/model.go:358:15: undefined: rlmcore.EventReplExec (but have EventREPLExec)
+tui/model.go:360:15: undefined: rlmcore.EventReplResult (but have EventREPLResult)
+tui/stream.go:117:19: undefined: rlmcore.RlmStart
+tui/stream.go:122:19: undefined: rlmcore.Analyze
+tui/stream.go:127:19: undefined: rlmcore.ReplExec
+tui/stream.go:132:19: undefined: rlmcore.Reason
+tui/stream.go:137:19: undefined: rlmcore.FinalAnswer
+tui/stream.go:137:19: too many errors
+FAIL	github.com/rand/rlm-core/go/tui [build failed]
+FAIL
+exit_code=1

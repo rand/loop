@@ -319,14 +319,14 @@ func (m Model) renderEvent(event *rlmcore.TrajectoryEvent) string {
 
 	// Depth indicator
 	depth := event.Depth()
-	indent := strings.Repeat("  ", depth)
+	indent := strings.Repeat("  ", int(depth))
 	if depth > 0 {
 		depthStr := fmt.Sprintf("L%d", depth)
 		parts = append(parts, m.styles.Depth.Render(depthStr))
 	}
 
 	// Event type with color based on type
-	eventType := event.EventType()
+	eventType := event.Type()
 	typeStyle := m.eventTypeStyle(eventType)
 	parts = append(parts, indent+typeStyle.Render(eventType.String()))
 
@@ -351,13 +351,13 @@ func (m Model) eventTypeStyle(eventType rlmcore.TrajectoryEventType) lipgloss.St
 	base := m.styles.EventType
 
 	switch eventType {
-	case rlmcore.EventRlmStart:
+	case rlmcore.EventRLMStart:
 		return base.Foreground(lipgloss.Color("212"))
 	case rlmcore.EventAnalyze:
 		return base.Foreground(lipgloss.Color("81"))
-	case rlmcore.EventReplExec:
+	case rlmcore.EventREPLExec:
 		return base.Foreground(lipgloss.Color("214"))
-	case rlmcore.EventReplResult:
+	case rlmcore.EventREPLResult:
 		return base.Foreground(lipgloss.Color("220"))
 	case rlmcore.EventReason:
 		return base.Foreground(lipgloss.Color("141"))

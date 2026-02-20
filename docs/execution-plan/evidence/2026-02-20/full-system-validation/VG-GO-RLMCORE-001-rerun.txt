@@ -1,0 +1,5 @@
+[VG-GO-RLMCORE-001-rerun] running
+# github.com/rand/rlm-core/go/rlmcore.test
+ld: warning: ignoring duplicate libraries: '-lrlm_core'
+ok  	github.com/rand/rlm-core/go/rlmcore	0.345s
+exit_code=0
