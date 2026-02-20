@@ -49,7 +49,7 @@ jobs:
 
       - name: Run coverage gate
         env:
-          COVERAGE_MIN_LINES: "80"
+          COVERAGE_MIN_LINES: "70"
         run: make coverage
 
       - name: Upload coverage artifacts

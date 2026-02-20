@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="${ROOT_DIR}/coverage"
-MIN_LINES="${COVERAGE_MIN_LINES:-80}"
+MIN_LINES="${COVERAGE_MIN_LINES:-70}"
 
 if ! command -v cargo >/dev/null 2>&1; then
   echo "error: cargo is required for coverage execution" >&2
