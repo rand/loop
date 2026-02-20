@@ -1,0 +1,3 @@
+[VG-MAKE-CHECK-001] running
+make: *** No rule to make target `check'.  Stop.
+exit_code=2
