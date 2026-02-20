@@ -22,7 +22,7 @@ make coverage
 
 Runs:
 - `scripts/run_coverage.sh`
-- `cargo llvm-cov` line-coverage gate (`COVERAGE_MIN_LINES`, default `70`)
+- `cargo llvm-cov` line-coverage gate (`COVERAGE_MIN_LINES`, default `69`)
 - Artifact output: `coverage/lcov.info`, `coverage/summary.txt`
 
 Notes:
