@@ -55,7 +55,8 @@ pub enum CompletenessMode {
     /// This mode avoids `TODO` and `sorry` markers by emitting permissive
     /// baseline definitions such as `True` predicates and trivial proofs.
     Baseline,
-    /// Emit draft-oriented placeholders (`TODO`, `sorry`) for manual completion.
+    /// Emit draft-oriented annotations (`draft:`) for manual refinement while
+    /// keeping generated artifacts executable and placeholder-token free.
     Placeholder,
 }
 

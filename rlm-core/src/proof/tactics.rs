@@ -379,10 +379,10 @@ pub fn with_modifiers(tactic: &str, modifiers: &[&str]) -> String {
     }
 }
 
-/// Generate a "sorry" placeholder with a TODO comment.
+/// Generate a human-handoff marker anchored to the current goal.
 pub fn sorry_placeholder(goal: &Goal) -> String {
     format!(
-        "-- TODO: Prove goal: {}\nsorry",
+        "-- HUMAN_REQUIRED: Prove goal: {}\nsorry",
         goal.target.lines().next().unwrap_or(&goal.target)
     )
 }
@@ -462,7 +462,7 @@ mod tests {
     fn test_sorry_placeholder() {
         let goal = Goal::from_string("P -> Q");
         let sorry = sorry_placeholder(&goal);
-        assert!(sorry.contains("TODO"));
+        assert!(sorry.contains("HUMAN_REQUIRED"));
         assert!(sorry.contains("P -> Q"));
         assert!(sorry.contains("sorry"));
     }

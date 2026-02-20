@@ -41,6 +41,7 @@ This documentation is organized by audience and workflow, not by who happened to
 
 ### Reference and Specifications
 - [Specification Set](./spec/): Canonical feature contracts (SPEC-20 through SPEC-27).
+- [Spec Lineage Status](./spec/SPEC-LINEAGE-STATUS.md): How origin-era design/migration specs map to current live status.
 - [Execution Plan](./execution-plan/README.md): Program-level planning, evidence, and governance.
 - [Architecture Decisions](./adr/): Long-lived technical decisions and context.
 - [Glossary](./glossary.md): Shared terms and definitions.

@@ -1,0 +1,32 @@
+{
+  "stage": "pre-commit",
+  "policy": "/Users/rand/src/loop/dp-policy.json",
+  "cwd": "/Users/rand/src/loop",
+  "ok": true,
+  "steps": [
+    {
+      "name": "check",
+      "command": [
+        "make",
+        "check"
+      ],
+      "exit_code": 0,
+      "duration_ms": 5053,
+      "stdout": "cd rlm-core && cargo check --quiet\ncd rlm-core && cargo test --quiet\n\nrunning 657 tests\n....................................................................................... 87/657\n....................................................................................... 174/657\n................................................................iii.................... 261/657\n....................................................................................... 348/657\n....................................................................................... 435/657\n..........................i....i..iiiii................................................ 522/657\n....................................................................................... 609/657\n................................................\ntest result: ok. 647 passed; 0 failed; 10 ignored; 0 measured; 0 filtered out; finished in 0.78s\n\n\nrunning 40 tests\niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii....\ntest result: ok. 4 passed; 0 failed; 36 ignored; 0 measured; 0 filtered out; finished in 2.86s\n\n",
+      "stderr": "warning: unused import: `std::path::PathBuf`\n   --> src/dp_integration/review.rs:563:9\n    |\n563 |     use std::path::PathBuf;\n    |         ^^^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`\n   --> src/sync/engine.rs:624:24\n    |\n624 |     use crate::topos::{LeanRef, Link, LinkSource, LinkType, ToposRef};\n    |                        ^^^^^^^  ^^^^  ^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused variable: `action_id`\n   --> src/reasoning/store.rs:743:14\n    |\n743 |         let (action_id, outcome_id) = trace.log_action(&chosen, \"Action\", \"Outcome\");\n    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `questions`\n   --> src/spec_agent/agent.rs:658:13\n    |\n658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();\n    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`\n\nwarning: function `probability_with_edges` is never used\n  --> src/epistemic/proptest.rs:27:8\n   |\n27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {\n   |        ^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = note: `#[warn(dead_code)]` on by default\n\nwarning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read\n   --> src/signature/mod.rs:687:13\n    |\n685 |         struct AnalyzeCode {\n    |                ----------- fields in this struct\n686 |             #[input(desc = \"Source code to analyze\")]\n687 |             code: String,\n    |             ^^^^\n...\n690 |             language: String,\n    |             ^^^^^^^^\n...\n693 |             max_issues: Option<u32>,\n    |             ^^^^^^^^^^\n...\n696 |             vulnerabilities: Vec<String>,\n    |             ^^^^^^^^^^^^^^^\n...\n699 |             severity: String,\n    |             ^^^^^^^^\n...\n702 |             confidence: f64,\n    |             ^^^^^^^^^^\n\nwarning: multiple fields are never read\n   --> src/signature/mod.rs:796:13\n    |\n794 |         struct AllTypes {\n    |                -------- fields in this struct\n795 |             #[input(desc = \"A string\")]\n796 |             string_field: String,\n    |             ^^^^^^^^^^^^\n...\n799 |             int_field: i32,\n    |             ^^^^^^^^^\n...\n802 |             float_field: f64,\n    |             ^^^^^^^^^^^\n...\n805 |             bool_field: bool,\n    |             ^^^^^^^^^^\n...\n808 |             list_field: Vec<String>,\n    |             ^^^^^^^^^^\n...\n811 |             optional_list_field: Option<Vec<i32>>,\n    |             ^^^^^^^^^^^^^^^^^^^\n...\n814 |             array_field: [i32; 2],\n    |             ^^^^^^^^^^^\n...\n817 |             output: String,\n    |             ^^^^^^\n\nwarning: fields `severity` and `category` are never read\n   --> src/signature/mod.rs:838:13\n    |\n835 |         struct EnumAnnotated {\n    |                ------------- fields in this struct\n...\n838 |             severity: String,\n    |             ^^^^^^^^\n...\n842 |             category: String,\n    |             ^^^^^^^^\n\n",
+      "ok": true
+    },
+    {
+      "name": "rustdoc-contract",
+      "command": [
+        "make",
+        "rustdoc-check"
+      ],
+      "exit_code": 0,
+      "duration_ms": 168,
+      "stdout": "cd rlm-core && RUSTDOCFLAGS=\"-D warnings\" cargo doc --no-deps\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s\n   Generated /Users/rand/src/loop/rlm-core/target/doc/rlm_core/index.html\n",
+      "ok": true
+    }
+  ]
+}

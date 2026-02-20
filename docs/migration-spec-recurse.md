@@ -12,7 +12,7 @@
 Migration status note (2026-02-20):
 - This spec is historical planning context.
 - Authoritative live outcome is closed task `loop-p95` (migration complete).
-- Unchecked phase checklists below are archival and not the live backlog.
+- Phase checklist lines marked `[historical target]` are archival and not the live backlog.
 - Live execution authority is `bd status` plus:
   - `docs/execution-plan/STATUS.md`
   - `docs/execution-plan/TASK-REGISTRY.md`
@@ -374,10 +374,10 @@ func (o *Orchestrator) SetTrajectoryCallback(cb func(TrajectoryEvent)) {
 4. Create minimal bridge layer with type definitions
 
 **Exit Criteria**:
-- [ ] rlm-core library links successfully
-- [ ] Basic FFI calls work (create/destroy context)
-- [ ] Feature flag toggles implementations
-- [ ] Existing tests pass with flag off
+- [historical target] rlm-core library links successfully
+- [historical target] Basic FFI calls work (create/destroy context)
+- [historical target] Feature flag toggles implementations
+- [historical target] Existing tests pass with flag off
 
 ### Phase 2: Migrate Memory System
 
@@ -422,11 +422,11 @@ func migrateDatabase(oldPath, newPath string) error {
 ```
 
 **Exit Criteria**:
-- [ ] Existing memories migrate without data loss
-- [ ] Semantic search produces equivalent results
-- [ ] Tier operations work correctly
-- [ ] Memory tests pass
-- [ ] TUI memory dialog renders correctly
+- [historical target] Existing memories migrate without data loss
+- [historical target] Semantic search produces equivalent results
+- [historical target] Tier operations work correctly
+- [historical target] Memory tests pass
+- [historical target] TUI memory dialog renders correctly
 
 ### Phase 3: Migrate Classification & Routing
 
@@ -458,9 +458,9 @@ func migrateDatabase(oldPath, newPath string) error {
 3. Update callers in orchestration layer
 
 **Exit Criteria**:
-- [ ] Classification produces equivalent results
-- [ ] Model routing works correctly
-- [ ] Performance within 10% of original
+- [historical target] Classification produces equivalent results
+- [historical target] Model routing works correctly
+- [historical target] Performance within 10% of original
 
 ### Phase 4: Migrate REPL System
 
@@ -489,10 +489,10 @@ func migrateDatabase(oldPath, newPath string) error {
    - Resource limits
 
 **Exit Criteria**:
-- [ ] Code execution produces same results
-- [ ] Callbacks work correctly
-- [ ] Timeouts enforced
-- [ ] Resource cleanup on exit
+- [historical target] Code execution produces same results
+- [historical target] Callbacks work correctly
+- [historical target] Timeouts enforced
+- [historical target] Resource cleanup on exit
 
 ### Phase 5: Migrate Trajectory System
 
@@ -516,9 +516,9 @@ func migrateDatabase(oldPath, newPath string) error {
 3. Update budget panel to use cost tracking events
 
 **Exit Criteria**:
-- [ ] All event types map correctly
-- [ ] TUI trace viewer renders events
-- [ ] Budget tracking accurate
+- [historical target] All event types map correctly
+- [historical target] TUI trace viewer renders events
+- [historical target] Budget tracking accurate
 
 ### Phase 6: Migrate Epistemic Verification
 
@@ -541,9 +541,9 @@ func migrateDatabase(oldPath, newPath string) error {
    - Output gate → rlm-core memory gate
 
 **Exit Criteria**:
-- [ ] Hallucination detection rate maintained
-- [ ] Memory gate rejects ungrounded facts
-- [ ] Verification tests pass
+- [historical target] Hallucination detection rate maintained
+- [historical target] Memory gate rejects ungrounded facts
+- [historical target] Verification tests pass
 
 ### Phase 7: Migrate Reasoning Strategies
 
@@ -569,10 +569,10 @@ func migrateDatabase(oldPath, newPath string) error {
    - Incremental compression → rlm-core context module
 
 **Exit Criteria**:
-- [ ] ToT produces equivalent exploration
-- [ ] LATS search works correctly
-- [ ] Compression maintains quality
-- [ ] Reasoning tests pass
+- [historical target] ToT produces equivalent exploration
+- [historical target] LATS search works correctly
+- [historical target] Compression maintains quality
+- [historical target] Reasoning tests pass
 
 ### Phase 8: Migrate Orchestrator
 
@@ -603,10 +603,10 @@ func migrateDatabase(oldPath, newPath string) error {
    - Budget-aware execution
 
 **Exit Criteria**:
-- [ ] End-to-end orchestration works
-- [ ] Recursive calls function correctly
-- [ ] Meta-control decisions correct
-- [ ] All orchestration tests pass
+- [historical target] End-to-end orchestration works
+- [historical target] Recursive calls function correctly
+- [historical target] Meta-control decisions correct
+- [historical target] All orchestration tests pass
 
 ### Phase 9: Migrate Learning & Budget
 
@@ -633,9 +633,9 @@ func migrateDatabase(oldPath, newPath string) error {
    ```
 
 **Exit Criteria**:
-- [ ] Learning state migrated
-- [ ] Budget tracking accurate
-- [ ] Budget UI updates correctly
+- [historical target] Learning state migrated
+- [historical target] Budget tracking accurate
+- [historical target] Budget UI updates correctly
 
 ### Phase 10: Cleanup
 
@@ -650,10 +650,10 @@ func migrateDatabase(oldPath, newPath string) error {
 6. Tag release
 
 **Exit Criteria**:
-- [ ] No legacy RLM code remains
-- [ ] All tests pass
-- [ ] Build clean without warnings
-- [ ] Documentation updated
+- [historical target] No legacy RLM code remains
+- [historical target] All tests pass
+- [historical target] Build clean without warnings
+- [historical target] Documentation updated
 
 ---
 
@@ -863,16 +863,16 @@ go test ./internal/rlmcore/... -race -count=100
 
 Migration is complete when:
 
-- [ ] All recurse tests pass
-- [ ] No regression in functionality
-- [ ] Performance within 10% of original
-- [ ] Memory migration works without data loss
-- [ ] TUI renders correctly with rlm-core backend
-- [ ] Cross-platform builds work (Linux, macOS, Windows)
-- [ ] Feature flag removed
-- [ ] Legacy RLM code deleted
-- [ ] Documentation updated
-- [ ] Release tagged
+- [historical target] All recurse tests pass
+- [historical target] No regression in functionality
+- [historical target] Performance within 10% of original
+- [historical target] Memory migration works without data loss
+- [historical target] TUI renders correctly with rlm-core backend
+- [historical target] Cross-platform builds work (Linux, macOS, Windows)
+- [historical target] Feature flag removed
+- [historical target] Legacy RLM code deleted
+- [historical target] Documentation updated
+- [historical target] Release tagged
 
 ---
 

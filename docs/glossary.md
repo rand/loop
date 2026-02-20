@@ -18,7 +18,7 @@ The issue tracking system used by this repository for planning, status, and clos
 **Completeness Mode**
 Spec-agent generation policy:
 - `Baseline`: placeholder-free stubs
-- `Placeholder`: explicit `TODO`/`sorry` draft output
+- `Placeholder`: explicit `draft:` annotations with executable stubs (no `TODO`/`sorry` tokens)
 
 **Context Externalization**
 The process of transforming context into structured variables used by runtime orchestration and prompts.

@@ -23,7 +23,8 @@
 //!
 //! Completeness mode is configured independently from formalization level:
 //! - **Baseline** (default): emits non-placeholder stubs without `TODO`/`sorry`
-//! - **Placeholder**: explicit opt-in for draft specs with `TODO`/`sorry`
+//! - **Placeholder**: explicit opt-in for draft annotations (`draft:`) while
+//!   still emitting executable stubs without `TODO`/`sorry`
 //!
 //! ## Example
 //!

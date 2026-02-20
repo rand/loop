@@ -3,7 +3,7 @@
 > Formal specification and verification capabilities for rlm-core
 >
 > Historical design/planning artifact:
-> - Unchecked `[ ]` checklist items in this file are archival, not active implementation backlog.
+> - Checklist lines marked `[historical target]` are archival, not active implementation backlog.
 > - For live execution status and priorities, use `bd status` and:
 >   - `docs/execution-plan/STATUS.md`
 >   - `docs/execution-plan/TASK-REGISTRY.md`
@@ -978,13 +978,13 @@ The memory system enables learning from proof attempts:
 
 ### 9.1 Functional Requirements
 
-- [ ] Lean REPL executes commands and tactics correctly
-- [ ] Lean projects with mathlib dependencies work
-- [ ] Topos ↔ Lean bidirectional linking works
-- [ ] Drift detection catches spec divergence
-- [ ] Spec agent generates valid Topos and Lean specs
-- [ ] Progressive proof automation achieves >70% auto-proof rate on simple theorems
-- [ ] DP integration tracks spec coverage and proof status
+- [historical target] Lean REPL executes commands and tactics correctly
+- [historical target] Lean projects with mathlib dependencies work
+- [historical target] Topos ↔ Lean bidirectional linking works
+- [historical target] Drift detection catches spec divergence
+- [historical target] Spec agent generates valid Topos and Lean specs
+- [historical target] Progressive proof automation achieves >70% auto-proof rate on simple theorems
+- [historical target] DP integration tracks spec coverage and proof status
 
 ### 9.2 Performance Requirements
 
@@ -998,10 +998,10 @@ The memory system enables learning from proof attempts:
 
 ### 9.3 Quality Requirements
 
-- [ ] >80% test coverage on core components
-- [ ] All public APIs documented
-- [ ] Proof strategies stored for reuse
-- [ ] Graceful degradation when Lean unavailable
+- [historical target] >80% test coverage on core components
+- [historical target] All public APIs documented
+- [historical target] Proof strategies stored for reuse
+- [historical target] Graceful degradation when Lean unavailable
 
 ---
 

@@ -668,7 +668,7 @@ mod tests {
 
         let sorry = automation.mark_for_human(&goal);
         assert!(sorry.contains("sorry"));
-        assert!(sorry.contains("TODO"));
+        assert!(sorry.contains("HUMAN_REQUIRED"));
     }
 
     #[test]

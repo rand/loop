@@ -58,7 +58,7 @@ Actions:
 ## 6. Spec-agent output includes placeholders unexpectedly
 
 Symptoms:
-- Generated artifacts include `TODO` or `sorry`
+- Generated artifacts include `draft:` annotations when strict baseline output was expected
 
 Actions:
 1. Verify `CompletenessMode` configuration.

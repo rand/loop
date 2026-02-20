@@ -3,7 +3,7 @@
 > Detailed plan for migrating rlm-claude-code from pure Python to rlm-core Python bindings
 >
 > Historical planning artifact:
-> - Unchecked `[ ]` checklist items in this file are archival snapshots, not active backlog.
+> - Checklist lines marked `[historical target]` are archival snapshots, not active backlog.
 > - Authoritative live status is tracked in Beads (`bd status`) and execution-plan trackers:
 >   - `docs/execution-plan/STATUS.md`
 >   - `docs/execution-plan/TASK-REGISTRY.md`
@@ -169,9 +169,9 @@ Live scope/status is tracked in Beads (`loop-cyl`) and `docs/execution-plan/STAT
    ```
 
 **Exit Criteria**:
-- [ ] rlm-core imports successfully
-- [ ] Feature flag toggles between implementations
-- [ ] Existing tests pass with flag off
+- [historical target] rlm-core imports successfully
+- [historical target] Feature flag toggles between implementations
+- [historical target] Existing tests pass with flag off
 
 ### Phase 2: Migrate Complexity Classification
 
@@ -199,9 +199,9 @@ Live scope/status is tracked in Beads (`loop-cyl`) and `docs/execution-plan/STAT
    - `tests/unit/test_complexity_classifier.py` (can be removed)
 
 **Exit Criteria**:
-- [ ] PatternClassifier produces equivalent results
-- [ ] Auto-activation tests pass
-- [ ] Performance within 10% of original
+- [historical target] PatternClassifier produces equivalent results
+- [historical target] Auto-activation tests pass
+- [historical target] Performance within 10% of original
 
 ### Phase 3: Migrate Memory System
 
@@ -246,10 +246,10 @@ def migrate_database(old_path: str, new_path: str):
 ```
 
 **Exit Criteria**:
-- [ ] Existing memories migrate without data loss
-- [ ] Tier evolution works correctly
-- [ ] Semantic search produces equivalent results
-- [ ] Memory tests pass
+- [historical target] Existing memories migrate without data loss
+- [historical target] Tier evolution works correctly
+- [historical target] Semantic search produces equivalent results
+- [historical target] Memory tests pass
 
 ### Phase 4: Migrate Trajectory System
 
@@ -277,9 +277,9 @@ def migrate_database(old_path: str, new_path: str):
 3. Update `rich_output.py` to render rlm-core events
 
 **Exit Criteria**:
-- [ ] All event types map correctly
-- [ ] Trajectory streaming works
-- [ ] Export/replay functions work
+- [historical target] All event types map correctly
+- [historical target] Trajectory streaming works
+- [historical target] Export/replay functions work
 
 ### Phase 5: Migrate REPL Environment
 
@@ -331,9 +331,9 @@ Rust cannot efficiently execute arbitrary Python code. Even if `ReplPool` were e
    ```
 
 **Exit Criteria**:
-- [ ] Hallucination detection rate maintained
-- [ ] Memory gate rejects ungrounded facts
-- [ ] Epistemic tests pass
+- [historical target] Hallucination detection rate maintained
+- [historical target] Memory gate rejects ungrounded facts
+- [historical target] Epistemic tests pass
 
 ### Phase 7: Migrate Orchestrator
 
@@ -538,20 +538,20 @@ Migration is complete when:
 
 - [x] All rlm-claude-code tests pass with `RLM_USE_CORE=false`
 - [x] All tests pass with `RLM_USE_CORE=true` (rlm_core available)
-- [ ] Performance within 10% of original
-- [ ] Memory operations work with both backends
+- [historical target] Performance within 10% of original
+- [historical target] Memory operations work with both backends
 - [x] Feature flag controls delegation
 - [x] Graceful fallback when rlm_core unavailable
 - [x] Documentation updated with migration reality
-- [ ] Fork merged via PR after validation
+- [historical target] Fork merged via PR after validation
 
 ### Full Replacement (Future Goal - Requires Python Binding Updates)
 
 Full migration requires rlm-core to expose:
 
-- [ ] `ClaudeCodeAdapter` with async Python support
-- [ ] `ReplPool` / `ReplHandle` (or accept Python-specific impl)
-- [ ] Full `Orchestrator` interface
+- [historical target] `ClaudeCodeAdapter` with async Python support
+- [historical target] `ReplPool` / `ReplHandle` (or accept Python-specific impl)
+- [historical target] Full `Orchestrator` interface
 
 Until then, component delegation provides:
 - Unified trajectory format across consumers

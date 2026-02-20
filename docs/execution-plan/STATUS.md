@@ -100,6 +100,7 @@ Last updated: 2026-02-20
 | R47 | Closed M7-T09 by delivering `io_rflx_interop.v0` fixture/calibration artifacts, executable RFLX fixture gate coverage, and refreshed RFLX/contract/perf evidence | `evidence/2026-02-20/milestone-M7/M7-T09-validation-summary.md` |
 | R48 | Closed M7-T10 by reconciling SPEC-20..27 status/governance metadata, refreshing consumer claim evidence, and assigning post-M7 up-next critical gaps to `loop-azq` | `evidence/2026-02-20/milestone-M7/M7-T10-validation-summary.md` |
 | R49 | Closed post-M7 reconciliation drift by aligning execution-plan tracker docs with live Beads state (`loop-azq` closed, no active implementation backlog) | `loop-k7d` + updated tracker docs |
+| R50 | Closed lineage-closure tranche by reconciling origin-era historical checklists (`[historical target]` semantics), hardening placeholder emitters (`draft:` + `HUMAN_REQUIRED`), and re-running `make check`/`make verify` plus repo-local `dp` governance pipelines with passing evidence | `evidence/2026-02-20/lineage-closure/lineage-completeness-report.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 

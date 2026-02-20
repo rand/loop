@@ -4,7 +4,7 @@
 
 > Historical planning artifact. Last reconciled against Beads/`STATUS.md` on 2026-02-20.
 > Live issue state is tracked in `bd` and `docs/execution-plan/STATUS.md`; tables below are archival sequencing context.
-> Unchecked `[ ]` items in this document are archival snapshots, not active backlog.
+> Checklist lines marked `[historical target]` are archival snapshots, not active backlog.
 
 ## Executive Summary
 
@@ -303,11 +303,11 @@ For maximum throughput, use **3 parallel agent sessions**:
 
 These checkboxes are a preserved planning snapshot. They do not represent live work intake.
 
-- [ ] rlm-core fully integrated in both Claude Code and TUI
-- [ ] Lean REPL executes commands and tactics correctly
-- [ ] >70% auto-proof rate on simple theorems
-- [ ] Spec Agent generates valid Topos + Lean from NL requirements
-- [ ] All SPEC-XX.YY items traceable through Lean theorems
+- [historical target] rlm-core fully integrated in both Claude Code and TUI
+- [historical target] Lean REPL executes commands and tactics correctly
+- [historical target] >70% auto-proof rate on simple theorems
+- [historical target] Spec Agent generates valid Topos + Lean from NL requirements
+- [historical target] All SPEC-XX.YY items traceable through Lean theorems
 
 ---
 

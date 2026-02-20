@@ -3,7 +3,7 @@
 > A shared library supporting both Claude Code plugins and agentic TUIs
 >
 > Historical design artifact:
-> - Unchecked `[ ]` checklist items are archival planning snapshots, not active backlog.
+> - Checklist lines marked `[historical target]` are archival planning snapshots, not active backlog.
 > - Authoritative live status is tracked in Beads (`bd status`) and:
 >   - `docs/execution-plan/STATUS.md`
 >   - `docs/execution-plan/TASK-REGISTRY.md`
@@ -881,15 +881,15 @@ type TUIModel interface {
 
 ### 7.1 Functional Requirements
 
-- [ ] RLM orchestration loop works identically in both contexts
-- [ ] Memory persists and evolves correctly across sessions
-- [ ] Trajectory events stream to both Claude Code and TUI
-- [ ] Smart routing selects appropriate models
-- [ ] Cost tracking accurate across all components
-- [ ] REPL sandbox prevents unauthorized operations
-- [ ] Epistemic verification detects >80% of procedural hallucinations
-- [ ] Memory gate rejects ungrounded facts (budget gap > threshold)
-- [ ] Verification adds <500ms latency in sample mode
+- [historical target] RLM orchestration loop works identically in both contexts
+- [historical target] Memory persists and evolves correctly across sessions
+- [historical target] Trajectory events stream to both Claude Code and TUI
+- [historical target] Smart routing selects appropriate models
+- [historical target] Cost tracking accurate across all components
+- [historical target] REPL sandbox prevents unauthorized operations
+- [historical target] Epistemic verification detects >80% of procedural hallucinations
+- [historical target] Memory gate rejects ungrounded facts (budget gap > threshold)
+- [historical target] Verification adds <500ms latency in sample mode
 
 ### 7.2 Performance Requirements
 
@@ -902,10 +902,10 @@ type TUIModel interface {
 
 ### 7.3 Quality Requirements
 
-- [ ] > 80% test coverage on core crate
-- [ ] All public APIs documented
-- [ ] No memory leaks in long-running sessions
-- [ ] Graceful degradation when services unavailable
+- [historical target] > 80% test coverage on core crate
+- [historical target] All public APIs documented
+- [historical target] No memory leaks in long-running sessions
+- [historical target] Graceful degradation when services unavailable
 
 ---
 

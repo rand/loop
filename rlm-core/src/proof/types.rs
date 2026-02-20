@@ -154,7 +154,7 @@ pub enum AutomationTier {
     /// Uses language models to suggest proof strategies.
     AIAssisted = 2,
 
-    /// Human loop: sorry with TODO marker for manual completion.
+    /// Human loop: sorry with explicit handoff marker for manual completion.
     /// Fallback when automation fails.
     HumanLoop = 3,
 }

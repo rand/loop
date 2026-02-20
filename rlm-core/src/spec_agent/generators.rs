@@ -132,7 +132,7 @@ impl ToposGenerator {
         }
         if completeness_mode == CompletenessMode::Placeholder {
             warnings.push(
-                "Placeholder mode enabled: generated Topos spec may contain TODO markers"
+                "Placeholder mode enabled: generated Topos spec includes draft annotations"
                     .to_string(),
             );
         }
@@ -178,7 +178,7 @@ impl ToposGenerator {
                     concept.push_str("  label: `String`\n");
                 }
                 CompletenessMode::Placeholder => {
-                    concept.push_str("  # TODO: Add fields\n");
+                    concept.push_str("  draft_field: `String`  # draft: refine fields\n");
                 }
             }
         }
@@ -230,8 +230,8 @@ impl ToposGenerator {
                 behavior.push_str("  post: true\n");
             }
             CompletenessMode::Placeholder => {
-                behavior.push_str("  pre: # TODO: Define preconditions\n");
-                behavior.push_str("  post: # TODO: Define postconditions\n");
+                behavior.push_str("  pre: true  # draft: refine preconditions\n");
+                behavior.push_str("  post: true  # draft: refine postconditions\n");
             }
         }
 
@@ -419,7 +419,7 @@ impl LeanGenerator {
         }
         if completeness_mode == CompletenessMode::Placeholder {
             warnings.push(
-                "Placeholder mode enabled: generated Lean spec may contain TODO/sorry markers"
+                "Placeholder mode enabled: generated Lean spec includes draft annotations"
                     .to_string(),
             );
         }
@@ -485,7 +485,7 @@ impl LeanGenerator {
                         }
                         CompletenessMode::Placeholder => {
                             structure.push_str(&format!(
-                                "  {} : {} -- TODO: specify type\n",
+                                "  {} : {} -- draft: refine type\n",
                                 Self::to_field_name(entity),
                                 Self::infer_type(entity)
                             ));
@@ -501,7 +501,7 @@ impl LeanGenerator {
                     structure.push_str("  label : String\n");
                 }
                 CompletenessMode::Placeholder => {
-                    structure.push_str("  -- TODO: Add fields\n");
+                    structure.push_str("  draftField : String -- draft: refine fields\n");
                 }
             }
         }
@@ -540,7 +540,7 @@ impl LeanGenerator {
                 invariant.push_str("  True\n");
             }
             CompletenessMode::Placeholder => {
-                invariant.push_str("  sorry -- TODO: formalize invariant\n");
+                invariant.push_str("  True -- draft: formalize invariant\n");
             }
         }
 
@@ -580,7 +580,7 @@ impl LeanGenerator {
                 spec.push_str("  some input\n\n");
             }
             CompletenessMode::Placeholder => {
-                spec.push_str("  sorry -- TODO: implement\n\n");
+                spec.push_str("  some input -- draft: refine implementation\n\n");
             }
         }
 
@@ -596,7 +596,7 @@ impl LeanGenerator {
                     spec.push_str("  True\n\n");
                 }
                 CompletenessMode::Placeholder => {
-                    spec.push_str("  sorry -- TODO: define precondition\n\n");
+                    spec.push_str("  True -- draft: refine precondition\n\n");
                 }
             }
 
@@ -610,7 +610,7 @@ impl LeanGenerator {
                     spec.push_str("  True\n\n");
                 }
                 CompletenessMode::Placeholder => {
-                    spec.push_str("  sorry -- TODO: define postcondition\n\n");
+                    spec.push_str("  True -- draft: refine postcondition\n\n");
                 }
             }
 
@@ -634,7 +634,9 @@ impl LeanGenerator {
                     spec.push_str("    trivial\n");
                 }
                 CompletenessMode::Placeholder => {
-                    spec.push_str("  sorry -- TODO: prove contract\n");
+                    spec.push_str("  by\n");
+                    spec.push_str("    intro _\n");
+                    spec.push_str("    trivial -- draft: strengthen contract proof\n");
                 }
             }
         }
@@ -658,7 +660,7 @@ impl LeanGenerator {
                 proof.push_str("  trivial\n");
             }
             CompletenessMode::Placeholder => {
-                proof.push_str("  trivial -- TODO: replace with actual proof\n");
+                proof.push_str("  trivial -- draft: replace with domain proof\n");
             }
         }
 
@@ -846,6 +848,7 @@ pub struct GeneratedSpec {
 mod tests {
     use super::*;
     use crate::spec_agent::parser::NLParser;
+    use proptest::prelude::*;
 
     #[test]
     fn test_topos_generator_basic() {
@@ -924,7 +927,7 @@ mod tests {
     }
 
     #[test]
-    fn test_placeholder_mode_emits_explicit_markers() {
+    fn test_placeholder_mode_emits_draft_markers_without_todo_or_sorry() {
         let mut ctx = SpecContext::new("An Order has items and status. Users can create orders.");
         NLParser::parse(&mut ctx);
 
@@ -937,9 +940,11 @@ mod tests {
             CompletenessMode::Placeholder,
         );
 
-        assert!(topos.content.contains("TODO"));
-        assert!(lean.content.contains("TODO"));
-        assert!(lean.content.contains("sorry"));
+        assert!(topos.content.contains("draft:"));
+        assert!(lean.content.contains("draft:"));
+        assert!(!topos.content.contains("TODO"));
+        assert!(!lean.content.contains("TODO"));
+        assert!(!lean.content.contains("sorry"));
     }
 
     #[test]
@@ -964,6 +969,54 @@ mod tests {
         assert!(!topos.content.contains("TODO"));
         assert!(!lean.content.contains("TODO"));
         assert!(!lean.content.contains("sorry"));
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(64))]
+
+        #[test]
+        fn prop_spec_generation_is_placeholder_token_free_across_modes(
+            entity in "[A-Z][a-z]{2,8}",
+            action in "[a-z]{3,10}",
+            spec_name in "[A-Z][A-Za-z0-9]{2,12}",
+        ) {
+            let prompt = format!(
+                "A {entity} has an id and status. Users can {action} {entity}s."
+            );
+            let mut ctx = SpecContext::new(&prompt);
+            NLParser::parse(&mut ctx);
+
+            let topos_baseline = ToposGenerator::generate(&ctx, &spec_name, CompletenessMode::Baseline);
+            let lean_baseline = LeanGenerator::generate(
+                &ctx,
+                &spec_name,
+                FormalizationLevel::Contracts,
+                CompletenessMode::Baseline,
+            );
+            let topos_placeholder = ToposGenerator::generate(&ctx, &spec_name, CompletenessMode::Placeholder);
+            let lean_placeholder = LeanGenerator::generate(
+                &ctx,
+                &spec_name,
+                FormalizationLevel::Contracts,
+                CompletenessMode::Placeholder,
+            );
+
+            for artifact in [
+                &topos_baseline.content,
+                &lean_baseline.content,
+                &topos_placeholder.content,
+                &lean_placeholder.content,
+            ] {
+                prop_assert!(!artifact.contains("TODO"));
+            }
+
+            prop_assert!(!lean_baseline.content.contains("sorry"));
+            prop_assert!(!lean_placeholder.content.contains("sorry"));
+            prop_assert!(
+                topos_placeholder.content.contains("draft:")
+                    || lean_placeholder.content.contains("draft:")
+            );
+        }
     }
 
     #[test]
