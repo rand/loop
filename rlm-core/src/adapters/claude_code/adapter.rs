@@ -521,6 +521,7 @@ mod tests {
         assert!(tools.contains(&"rlm_status".to_string()));
         assert!(tools.contains(&"memory_query".to_string()));
         assert!(tools.contains(&"memory_store".to_string()));
+        assert!(tools.contains(&"trace_visualize".to_string()));
     }
 
     #[test]

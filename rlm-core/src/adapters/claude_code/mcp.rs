@@ -6,8 +6,10 @@
 //! - **rlm_status**: Get current RLM status
 //! - **memory_query**: Query the memory store
 //! - **memory_store**: Store data in memory
+//! - **trace_visualize**: Export ReasoningTrace artifacts (HTML/DOT/NetworkX/Mermaid)
 
 use crate::error::{Error, Result};
+use crate::reasoning::{HtmlConfig, ReasoningTrace};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -125,6 +127,7 @@ impl McpToolRegistry {
         registry.register_rlm_status();
         registry.register_memory_query();
         registry.register_memory_store();
+        registry.register_trace_visualize();
 
         registry
     }
@@ -418,6 +421,97 @@ impl McpToolRegistry {
 
         self.register(tool, handler);
     }
+
+    fn register_trace_visualize(&mut self) {
+        let tool = McpTool::new(
+            "trace_visualize",
+            "Export a serialized ReasoningTrace into visualization artifacts \
+             (html, dot, networkx_json, or mermaid).",
+        )
+        .with_schema(serde_json::json!({
+            "type": "object",
+            "properties": {
+                "trace_json": {
+                    "type": "string",
+                    "description": "Serialized ReasoningTrace JSON payload"
+                },
+                "format": {
+                    "type": "string",
+                    "enum": ["html", "dot", "networkx_json", "mermaid"],
+                    "description": "Requested output format",
+                    "default": "html"
+                },
+                "html_preset": {
+                    "type": "string",
+                    "enum": ["default", "minimal", "presentation"],
+                    "description": "Preset used when format=html",
+                    "default": "default"
+                }
+            },
+            "required": ["trace_json"]
+        }))
+        .with_category("reasoning")
+        .with_example(ToolExample::new(
+            "Export Mermaid trace",
+            serde_json::json!({
+                "trace_json": "{\"id\":\"...\"}",
+                "format": "mermaid"
+            }),
+            "Mermaid graph with trace metadata header",
+        ));
+
+        let handler: ToolHandler = Arc::new(|input| {
+            let trace_json = input
+                .get("trace_json")
+                .and_then(Value::as_str)
+                .ok_or_else(|| Error::Config("trace_json is required".to_string()))?;
+
+            let trace: ReasoningTrace = serde_json::from_str(trace_json)
+                .map_err(|e| Error::Config(format!("Invalid trace_json: {}", e)))?;
+
+            let format = input
+                .get("format")
+                .and_then(Value::as_str)
+                .unwrap_or("html");
+
+            let artifact = match format {
+                "html" => {
+                    let preset = input
+                        .get("html_preset")
+                        .and_then(Value::as_str)
+                        .unwrap_or("default");
+                    let config = match preset {
+                        "default" => HtmlConfig::default(),
+                        "minimal" => HtmlConfig::minimal(),
+                        "presentation" => HtmlConfig::presentation(),
+                        other => {
+                            return Err(Error::Config(format!(
+                                "Unsupported html_preset: {}",
+                                other
+                            )))
+                        }
+                    };
+                    trace.to_html(config)
+                }
+                "dot" => trace.to_dot(),
+                "networkx_json" => trace.to_networkx_json(),
+                "mermaid" => trace.to_mermaid_enhanced(),
+                other => {
+                    return Err(Error::Config(format!("Unsupported format: {}", other)));
+                }
+            };
+
+            Ok(serde_json::json!({
+                "trace_id": trace.id.to_string(),
+                "format": format,
+                "node_count": trace.nodes.len(),
+                "edge_count": trace.edges.len(),
+                "artifact": artifact
+            }))
+        });
+
+        self.register(tool, handler);
+    }
 }
 
 /// Input for rlm_execute tool.
@@ -457,6 +551,14 @@ pub struct MemoryStoreInput {
     pub metadata: Option<HashMap<String, Value>>,
 }
 
+/// Input for trace_visualize tool.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TraceVisualizeInput {
+    pub trace_json: String,
+    pub format: Option<String>,
+    pub html_preset: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -490,11 +592,12 @@ mod tests {
     fn test_registry_default_tools() {
         let registry = McpToolRegistry::with_defaults();
 
-        assert_eq!(registry.count(), 4);
+        assert_eq!(registry.count(), 5);
         assert!(registry.get_tool("rlm_execute").is_some());
         assert!(registry.get_tool("rlm_status").is_some());
         assert!(registry.get_tool("memory_query").is_some());
         assert!(registry.get_tool("memory_store").is_some());
+        assert!(registry.get_tool("trace_visualize").is_some());
     }
 
     #[test]
@@ -506,6 +609,9 @@ mod tests {
 
         let memory_tools = registry.tools_by_category("memory");
         assert_eq!(memory_tools.len(), 2);
+
+        let reasoning_tools = registry.tools_by_category("reasoning");
+        assert_eq!(reasoning_tools.len(), 1);
     }
 
     #[test]
@@ -514,6 +620,33 @@ mod tests {
 
         let result = registry.execute("rlm_status", serde_json::json!({}));
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_trace_visualize_mermaid_export() {
+        let registry = McpToolRegistry::with_defaults();
+        let mut trace = ReasoningTrace::new("Visualize this trace", "mcp-session");
+        let root = trace.root_goal.clone();
+        trace.log_decision(&root, "Pick option", &["A", "B"], 0, "A selected");
+        let trace_json = serde_json::to_string(&trace).expect("trace should serialize");
+
+        let result = registry
+            .execute(
+                "trace_visualize",
+                serde_json::json!({
+                    "trace_json": trace_json,
+                    "format": "mermaid"
+                }),
+            )
+            .expect("trace_visualize should succeed");
+
+        assert_eq!(result.get("format").and_then(Value::as_str), Some("mermaid"));
+        let artifact = result
+            .get("artifact")
+            .and_then(Value::as_str)
+            .expect("artifact must be string");
+        assert!(artifact.contains("%% ReasoningTrace (enhanced)"));
+        assert!(artifact.contains("graph TD"));
     }
 
     #[test]

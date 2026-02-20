@@ -333,6 +333,21 @@ impl ReasoningTrace {
         self.to_dot_with_config(&DotConfig::default())
     }
 
+    /// Export to enhanced Mermaid format with trace metadata comments.
+    ///
+    /// This builds on `ReasoningTrace::to_mermaid()` by prepending trace-level
+    /// metadata so generated diagrams remain self-describing in artifacts.
+    pub fn to_mermaid_enhanced(&self) -> String {
+        let mut mermaid = String::new();
+        mermaid.push_str("%% ReasoningTrace (enhanced)\n");
+        mermaid.push_str(&format!("%% trace_id: {}\n", self.id));
+        mermaid.push_str(&format!("%% session_id: {}\n", self.session_id));
+        mermaid.push_str(&format!("%% node_count: {}\n", self.nodes.len()));
+        mermaid.push_str(&format!("%% edge_count: {}\n\n", self.edges.len()));
+        mermaid.push_str(&self.to_mermaid());
+        mermaid
+    }
+
     /// Export to DOT format with custom configuration.
     pub fn to_dot_with_config(&self, config: &DotConfig) -> String {
         let mut dot = String::new();
@@ -993,6 +1008,21 @@ mod tests {
         assert!(dot.contains("shape=diamond")); // Decision shape
         assert!(dot.contains("->")); // Edges
         assert!(dot.contains("chooses"));
+    }
+
+    #[test]
+    fn test_mermaid_enhanced_export() {
+        let mut trace = ReasoningTrace::new("Visualize trace", "session-mermaid");
+        let root = trace.root_goal.clone();
+        trace.log_decision(&root, "Choose approach", &["A", "B"], 0, "A is simpler");
+
+        let mermaid = trace.to_mermaid_enhanced();
+
+        assert!(mermaid.contains("%% ReasoningTrace (enhanced)"));
+        assert!(mermaid.contains("%% trace_id:"));
+        assert!(mermaid.contains("%% session_id: session-mermaid"));
+        assert!(mermaid.contains("graph TD"));
+        assert!(mermaid.contains("classDef goal"));
     }
 
     #[test]

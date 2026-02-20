@@ -2,7 +2,7 @@
 
 > Interactive debugging visualization for reasoning traces
 
-**Status**: Draft
+**Status**: Partially implemented (core exports + TUI/MCP integration endpoints are implemented; CLI command and advanced HTML controls remain deferred)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-wve
@@ -12,6 +12,15 @@
 ## Overview
 
 Add interactive graph visualization for ReasoningTrace to enable debugging of complex reasoning chains. Based on Codecrack3's NetworkX visualization approach.
+
+## Implementation Snapshot (2026-02-20)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-23.01 Graph export formats | Implemented (NetworkX JSON, DOT, HTML, enhanced Mermaid) | `rlm-core/src/reasoning/visualize.rs` |
+| SPEC-23.02 NetworkX schema | Implemented (runtime node-link schema) | `NetworkXGraph` types and export tests in `rlm-core/src/reasoning/visualize.rs` |
+| SPEC-23.03 HTML visualization | Partially implemented | `ReasoningTrace::to_html` + `test_html_export` in `rlm-core/src/reasoning/visualize.rs` |
+| SPEC-23.04 Integration points | Partially implemented (TUI + MCP, CLI deferred) | `TUIAdapter::render_trace_panel` and `trace_visualize` in `rlm-core/src/adapters/` |
 
 ## Requirements
 
@@ -271,10 +280,10 @@ The HTML visualization should use D3.js for graph rendering:
 
 | Component | Location |
 |-----------|----------|
-| Graph export | `src/reasoning/export.rs` |
-| HTML template | `src/reasoning/templates/trace.html` |
-| CLI command | `src/cli/trace.rs` |
-| TUI panel | `src/adapters/tui/trace_panel.rs` |
+| Graph export | `rlm-core/src/reasoning/visualize.rs` |
+| Mermaid base export | `rlm-core/src/reasoning/trace.rs` |
+| TUI integration surface | `rlm-core/src/adapters/tui/adapter.rs` |
+| Claude Code MCP integration surface | `rlm-core/src/adapters/claude_code/mcp.rs` |
 
 ---
 
@@ -286,7 +295,9 @@ The HTML visualization should use D3.js for graph rendering:
 | `test_html_renders` | HTML is valid | SPEC-23.03 |
 | `test_dot_valid` | DOT is valid Graphviz | SPEC-23.01 |
 | `test_node_colors` | Correct color by type | SPEC-23.03 |
-| `test_cli_visualize` | CLI command works | SPEC-23.04 |
+| `test_mermaid_enhanced_export` | Enhanced Mermaid includes metadata and valid graph body | SPEC-23.01 |
+| `test_trace_visualize_mermaid_export` | MCP visualization endpoint exports Mermaid artifact | SPEC-23.04 |
+| `test_render_trace_panel_contains_mermaid` | TUI integration surface renders deterministic Mermaid panel payload | SPEC-23.04 |
 
 ---
 

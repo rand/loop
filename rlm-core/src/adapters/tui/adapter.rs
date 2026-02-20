@@ -10,6 +10,7 @@ use tokio::sync::broadcast;
 use tokio::sync::RwLock;
 
 use crate::memory::SqliteMemoryStore;
+use crate::reasoning::ReasoningTrace;
 use crate::trajectory::{
     BroadcastEmitter, BudgetConfig, BudgetManager, BudgetState, TrajectoryEmitter, TrajectoryEvent,
     Verbosity,
@@ -461,6 +462,21 @@ impl TUIAdapter {
     // Utility Methods
     // =========================================================================
 
+    /// Render a deterministic trace panel payload for TUI consumers.
+    ///
+    /// The payload includes a concise header and an embedded Mermaid block so
+    /// downstream renderers can choose either plain-text or graph rendering.
+    pub fn render_trace_panel(&self, trace: &ReasoningTrace) -> String {
+        format!(
+            "Trace ID: {}\nSession: {}\nNodes: {}\nEdges: {}\n\n```mermaid\n{}\n```",
+            trace.id,
+            trace.session_id,
+            trace.nodes.len(),
+            trace.edges.len(),
+            trace.to_mermaid_enhanced(),
+        )
+    }
+
     /// Check if budget is exceeded.
     pub fn is_budget_exceeded(&self) -> bool {
         self.budget.is_exceeded()
@@ -502,6 +518,7 @@ impl std::fmt::Debug for TUIAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::reasoning::ReasoningTrace;
     use crate::trajectory::TrajectoryEvent;
 
     #[test]
@@ -602,5 +619,16 @@ mod tests {
         let trace = adapter.get_trace_panel().await;
         assert_eq!(trace.total_events, 0);
         assert_eq!(adapter.get_status().await, ExecutionStatus::Idle);
+    }
+
+    #[test]
+    fn test_render_trace_panel_contains_mermaid() {
+        let adapter = TUIAdapter::with_defaults();
+        let trace = ReasoningTrace::new("Build visualization payload", "tui-session");
+
+        let rendered = adapter.render_trace_panel(&trace);
+        assert!(rendered.contains("Trace ID:"));
+        assert!(rendered.contains("```mermaid"));
+        assert!(rendered.contains("graph TD"));
     }
 }
