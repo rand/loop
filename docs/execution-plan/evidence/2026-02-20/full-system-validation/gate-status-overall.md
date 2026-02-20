@@ -7,12 +7,7 @@ Date: 2026-02-20
 - Perf/efficacy: `VG-PERF-001`, `VG-PERF-002`, `VG-PERF-003`
 - Additional: `VG-PROPTEST-001`, `VG-PY-INTEGRATION-001`, `VG-GO-ALL-001-final`
 - Manual reconciliation: `VG-DOC-SPEC-002`, `VG-CONTRACT-001`
+- Governance/runtime: `VG-MAKE-CHECK-001`, `VG-DP-REVIEW`, `VG-DP-VERIFY`, `VG-DP-ENFORCE-PRE-COMMIT`, `VG-DP-ENFORCE-PRE-PUSH`
 
 ## Failed / Blocked
-- `VG-DP-ENFORCE-PRE-COMMIT`
-- `VG-DP-REVIEW`
-- `VG-DP-VERIFY`
-- `VG-DP-ENFORCE-PRE-PUSH`
-
-Reason: local runtime missing `dp` executable (`Failed to spawn: dp`, os error 2).
-Tracked remediation: `loop-rv2`.
+None.

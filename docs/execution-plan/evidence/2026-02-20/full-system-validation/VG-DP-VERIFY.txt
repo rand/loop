@@ -1,4 +1,20 @@
-[VG-DP-VERIFY] running
-error: Failed to spawn: `dp`
-  Caused by: No such file or directory (os error 2)
-exit_code=2
+{
+  "stage": "verify",
+  "policy": "/Users/rand/src/loop/dp-policy.json",
+  "cwd": "/Users/rand/src/loop",
+  "ok": true,
+  "steps": [
+    {
+      "name": "check",
+      "command": [
+        "make",
+        "check"
+      ],
+      "exit_code": 0,
+      "duration_ms": 2763,
+      "stdout": "cd rlm-core && cargo check --quiet\ncd rlm-core && cargo test --quiet\n\nrunning 634 tests\n....................................................................................... 87/634\n....................................................................................... 174/634\n.........................................................iii........................... 261/634\n....................................................................................... 348/634\n....................................................................................... 435/634\n..............i....i.iiiii............................................................. 522/634\n....................................................................................... 609/634\n.........................\ntest result: ok. 624 passed; 0 failed; 10 ignored; 0 measured; 0 filtered out; finished in 0.55s\n\n\nrunning 40 tests\niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii....\ntest result: ok. 4 passed; 0 failed; 36 ignored; 0 measured; 0 filtered out; finished in 1.02s\n\n",
+      "stderr": "warning: unused import: `std::path::PathBuf`\n   --> src/dp_integration/review.rs:560:9\n    |\n560 |     use std::path::PathBuf;\n    |         ^^^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`\n   --> src/sync/engine.rs:609:24\n    |\n609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};\n    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused variable: `action_id`\n   --> src/reasoning/store.rs:741:14\n    |\n741 |         let (action_id, outcome_id) = trace.log_action(&chosen, \"Action\", \"Outcome\");\n    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `questions`\n   --> src/spec_agent/agent.rs:658:13\n    |\n658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();\n    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`\n\nwarning: function `probability_with_edges` is never used\n  --> src/epistemic/proptest.rs:27:8\n   |\n27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {\n   |        ^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = note: `#[warn(dead_code)]` on by default\n\nwarning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read\n   --> src/signature/mod.rs:684:13\n    |\n682 |         struct AnalyzeCode {\n    |                ----------- fields in this struct\n683 |             #[input(desc = \"Source code to analyze\")]\n684 |             code: String,\n    |             ^^^^\n...\n687 |             language: String,\n    |             ^^^^^^^^\n...\n690 |             max_issues: Option<u32>,\n    |             ^^^^^^^^^^\n...\n693 |             vulnerabilities: Vec<String>,\n    |             ^^^^^^^^^^^^^^^\n...\n696 |             severity: String,\n    |             ^^^^^^^^\n...\n699 |             confidence: f64,\n    |             ^^^^^^^^^^\n\nwarning: multiple fields are never read\n   --> src/signature/mod.rs:793:13\n    |\n791 |         struct AllTypes {\n    |                -------- fields in this struct\n792 |             #[input(desc = \"A string\")]\n793 |             string_field: String,\n    |             ^^^^^^^^^^^^\n...\n796 |             int_field: i32,\n    |             ^^^^^^^^^\n...\n799 |             float_field: f64,\n    |             ^^^^^^^^^^^\n...\n802 |             bool_field: bool,\n    |             ^^^^^^^^^^\n...\n805 |             list_field: Vec<String>,\n    |             ^^^^^^^^^^\n...\n808 |             optional_list_field: Option<Vec<i32>>,\n    |             ^^^^^^^^^^^^^^^^^^^\n...\n811 |             array_field: [i32; 2],\n    |             ^^^^^^^^^^^\n...\n814 |             output: String,\n    |             ^^^^^^\n\nwarning: fields `severity` and `category` are never read\n   --> src/signature/mod.rs:835:13\n    |\n832 |         struct EnumAnnotated {\n    |                ------------- fields in this struct\n...\n835 |             severity: String,\n    |             ^^^^^^^^\n...\n839 |             category: String,\n    |             ^^^^^^^^\n\n",
+      "ok": true
+    }
+  ]
+}

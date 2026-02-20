@@ -14,6 +14,79 @@ use super::types::{
     ToposField, ToposInvariant, TypeMismatch,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct SymbolId(u32);
+
+#[derive(Debug, Default)]
+struct StringInterner {
+    symbol_to_id: HashMap<String, SymbolId>,
+    symbols: Vec<String>,
+}
+
+impl StringInterner {
+    fn intern(&mut self, value: &str) -> SymbolId {
+        if let Some(id) = self.symbol_to_id.get(value).copied() {
+            return id;
+        }
+
+        let owned = value.to_string();
+        let id = SymbolId(self.symbols.len() as u32);
+        self.symbol_to_id.insert(owned.clone(), id);
+        self.symbols.push(owned);
+        id
+    }
+
+    #[cfg(test)]
+    fn resolve(&self, id: SymbolId) -> Option<&str> {
+        self.symbols.get(id.0 as usize).map(String::as_str)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AnalysisNodeKind {
+    Concept,
+    Structure,
+    Behavior,
+    Theorem,
+    Link,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct AnalysisNode {
+    symbol: SymbolId,
+    kind: AnalysisNodeKind,
+}
+
+impl AnalysisNode {
+    fn new(symbol: SymbolId, kind: AnalysisNodeKind) -> Self {
+        Self { symbol, kind }
+    }
+}
+
+/// Minimal typed arena for short-lived graph-analysis allocations.
+///
+/// This keeps temporary analysis nodes densely packed in one vector to reduce
+/// per-node heap churn in drift detection hot paths.
+#[derive(Debug, Default)]
+struct TypedArena<T> {
+    items: Vec<T>,
+}
+
+impl<T> TypedArena<T> {
+    fn new() -> Self {
+        Self { items: Vec::new() }
+    }
+
+    fn alloc(&mut self, value: T) -> usize {
+        self.items.push(value);
+        self.items.len() - 1
+    }
+
+    fn get(&self, id: usize) -> Option<&T> {
+        self.items.get(id)
+    }
+}
+
 /// Drift detector for comparing Topos and Lean artifacts.
 pub struct DriftDetector {
     /// Type mapping from Topos to Lean.
@@ -65,25 +138,60 @@ impl DriftDetector {
         index: &LinkIndex,
     ) -> DriftReport {
         let mut report = DriftReport::new();
+        let mut interner = StringInterner::default();
+        let mut analysis_arena: TypedArena<AnalysisNode> = TypedArena::new();
 
-        // Build lookup maps
-        let struct_by_name: HashMap<&str, &LeanStructure> =
-            structures.iter().map(|s| (s.name.as_str(), s)).collect();
+        // Build symbol-indexed lookup maps. This avoids repeated string hashing and
+        // allocates short-lived analysis nodes from a single typed arena slab.
+        let mut structures_by_symbol: HashMap<SymbolId, (usize, &LeanStructure)> = HashMap::new();
+        for structure in structures {
+            let symbol = interner.intern(&structure.name);
+            let node_id =
+                analysis_arena.alloc(AnalysisNode::new(symbol, AnalysisNodeKind::Structure));
+            structures_by_symbol.insert(symbol, (node_id, structure));
+        }
 
-        let linked_lean_names: HashSet<String> = index
+        let concept_symbols: HashSet<SymbolId> = concepts
+            .iter()
+            .map(|concept| {
+                let symbol = interner.intern(&concept.name);
+                let node_id =
+                    analysis_arena.alloc(AnalysisNode::new(symbol, AnalysisNodeKind::Concept));
+                debug_assert_eq!(
+                    analysis_arena.get(node_id).map(|n| n.kind),
+                    Some(AnalysisNodeKind::Concept)
+                );
+                symbol
+            })
+            .collect();
+
+        let linked_lean_symbols: HashSet<SymbolId> = index
             .links_by_type(LinkType::Structure)
             .iter()
-            .map(|link| link.lean.artifact.clone())
+            .map(|link| {
+                let symbol = interner.intern(&link.lean.artifact);
+                let node_id =
+                    analysis_arena.alloc(AnalysisNode::new(symbol, AnalysisNodeKind::Link));
+                debug_assert_eq!(
+                    analysis_arena.get(node_id).map(|n| n.kind),
+                    Some(AnalysisNodeKind::Link)
+                );
+                analysis_arena
+                    .get(node_id)
+                    .map(|n| n.symbol)
+                    .unwrap_or(symbol)
+            })
             .collect();
 
         // Check each concept for a corresponding structure
         for concept in concepts {
+            let concept_symbol = interner.intern(&concept.name);
             let topos_ref = ToposRef::new(&concept.source_file, &concept.name);
             let links = index.get_lean_refs(&topos_ref);
 
             if links.is_empty() {
                 // No link - check if there's a structure with matching name
-                if let Some(structure) = struct_by_name.get(concept.name.as_str()) {
+                if let Some((_node_id, structure)) = structures_by_symbol.get(&concept_symbol) {
                     // Structure exists but no link
                     let lean_ref = LeanRef::new(&structure.source_file, &structure.name);
                     let drift = Drift::new(
@@ -96,13 +204,11 @@ impl DriftDetector {
                     .with_severity(2);
 
                     let drift_idx = report.drifts.len();
-                    report.add_drift(
-                        Drift {
-                            topos_ref: Some(topos_ref.clone()),
-                            lean_ref: Some(lean_ref.clone()),
-                            ..drift
-                        }
-                    );
+                    report.add_drift(Drift {
+                        topos_ref: Some(topos_ref.clone()),
+                        lean_ref: Some(lean_ref.clone()),
+                        ..drift
+                    });
 
                     report.add_suggestion(SyncSuggestion::new(
                         drift_idx,
@@ -138,10 +244,28 @@ impl DriftDetector {
             } else {
                 // Has links - check each linked structure
                 for link in links {
-                    if let Some(structure) = struct_by_name.get(link.lean.artifact.as_str()) {
+                    let linked_symbol = interner.intern(&link.lean.artifact);
+                    let linked_node_id = analysis_arena
+                        .alloc(AnalysisNode::new(linked_symbol, AnalysisNodeKind::Link));
+                    debug_assert_eq!(
+                        analysis_arena.get(linked_node_id).map(|n| n.kind),
+                        Some(AnalysisNodeKind::Link)
+                    );
+                    let linked_node_symbol = analysis_arena
+                        .get(linked_node_id)
+                        .map(|n| n.symbol)
+                        .unwrap_or(linked_symbol);
+
+                    if let Some((_node_id, structure)) =
+                        structures_by_symbol.get(&linked_node_symbol)
+                    {
                         // Compare fields
-                        let field_drifts =
-                            self.compare_fields(&concept.fields, &structure.fields, concept, structure);
+                        let field_drifts = self.compare_fields(
+                            &concept.fields,
+                            &structure.fields,
+                            concept,
+                            structure,
+                        );
 
                         for (drift, suggestion) in field_drifts {
                             let drift_idx = report.drifts.len();
@@ -184,13 +308,10 @@ impl DriftDetector {
 
         // Check for extra structures (in Lean but not linked from Topos)
         for structure in structures {
-            if !linked_lean_names.contains(&structure.name) {
+            let structure_symbol = interner.intern(&structure.name);
+            if !linked_lean_symbols.contains(&structure_symbol) {
                 let lean_ref = LeanRef::new(&structure.source_file, &structure.name);
-
-                // Check if there's a concept with matching name
-                let matching_concept = concepts.iter().find(|c| c.name == structure.name);
-
-                if matching_concept.is_some() {
+                if concept_symbols.contains(&structure_symbol) {
                     // Already handled above (missing link case)
                     continue;
                 }
@@ -230,15 +351,48 @@ impl DriftDetector {
         index: &LinkIndex,
     ) -> DriftReport {
         let mut report = DriftReport::new();
+        let mut interner = StringInterner::default();
+        let mut analysis_arena: TypedArena<AnalysisNode> = TypedArena::new();
 
-        let theorem_by_name: HashMap<&str, &LeanTheorem> =
-            theorems.iter().map(|t| (t.name.as_str(), t)).collect();
+        let mut theorem_by_symbol: HashMap<SymbolId, (usize, &LeanTheorem)> = HashMap::new();
+        for theorem in theorems {
+            let symbol = interner.intern(&theorem.name);
+            let node_id =
+                analysis_arena.alloc(AnalysisNode::new(symbol, AnalysisNodeKind::Theorem));
+            theorem_by_symbol.insert(symbol, (node_id, theorem));
+        }
 
-        let linked_theorem_names: HashSet<String> = index
+        let behavior_symbols: HashSet<SymbolId> = behaviors
+            .iter()
+            .map(|behavior| {
+                let symbol = interner.intern(&behavior.name);
+                let node_id =
+                    analysis_arena.alloc(AnalysisNode::new(symbol, AnalysisNodeKind::Behavior));
+                debug_assert_eq!(
+                    analysis_arena.get(node_id).map(|n| n.kind),
+                    Some(AnalysisNodeKind::Behavior)
+                );
+                symbol
+            })
+            .collect();
+
+        let linked_theorem_symbols: HashSet<SymbolId> = index
             .links_by_type(LinkType::FunctionSpec)
             .iter()
             .chain(index.links_by_type(LinkType::Theorem).iter())
-            .map(|link| link.lean.artifact.clone())
+            .map(|link| {
+                let symbol = interner.intern(&link.lean.artifact);
+                let node_id =
+                    analysis_arena.alloc(AnalysisNode::new(symbol, AnalysisNodeKind::Link));
+                debug_assert_eq!(
+                    analysis_arena.get(node_id).map(|n| n.kind),
+                    Some(AnalysisNodeKind::Link)
+                );
+                analysis_arena
+                    .get(node_id)
+                    .map(|n| n.symbol)
+                    .unwrap_or(symbol)
+            })
             .collect();
 
         for behavior in behaviors {
@@ -247,12 +401,13 @@ impl DriftDetector {
 
             if links.is_empty() {
                 // Check for matching theorem by name convention
-                let expected_name = format!("{}_spec", behavior.name);
-                let alternate_name = behavior.name.clone();
+                let expected_symbol = interner.intern(&format!("{}_spec", behavior.name));
+                let alternate_symbol = interner.intern(&behavior.name);
 
-                let matching_theorem = theorem_by_name
-                    .get(expected_name.as_str())
-                    .or_else(|| theorem_by_name.get(alternate_name.as_str()));
+                let matching_theorem = theorem_by_symbol
+                    .get(&expected_symbol)
+                    .or_else(|| theorem_by_symbol.get(&alternate_symbol))
+                    .map(|(_node_id, theorem)| theorem);
 
                 if let Some(theorem) = matching_theorem {
                     let lean_ref = LeanRef::new(&theorem.source_file, &theorem.name);
@@ -304,7 +459,19 @@ impl DriftDetector {
             } else {
                 // Has links - verify they exist
                 for link in links {
-                    if !theorem_by_name.contains_key(link.lean.artifact.as_str()) {
+                    let linked_symbol = interner.intern(&link.lean.artifact);
+                    let linked_node_id = analysis_arena
+                        .alloc(AnalysisNode::new(linked_symbol, AnalysisNodeKind::Link));
+                    debug_assert_eq!(
+                        analysis_arena.get(linked_node_id).map(|n| n.kind),
+                        Some(AnalysisNodeKind::Link)
+                    );
+                    let linked_node_symbol = analysis_arena
+                        .get(linked_node_id)
+                        .map(|n| n.symbol)
+                        .unwrap_or(linked_symbol);
+
+                    if !theorem_by_symbol.contains_key(&linked_node_symbol) {
                         let drift = Drift {
                             topos_ref: Some(topos_ref.clone()),
                             lean_ref: Some(link.lean.clone()),
@@ -336,7 +503,8 @@ impl DriftDetector {
 
         // Check for extra theorems
         for theorem in theorems {
-            if !linked_theorem_names.contains(&theorem.name) {
+            let theorem_symbol = interner.intern(&theorem.name);
+            if !linked_theorem_symbols.contains(&theorem_symbol) {
                 // Skip theorems that look like proofs of invariants (not behavior specs)
                 if theorem.name.ends_with("_inv") || theorem.name.contains("invariant") {
                     continue;
@@ -346,7 +514,7 @@ impl DriftDetector {
 
                 // Check for matching behavior
                 let base_name = theorem.name.strip_suffix("_spec").unwrap_or(&theorem.name);
-                let has_behavior = behaviors.iter().any(|b| b.name == base_name);
+                let has_behavior = behavior_symbols.contains(&interner.intern(base_name));
 
                 if has_behavior {
                     continue; // Handled in missing link case
@@ -418,10 +586,7 @@ impl DriftDetector {
                     let suggestion = SyncSuggestion::new(
                         0, // Will be updated
                         SuggestedAction::UpdateType,
-                        format!(
-                            "Update type of field '{}' to match",
-                            topos_field.name
-                        ),
+                        format!("Update type of field '{}' to match", topos_field.name),
                         0.7,
                     );
 
@@ -594,7 +759,10 @@ pub fn parse_topos_concepts(content: &str, file: &Path) -> Vec<ToposConcept> {
 
         // Look for "Concept Name:"
         if line.starts_with("Concept ") && line.ends_with(':') {
-            if let Some(name) = line.strip_prefix("Concept ").and_then(|s| s.strip_suffix(':')) {
+            if let Some(name) = line
+                .strip_prefix("Concept ")
+                .and_then(|s| s.strip_suffix(':'))
+            {
                 let name = name.trim().to_string();
                 let start_line = i as u32 + 1;
 
@@ -644,7 +812,9 @@ pub fn parse_topos_concepts(content: &str, file: &Path) -> Vec<ToposConcept> {
                         } else {
                             "description:"
                         };
-                        doc = field_line.strip_prefix(prefix).map(|s| s.trim().to_string());
+                        doc = field_line
+                            .strip_prefix(prefix)
+                            .map(|s| s.trim().to_string());
                     }
 
                     i += 1;
@@ -680,7 +850,10 @@ pub fn parse_topos_behaviors(content: &str, file: &Path) -> Vec<ToposBehavior> {
 
         // Look for "Behavior name:"
         if line.starts_with("Behavior ") && line.ends_with(':') {
-            if let Some(name) = line.strip_prefix("Behavior ").and_then(|s| s.strip_suffix(':')) {
+            if let Some(name) = line
+                .strip_prefix("Behavior ")
+                .and_then(|s| s.strip_suffix(':'))
+            {
                 let name = name.trim().to_string();
                 let start_line = i as u32 + 1;
 
@@ -790,7 +963,9 @@ pub fn parse_lean_structures(content: &str, file: &Path) -> Vec<LeanStructure> {
 
         // Track namespace
         if line.starts_with("namespace ") {
-            current_namespace = line.strip_prefix("namespace ").map(|s| s.trim().to_string());
+            current_namespace = line
+                .strip_prefix("namespace ")
+                .map(|s| s.trim().to_string());
         } else if line == "end" || line.starts_with("end ") {
             current_namespace = None;
         }
@@ -901,7 +1076,9 @@ pub fn parse_lean_theorems(content: &str, file: &Path) -> Vec<LeanTheorem> {
 
         // Track namespace
         if line.starts_with("namespace ") {
-            current_namespace = line.strip_prefix("namespace ").map(|s| s.trim().to_string());
+            current_namespace = line
+                .strip_prefix("namespace ")
+                .map(|s| s.trim().to_string());
         } else if line == "end" || line.starts_with("end ") {
             current_namespace = None;
         }
@@ -1059,8 +1236,9 @@ fn parse_lean_field(line: &str) -> Option<(String, String, Option<String>)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::topos::{LeanRef, Link, LinkType, ToposRef};
+    use proptest::prelude::*;
     use std::path::PathBuf;
-    use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
 
     #[test]
     fn test_parse_topos_concepts() {
@@ -1225,5 +1403,87 @@ theorem create_order_spec (req : OrderRequest) : Order :=
         // Should detect: name only in Topos, status only in Lean
         assert!(report.has_drifts());
         assert!(report.drifts.len() >= 2);
+    }
+
+    #[test]
+    fn test_string_interner_reuses_ids() {
+        let mut interner = StringInterner::default();
+        let a1 = interner.intern("Order");
+        let a2 = interner.intern("Order");
+        let b = interner.intern("OrderItem");
+
+        assert_eq!(a1, a2);
+        assert_ne!(a1, b);
+        assert_eq!(interner.resolve(a1), Some("Order"));
+        assert_eq!(interner.resolve(b), Some("OrderItem"));
+    }
+
+    proptest! {
+        #[test]
+        fn prop_string_interner_idempotent(
+            symbols in proptest::collection::vec("[A-Za-z_][A-Za-z0-9_]{0,15}", 1..64)
+        ) {
+            let mut interner = StringInterner::default();
+
+            for symbol in &symbols {
+                let first = interner.intern(symbol);
+                let second = interner.intern(symbol);
+                prop_assert_eq!(first, second);
+                prop_assert_eq!(interner.resolve(first), Some(symbol.as_str()));
+            }
+        }
+
+        #[test]
+        fn prop_behavior_drift_is_order_invariant(
+            names in proptest::collection::vec("[a-z][a-z0-9_]{0,10}", 1..20)
+        ) {
+            let mut deduped = names;
+            deduped.sort();
+            deduped.dedup();
+
+            let behaviors: Vec<ToposBehavior> = deduped
+                .iter()
+                .enumerate()
+                .map(|(i, name)| ToposBehavior {
+                    name: name.clone(),
+                    inputs: vec![],
+                    returns: Some("Unit".to_string()),
+                    preconditions: vec![],
+                    postconditions: vec![],
+                    doc: None,
+                    source_file: PathBuf::from("specs/app.tps"),
+                    line: i as u32 + 1,
+                })
+                .collect();
+
+            let theorems_forward: Vec<LeanTheorem> = deduped
+                .iter()
+                .enumerate()
+                .map(|(i, name)| LeanTheorem {
+                    name: format!("{}_spec", name),
+                    statement: "True".to_string(),
+                    namespace: None,
+                    doc: None,
+                    has_proof: true,
+                    source_file: PathBuf::from("specs/app.lean"),
+                    line: i as u32 + 1,
+                })
+                .collect();
+
+            let mut theorems_reverse = theorems_forward.clone();
+            theorems_reverse.reverse();
+
+            let detector = DriftDetector::new();
+            let index = LinkIndex::new();
+            let report_forward = detector.detect_behavior_drift(&behaviors, &theorems_forward, &index);
+            let report_reverse = detector.detect_behavior_drift(&behaviors, &theorems_reverse, &index);
+
+            // With no links and matching *_spec theorems, each behavior should
+            // consistently yield one missing-link drift regardless of theorem order.
+            prop_assert_eq!(report_forward.drifts.len(), behaviors.len());
+            prop_assert_eq!(report_reverse.drifts.len(), behaviors.len());
+            prop_assert_eq!(report_forward.drifts.len(), report_reverse.drifts.len());
+            prop_assert_eq!(report_forward.suggestions.len(), report_reverse.suggestions.len());
+        }
     }
 }

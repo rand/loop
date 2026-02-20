@@ -83,11 +83,7 @@ pub struct ToolExample {
 
 impl ToolExample {
     /// Create a new example.
-    pub fn new(
-        name: impl Into<String>,
-        input: Value,
-        expected_output: impl Into<String>,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, input: Value, expected_output: impl Into<String>) -> Self {
         Self {
             name: name.into(),
             input,
@@ -135,6 +131,17 @@ impl McpToolRegistry {
     /// Register a tool with its handler.
     pub fn register(&mut self, tool: McpTool, handler: ToolHandler) {
         self.tools.insert(tool.name.clone(), (tool, handler));
+    }
+
+    /// Replace the handler for an existing tool while preserving its definition.
+    pub fn set_handler(&mut self, name: &str, handler: ToolHandler) -> Result<()> {
+        let (tool, _) = self
+            .tools
+            .get(name)
+            .cloned()
+            .ok_or_else(|| Error::Config(format!("Unknown tool: {}", name)))?;
+        self.tools.insert(name.to_string(), (tool, handler));
+        Ok(())
     }
 
     /// Get a tool definition by name.
@@ -243,13 +250,10 @@ impl McpToolRegistry {
             "Comprehensive security audit with findings",
         ));
 
-        let handler: ToolHandler = Arc::new(|input| {
-            // This is a placeholder - actual implementation connects to adapter
-            Ok(serde_json::json!({
-                "status": "pending",
-                "message": "RLM execution queued",
-                "input": input
-            }))
+        let handler: ToolHandler = Arc::new(|_input| {
+            Err(Error::Config(
+                "rlm_execute handler is not bound to a live adapter runtime".to_string(),
+            ))
         });
 
         self.register(tool, handler);
@@ -284,15 +288,9 @@ impl McpToolRegistry {
         ));
 
         let handler: ToolHandler = Arc::new(|_input| {
-            // Placeholder
-            Ok(serde_json::json!({
-                "mode": "micro",
-                "is_executing": false,
-                "budget": {
-                    "current_cost_usd": 0.0,
-                    "max_cost_usd": 1.0
-                }
-            }))
+            Err(Error::Config(
+                "rlm_status handler is not bound to a live adapter runtime".to_string(),
+            ))
         });
 
         self.register(tool, handler);
@@ -350,11 +348,9 @@ impl McpToolRegistry {
         ));
 
         let handler: ToolHandler = Arc::new(|_input| {
-            // Placeholder
-            Ok(serde_json::json!({
-                "nodes": [],
-                "total_count": 0
-            }))
+            Err(Error::Config(
+                "memory_query handler is not bound to a live adapter runtime".to_string(),
+            ))
         });
 
         self.register(tool, handler);
@@ -412,11 +408,9 @@ impl McpToolRegistry {
         ));
 
         let handler: ToolHandler = Arc::new(|_input| {
-            // Placeholder
-            Ok(serde_json::json!({
-                "success": true,
-                "node_id": "placeholder-id"
-            }))
+            Err(Error::Config(
+                "memory_store handler is not bound to a live adapter runtime".to_string(),
+            ))
         });
 
         self.register(tool, handler);
@@ -525,10 +519,7 @@ impl McpToolRegistry {
                             "light" => HtmlTheme::Light,
                             "high_contrast" => HtmlTheme::HighContrast,
                             other => {
-                                return Err(Error::Config(format!(
-                                    "Unsupported theme: {}",
-                                    other
-                                )))
+                                return Err(Error::Config(format!("Unsupported theme: {}", other)))
                             }
                         };
                         config.with_theme(theme)
@@ -659,13 +650,12 @@ mod tests {
 
     #[test]
     fn test_mcp_tool_with_schema() {
-        let tool = McpTool::new("test", "test")
-            .with_schema(serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" }
-                }
-            }));
+        let tool = McpTool::new("test", "test").with_schema(serde_json::json!({
+            "type": "object",
+            "properties": {
+                "name": { "type": "string" }
+            }
+        }));
 
         assert!(tool.input_schema.is_object());
     }
@@ -701,7 +691,23 @@ mod tests {
         let registry = McpToolRegistry::with_defaults();
 
         let result = registry.execute("rlm_status", serde_json::json!({}));
-        assert!(result.is_ok());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_set_handler_binds_runtime_implementation() {
+        let mut registry = McpToolRegistry::with_defaults();
+        registry
+            .set_handler(
+                "rlm_status",
+                Arc::new(|_input| Ok(serde_json::json!({"mode": "micro"}))),
+            )
+            .expect("expected handler override to succeed");
+
+        let result = registry
+            .execute("rlm_status", serde_json::json!({}))
+            .expect("expected bound handler to execute");
+        assert_eq!(result.get("mode").and_then(Value::as_str), Some("micro"));
     }
 
     #[test]
@@ -722,7 +728,10 @@ mod tests {
             )
             .expect("trace_visualize should succeed");
 
-        assert_eq!(result.get("format").and_then(Value::as_str), Some("mermaid"));
+        assert_eq!(
+            result.get("format").and_then(Value::as_str),
+            Some("mermaid")
+        );
         let artifact = result
             .get("artifact")
             .and_then(Value::as_str)

@@ -1,4 +1,20 @@
-[VG-DP-REVIEW] running
-error: Failed to spawn: `dp`
-  Caused by: No such file or directory (os error 2)
-exit_code=2
+{
+  "stage": "review",
+  "policy": "/Users/rand/src/loop/dp-policy.json",
+  "cwd": "/Users/rand/src/loop",
+  "ok": true,
+  "steps": [
+    {
+      "name": "typecheck",
+      "command": [
+        "make",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "duration_ms": 146,
+      "stdout": "cd rlm-core && cargo check --quiet\n",
+      "stderr": "",
+      "ok": true
+    }
+  ]
+}

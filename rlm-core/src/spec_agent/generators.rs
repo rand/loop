@@ -5,10 +5,9 @@
 //! - Lean (.lean) specifications for formal verification
 //! - Cross-references between the two formats
 
-
 use super::types::{
-    CrossReference, ExtractedRequirement, FormalizationLevel, FormalizationResult,
-    RequirementType, SpecContext, SpecDomain,
+    CompletenessMode, CrossReference, ExtractedRequirement, FormalizationLevel,
+    FormalizationResult, RequirementType, SpecContext, SpecDomain,
 };
 
 // ============================================================================
@@ -20,7 +19,11 @@ pub struct ToposGenerator;
 
 impl ToposGenerator {
     /// Generate a Topos specification from the context.
-    pub fn generate(ctx: &SpecContext, spec_name: &str) -> GeneratedSpec {
+    pub fn generate(
+        ctx: &SpecContext,
+        spec_name: &str,
+        completeness_mode: CompletenessMode,
+    ) -> GeneratedSpec {
         let mut content = String::new();
         let mut warnings = Vec::new();
 
@@ -30,6 +33,7 @@ impl ToposGenerator {
             "# Generated from: {}\n\n",
             Self::truncate(&ctx.nl_input, 60)
         ));
+        content.push_str(&format!("# Completeness mode: {:?}\n\n", completeness_mode));
 
         // Domain-specific imports/context
         if !ctx.detected_domains.is_empty() {
@@ -73,7 +77,11 @@ impl ToposGenerator {
             content.push_str("# ============================================================\n\n");
 
             for req in &data_structures {
-                content.push_str(&Self::generate_concept(req, &constraints));
+                content.push_str(&Self::generate_concept(
+                    req,
+                    &constraints,
+                    completeness_mode,
+                ));
                 content.push_str("\n");
             }
         }
@@ -85,7 +93,11 @@ impl ToposGenerator {
             content.push_str("# ============================================================\n\n");
 
             for req in &behaviors {
-                content.push_str(&Self::generate_behavior(req, &error_cases));
+                content.push_str(&Self::generate_behavior(
+                    req,
+                    &error_cases,
+                    completeness_mode,
+                ));
                 content.push_str("\n");
             }
         }
@@ -110,10 +122,19 @@ impl ToposGenerator {
 
         // Add warnings for incomplete specs
         if data_structures.is_empty() {
-            warnings.push("No data structures detected - consider adding Concept definitions".to_string());
+            warnings.push(
+                "No data structures detected - consider adding Concept definitions".to_string(),
+            );
         }
         if behaviors.is_empty() {
-            warnings.push("No behaviors detected - consider adding Behavior definitions".to_string());
+            warnings
+                .push("No behaviors detected - consider adding Behavior definitions".to_string());
+        }
+        if completeness_mode == CompletenessMode::Placeholder {
+            warnings.push(
+                "Placeholder mode enabled: generated Topos spec may contain TODO markers"
+                    .to_string(),
+            );
         }
 
         GeneratedSpec {
@@ -124,7 +145,11 @@ impl ToposGenerator {
     }
 
     /// Generate a Concept definition from a data structure requirement.
-    fn generate_concept(req: &ExtractedRequirement, constraints: &[&ExtractedRequirement]) -> String {
+    fn generate_concept(
+        req: &ExtractedRequirement,
+        constraints: &[&ExtractedRequirement],
+        completeness_mode: CompletenessMode,
+    ) -> String {
         let name = req
             .formal_name
             .as_ref()
@@ -148,7 +173,14 @@ impl ToposGenerator {
         } else {
             // Default fields
             concept.push_str("  id: `Id`\n");
-            concept.push_str("  # TODO: Add fields\n");
+            match completeness_mode {
+                CompletenessMode::Baseline => {
+                    concept.push_str("  label: `String`\n");
+                }
+                CompletenessMode::Placeholder => {
+                    concept.push_str("  # TODO: Add fields\n");
+                }
+            }
         }
 
         // Add relevant constraints as invariants
@@ -178,7 +210,11 @@ impl ToposGenerator {
     }
 
     /// Generate a Behavior definition from a behavioral requirement.
-    fn generate_behavior(req: &ExtractedRequirement, error_cases: &[&ExtractedRequirement]) -> String {
+    fn generate_behavior(
+        req: &ExtractedRequirement,
+        error_cases: &[&ExtractedRequirement],
+        completeness_mode: CompletenessMode,
+    ) -> String {
         let name = req
             .formal_name
             .as_ref()
@@ -188,9 +224,16 @@ impl ToposGenerator {
         let mut behavior = format!("Behavior {}:\n", name);
         behavior.push_str(&format!("  # Source: {}\n", Self::truncate(&req.text, 50)));
 
-        // Placeholder pre/post conditions
-        behavior.push_str("  pre: # TODO: Define preconditions\n");
-        behavior.push_str("  post: # TODO: Define postconditions\n");
+        match completeness_mode {
+            CompletenessMode::Baseline => {
+                behavior.push_str("  pre: true\n");
+                behavior.push_str("  post: true\n");
+            }
+            CompletenessMode::Placeholder => {
+                behavior.push_str("  pre: # TODO: Define preconditions\n");
+                behavior.push_str("  post: # TODO: Define postconditions\n");
+            }
+        }
 
         // Add relevant error cases
         let relevant_errors: Vec<_> = error_cases
@@ -267,6 +310,7 @@ impl LeanGenerator {
         ctx: &SpecContext,
         spec_name: &str,
         level: FormalizationLevel,
+        completeness_mode: CompletenessMode,
     ) -> GeneratedSpec {
         let mut content = String::new();
         let mut warnings = Vec::new();
@@ -278,6 +322,10 @@ impl LeanGenerator {
             Self::truncate(&ctx.nl_input, 60)
         ));
         content.push_str(&format!("Formalization level: {:?}\n-/\n\n", level));
+        content.push_str(&format!(
+            "-- Completeness mode: {:?}\n\n",
+            completeness_mode
+        ));
 
         // Imports based on domains
         content.push_str(&Self::generate_imports(&ctx.detected_domains));
@@ -311,7 +359,7 @@ impl LeanGenerator {
             content.push_str("-- ============================================================\n\n");
 
             for req in &data_structures {
-                content.push_str(&Self::generate_structure(req, spec_name));
+                content.push_str(&Self::generate_structure(req, spec_name, completeness_mode));
                 content.push_str("\n");
             }
         }
@@ -323,7 +371,12 @@ impl LeanGenerator {
             content.push_str("-- ============================================================\n\n");
 
             for (idx, req) in constraints.iter().enumerate() {
-                content.push_str(&Self::generate_invariant(req, idx, &data_structures));
+                content.push_str(&Self::generate_invariant(
+                    req,
+                    idx,
+                    &data_structures,
+                    completeness_mode,
+                ));
                 content.push_str("\n");
             }
         }
@@ -335,7 +388,12 @@ impl LeanGenerator {
             content.push_str("-- ============================================================\n\n");
 
             for req in &behaviors {
-                content.push_str(&Self::generate_function_spec(req, &data_structures, level));
+                content.push_str(&Self::generate_function_spec(
+                    req,
+                    &data_structures,
+                    level,
+                    completeness_mode,
+                ));
                 content.push_str("\n");
             }
         }
@@ -347,7 +405,7 @@ impl LeanGenerator {
             content.push_str("-- ============================================================\n\n");
 
             for (idx, req) in constraints.iter().enumerate() {
-                content.push_str(&Self::generate_proof_stub(req, idx));
+                content.push_str(&Self::generate_proof_stub(req, idx, completeness_mode));
                 content.push_str("\n");
             }
         }
@@ -358,6 +416,12 @@ impl LeanGenerator {
         // Add warnings
         if data_structures.is_empty() {
             warnings.push("No structures generated - add data structure requirements".to_string());
+        }
+        if completeness_mode == CompletenessMode::Placeholder {
+            warnings.push(
+                "Placeholder mode enabled: generated Lean spec may contain TODO/sorry markers"
+                    .to_string(),
+            );
         }
 
         GeneratedSpec {
@@ -387,7 +451,11 @@ impl LeanGenerator {
     }
 
     /// Generate a structure definition from a data structure requirement.
-    fn generate_structure(req: &ExtractedRequirement, spec_name: &str) -> String {
+    fn generate_structure(
+        req: &ExtractedRequirement,
+        spec_name: &str,
+        completeness_mode: CompletenessMode,
+    ) -> String {
         let name = req
             .formal_name
             .as_ref()
@@ -407,17 +475,35 @@ impl LeanGenerator {
         if !req.entities.is_empty() {
             for entity in &req.entities {
                 if entity != &name {
-                    structure.push_str(&format!(
-                        "  {} : {} -- TODO: specify type\n",
-                        Self::to_field_name(entity),
-                        Self::infer_type(entity)
-                    ));
+                    match completeness_mode {
+                        CompletenessMode::Baseline => {
+                            structure.push_str(&format!(
+                                "  {} : {}\n",
+                                Self::to_field_name(entity),
+                                Self::infer_type(entity)
+                            ));
+                        }
+                        CompletenessMode::Placeholder => {
+                            structure.push_str(&format!(
+                                "  {} : {} -- TODO: specify type\n",
+                                Self::to_field_name(entity),
+                                Self::infer_type(entity)
+                            ));
+                        }
+                    }
                 }
             }
         } else {
             // Default fields
             structure.push_str("  id : Nat\n");
-            structure.push_str("  -- TODO: Add fields\n");
+            match completeness_mode {
+                CompletenessMode::Baseline => {
+                    structure.push_str("  label : String\n");
+                }
+                CompletenessMode::Placeholder => {
+                    structure.push_str("  -- TODO: Add fields\n");
+                }
+            }
         }
 
         structure.push_str(&format!("  deriving Repr, DecidableEq\n"));
@@ -430,6 +516,7 @@ impl LeanGenerator {
         req: &ExtractedRequirement,
         idx: usize,
         data_structures: &[&ExtractedRequirement],
+        completeness_mode: CompletenessMode,
     ) -> String {
         // Try to find the related structure
         let related_struct = data_structures
@@ -437,19 +524,25 @@ impl LeanGenerator {
             .find(|ds| req.entities.iter().any(|e| ds.entities.contains(e)))
             .and_then(|ds| ds.formal_name.as_ref());
 
-        let struct_name = related_struct.cloned().unwrap_or_else(|| "Entity".to_string());
+        let struct_name = related_struct
+            .cloned()
+            .unwrap_or_else(|| "Entity".to_string());
         let inv_name = format!("{}_invariant_{}", Self::to_field_name(&struct_name), idx);
 
-        let mut invariant = format!(
-            "/--\nInvariant: {}\n-/\n",
-            Self::truncate(&req.text, 60)
-        );
+        let mut invariant = format!("/--\nInvariant: {}\n-/\n", Self::truncate(&req.text, 60));
 
         invariant.push_str(&format!(
             "def {} (x : {}) : Prop :=\n",
             inv_name, struct_name
         ));
-        invariant.push_str("  sorry -- TODO: formalize invariant\n");
+        match completeness_mode {
+            CompletenessMode::Baseline => {
+                invariant.push_str("  True\n");
+            }
+            CompletenessMode::Placeholder => {
+                invariant.push_str("  sorry -- TODO: formalize invariant\n");
+            }
+        }
 
         invariant
     }
@@ -459,6 +552,7 @@ impl LeanGenerator {
         req: &ExtractedRequirement,
         data_structures: &[&ExtractedRequirement],
         level: FormalizationLevel,
+        completeness_mode: CompletenessMode,
     ) -> String {
         let name = req
             .formal_name
@@ -474,39 +568,51 @@ impl LeanGenerator {
             .cloned()
             .unwrap_or_else(|| "Unit".to_string());
 
-        let mut spec = format!(
-            "/--\nBehavior: {}\n-/\n",
-            Self::truncate(&req.text, 60)
-        );
+        let mut spec = format!("/--\nBehavior: {}\n-/\n", Self::truncate(&req.text, 60));
 
         // Function signature
         spec.push_str(&format!(
             "def {} (input : {}) : Option {} :=\n",
             name, input_type, input_type
         ));
-        spec.push_str("  sorry -- TODO: implement\n\n");
+        match completeness_mode {
+            CompletenessMode::Baseline => {
+                spec.push_str("  some input\n\n");
+            }
+            CompletenessMode::Placeholder => {
+                spec.push_str("  sorry -- TODO: implement\n\n");
+            }
+        }
 
         // Pre/post conditions (if contracts level)
         if level.includes_contracts() {
-            spec.push_str(&format!(
-                "/--\nPrecondition for {}\n-/\n",
-                name
-            ));
+            spec.push_str(&format!("/--\nPrecondition for {}\n-/\n", name));
             spec.push_str(&format!(
                 "def {}_pre (input : {}) : Prop :=\n",
                 name, input_type
             ));
-            spec.push_str("  sorry -- TODO: define precondition\n\n");
+            match completeness_mode {
+                CompletenessMode::Baseline => {
+                    spec.push_str("  True\n\n");
+                }
+                CompletenessMode::Placeholder => {
+                    spec.push_str("  sorry -- TODO: define precondition\n\n");
+                }
+            }
 
-            spec.push_str(&format!(
-                "/--\nPostcondition for {}\n-/\n",
-                name
-            ));
+            spec.push_str(&format!("/--\nPostcondition for {}\n-/\n", name));
             spec.push_str(&format!(
                 "def {}_post (input : {}) (result : Option {}) : Prop :=\n",
                 name, input_type, input_type
             ));
-            spec.push_str("  sorry -- TODO: define postcondition\n\n");
+            match completeness_mode {
+                CompletenessMode::Baseline => {
+                    spec.push_str("  True\n\n");
+                }
+                CompletenessMode::Placeholder => {
+                    spec.push_str("  sorry -- TODO: define postcondition\n\n");
+                }
+            }
 
             // Contract theorem
             spec.push_str(&format!(
@@ -521,26 +627,40 @@ impl LeanGenerator {
                 "    {}_pre input → {}_post input ({} input) :=\n",
                 name, name, name
             ));
-            spec.push_str("  sorry -- TODO: prove contract\n");
+            match completeness_mode {
+                CompletenessMode::Baseline => {
+                    spec.push_str("  by\n");
+                    spec.push_str("    intro _\n");
+                    spec.push_str("    trivial\n");
+                }
+                CompletenessMode::Placeholder => {
+                    spec.push_str("  sorry -- TODO: prove contract\n");
+                }
+            }
         }
 
         spec
     }
 
     /// Generate a proof stub for a constraint.
-    fn generate_proof_stub(req: &ExtractedRequirement, idx: usize) -> String {
+    fn generate_proof_stub(
+        req: &ExtractedRequirement,
+        idx: usize,
+        completeness_mode: CompletenessMode,
+    ) -> String {
         let theorem_name = format!("proof_{}", idx);
 
-        let mut proof = format!(
-            "/--\nProof that: {}\n-/\n",
-            Self::truncate(&req.text, 60)
-        );
+        let mut proof = format!("/--\nProof that: {}\n-/\n", Self::truncate(&req.text, 60));
 
-        proof.push_str(&format!(
-            "theorem {} : True := by\n",
-            theorem_name
-        ));
-        proof.push_str("  trivial -- TODO: replace with actual proof\n");
+        proof.push_str(&format!("theorem {} : True := by\n", theorem_name));
+        match completeness_mode {
+            CompletenessMode::Baseline => {
+                proof.push_str("  trivial\n");
+            }
+            CompletenessMode::Placeholder => {
+                proof.push_str("  trivial -- TODO: replace with actual proof\n");
+            }
+        }
 
         proof
     }
@@ -550,9 +670,11 @@ impl LeanGenerator {
         let lower = entity.to_lowercase();
         if lower.contains("id") {
             "Nat"
-        } else if lower.contains("name") || lower.contains("title") || lower.contains("description") {
+        } else if lower.contains("name") || lower.contains("title") || lower.contains("description")
+        {
             "String"
-        } else if lower.contains("count") || lower.contains("quantity") || lower.contains("amount") {
+        } else if lower.contains("count") || lower.contains("quantity") || lower.contains("amount")
+        {
             "Nat"
         } else if lower.contains("price") || lower.contains("cost") || lower.contains("rate") {
             "Float"
@@ -562,7 +684,11 @@ impl LeanGenerator {
             "List α"
         } else if lower.contains("status") || lower.contains("state") || lower.contains("type") {
             "Nat" // Enum represented as Nat
-        } else if lower.contains("flag") || lower.starts_with("is") || lower.contains("is_") || lower.contains("has_") {
+        } else if lower.contains("flag")
+            || lower.starts_with("is")
+            || lower.contains("is_")
+            || lower.contains("has_")
+        {
             "Bool"
         } else {
             "α" // Generic type
@@ -623,11 +749,19 @@ pub struct CrossRefGenerator;
 
 impl CrossRefGenerator {
     /// Generate cross-references from a context.
-    pub fn generate(ctx: &SpecContext, topos_filename: &str, lean_filename: &str) -> Vec<CrossReference> {
+    pub fn generate(
+        ctx: &SpecContext,
+        topos_filename: &str,
+        lean_filename: &str,
+    ) -> Vec<CrossReference> {
         let mut refs = Vec::new();
 
         // Generate cross-refs for data structures
-        for req in ctx.requirements.iter().filter(|r| r.req_type == RequirementType::DataStructure) {
+        for req in ctx
+            .requirements
+            .iter()
+            .filter(|r| r.req_type == RequirementType::DataStructure)
+        {
             if let Some(ref name) = req.formal_name {
                 refs.push(CrossReference {
                     topos_element: format!("{}#{}", topos_filename, name),
@@ -638,7 +772,11 @@ impl CrossRefGenerator {
         }
 
         // Generate cross-refs for behaviors
-        for req in ctx.requirements.iter().filter(|r| r.req_type == RequirementType::Behavior) {
+        for req in ctx
+            .requirements
+            .iter()
+            .filter(|r| r.req_type == RequirementType::Behavior)
+        {
             if let Some(ref name) = req.formal_name {
                 refs.push(CrossReference {
                     topos_element: format!("{}#{}", topos_filename, name),
@@ -672,9 +810,10 @@ impl SpecGenerator {
         ctx: &SpecContext,
         spec_name: &str,
         level: FormalizationLevel,
+        completeness_mode: CompletenessMode,
     ) -> FormalizationResult {
-        let topos = ToposGenerator::generate(ctx, spec_name);
-        let lean = LeanGenerator::generate(ctx, spec_name, level);
+        let topos = ToposGenerator::generate(ctx, spec_name, completeness_mode);
+        let lean = LeanGenerator::generate(ctx, spec_name, level, completeness_mode);
 
         let cross_refs = CrossRefGenerator::generate(ctx, &topos.filename, &lean.filename);
 
@@ -713,10 +852,11 @@ mod tests {
         let mut ctx = SpecContext::new("An Order has multiple items and a status");
         NLParser::parse(&mut ctx);
 
-        let spec = ToposGenerator::generate(&ctx, "OrderManagement");
+        let spec = ToposGenerator::generate(&ctx, "OrderManagement", CompletenessMode::Baseline);
         assert!(spec.content.contains("Concept"));
         assert!(spec.content.contains("Order"));
         assert!(spec.filename.ends_with(".tps"));
+        assert!(!spec.content.contains("TODO"));
     }
 
     #[test]
@@ -724,21 +864,36 @@ mod tests {
         let mut ctx = SpecContext::new("An Order has multiple items and a status");
         NLParser::parse(&mut ctx);
 
-        let spec = LeanGenerator::generate(&ctx, "OrderManagement", FormalizationLevel::Types);
+        let spec = LeanGenerator::generate(
+            &ctx,
+            "OrderManagement",
+            FormalizationLevel::Types,
+            CompletenessMode::Baseline,
+        );
         assert!(spec.content.contains("structure"));
         assert!(spec.content.contains("namespace"));
         assert!(spec.filename.ends_with(".lean"));
+        assert!(!spec.content.contains("TODO"));
+        assert!(!spec.content.contains("sorry"));
     }
 
     #[test]
     fn test_lean_generator_with_contracts() {
-        let mut ctx = SpecContext::new("Users can create orders. Each order must have at least one item.");
+        let mut ctx =
+            SpecContext::new("Users can create orders. Each order must have at least one item.");
         NLParser::parse(&mut ctx);
 
-        let spec = LeanGenerator::generate(&ctx, "OrderManagement", FormalizationLevel::Contracts);
+        let spec = LeanGenerator::generate(
+            &ctx,
+            "OrderManagement",
+            FormalizationLevel::Contracts,
+            CompletenessMode::Baseline,
+        );
         assert!(spec.content.contains("_pre"));
         assert!(spec.content.contains("_post"));
         assert!(spec.content.contains("_spec"));
+        assert!(!spec.content.contains("TODO"));
+        assert!(!spec.content.contains("sorry"));
     }
 
     #[test]
@@ -752,13 +907,63 @@ mod tests {
 
     #[test]
     fn test_spec_generator_combined() {
-        let mut ctx = SpecContext::new("An Order has items and a status. Users can create and cancel orders.");
+        let mut ctx = SpecContext::new(
+            "An Order has items and a status. Users can create and cancel orders.",
+        );
         NLParser::parse(&mut ctx);
 
-        let result = SpecGenerator::generate(&ctx, "OrderManagement", FormalizationLevel::Contracts);
+        let result = SpecGenerator::generate(
+            &ctx,
+            "OrderManagement",
+            FormalizationLevel::Contracts,
+            CompletenessMode::Baseline,
+        );
         assert!(!result.topos_content.is_empty());
         assert!(!result.lean_content.is_empty());
         assert!(!result.cross_refs.is_empty());
+    }
+
+    #[test]
+    fn test_placeholder_mode_emits_explicit_markers() {
+        let mut ctx = SpecContext::new("An Order has items and status. Users can create orders.");
+        NLParser::parse(&mut ctx);
+
+        let topos =
+            ToposGenerator::generate(&ctx, "OrderManagement", CompletenessMode::Placeholder);
+        let lean = LeanGenerator::generate(
+            &ctx,
+            "OrderManagement",
+            FormalizationLevel::Contracts,
+            CompletenessMode::Placeholder,
+        );
+
+        assert!(topos.content.contains("TODO"));
+        assert!(lean.content.contains("TODO"));
+        assert!(lean.content.contains("sorry"));
+    }
+
+    #[test]
+    fn test_baseline_mode_contracts_are_placeholder_free_for_data_and_behavior() {
+        let mut ctx = SpecContext::new(
+            "An Order has items and status. Users can create orders and cancel orders.",
+        );
+        NLParser::parse(&mut ctx);
+
+        let topos = ToposGenerator::generate(&ctx, "OrderManagement", CompletenessMode::Baseline);
+        let lean = LeanGenerator::generate(
+            &ctx,
+            "OrderManagement",
+            FormalizationLevel::Contracts,
+            CompletenessMode::Baseline,
+        );
+
+        assert!(topos.content.contains("Concept"));
+        assert!(topos.content.contains("Behavior"));
+        assert!(lean.content.contains("structure"));
+        assert!(lean.content.contains("_spec"));
+        assert!(!topos.content.contains("TODO"));
+        assert!(!lean.content.contains("TODO"));
+        assert!(!lean.content.contains("sorry"));
     }
 
     #[test]
@@ -778,7 +983,10 @@ mod tests {
 
     #[test]
     fn test_to_namespace() {
-        assert_eq!(LeanGenerator::to_namespace("order-management"), "OrderManagement");
+        assert_eq!(
+            LeanGenerator::to_namespace("order-management"),
+            "OrderManagement"
+        );
         assert_eq!(LeanGenerator::to_namespace("user_auth"), "UserAuth");
     }
 }

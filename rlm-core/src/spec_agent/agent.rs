@@ -150,13 +150,16 @@ impl SpecAgent {
             ))
         })?;
 
-        let mut node = Node::new(NodeType::Experience, format!("Spec intake: {}", ctx.nl_input))
-            .with_subtype("spec_agent_intake")
-            .with_tier(Tier::Session)
-            .with_confidence(0.9)
-            .with_metadata("phase", serde_json::json!(ctx.phase))
-            .with_metadata("requirements_count", ctx.requirements.len() as u64)
-            .with_metadata("context_json", serialized_context);
+        let mut node = Node::new(
+            NodeType::Experience,
+            format!("Spec intake: {}", ctx.nl_input),
+        )
+        .with_subtype("spec_agent_intake")
+        .with_tier(Tier::Session)
+        .with_confidence(0.9)
+        .with_metadata("phase", serde_json::json!(ctx.phase))
+        .with_metadata("requirements_count", ctx.requirements.len() as u64)
+        .with_metadata("context_json", serialized_context);
 
         if let Some(spec_name) = &self.spec_name {
             node = node.with_metadata("spec_name", spec_name.clone());
@@ -210,8 +213,7 @@ impl SpecAgent {
         let new_questions = NLParser::generate_questions(ctx);
 
         // Filter out already asked questions
-        let asked_ids: std::collections::HashSet<_> =
-            ctx.questions.iter().map(|q| &q.id).collect();
+        let asked_ids: std::collections::HashSet<_> = ctx.questions.iter().map(|q| &q.id).collect();
         let fresh_questions: Vec<_> = new_questions
             .into_iter()
             .filter(|q| !asked_ids.contains(&q.id))
@@ -240,9 +242,11 @@ impl SpecAgent {
                 super::types::QuestionCategory::DataTypes => {
                     // The answer provides field information - update requirements
                     // This could be enhanced with more sophisticated NL parsing
-                    if let Some(req) = ctx.requirements.iter_mut().find(|r| {
-                        r.req_type == super::types::RequirementType::DataStructure
-                    }) {
+                    if let Some(req) = ctx
+                        .requirements
+                        .iter_mut()
+                        .find(|r| r.req_type == super::types::RequirementType::DataStructure)
+                    {
                         // Append answer to requirement text for re-parsing
                         req.text.push_str(". Fields: ");
                         req.text.push_str(&answer.text);
@@ -317,7 +321,12 @@ impl SpecAgent {
             .unwrap_or_else(|| "Specification".to_string());
 
         // Generate specifications
-        let result = SpecGenerator::generate(ctx, &spec_name, self.config.formalization_level);
+        let result = SpecGenerator::generate(
+            ctx,
+            &spec_name,
+            self.config.formalization_level,
+            self.config.completeness_mode,
+        );
 
         // Store generated specs in context (via a mutable method would be cleaner)
         // For now, we return the result and the caller can update the context
@@ -414,11 +423,7 @@ impl SpecAgent {
                 .lean_content
                 .lines()
                 .filter(|line| line.trim().starts_with("theorem"))
-                .filter_map(|line| {
-                    line.split_whitespace()
-                        .nth(1)
-                        .map(|s| s.to_string())
-                })
+                .filter_map(|line| line.split_whitespace().nth(1).map(|s| s.to_string()))
                 .collect();
 
             for theorem in theorems {
@@ -597,12 +602,7 @@ impl WorkflowResult {
             .iter()
             .map(|s| s.as_str())
             .collect();
-        errors.extend(
-            self.verification
-                .topos_errors
-                .iter()
-                .map(|s| s.as_str()),
-        );
+        errors.extend(self.verification.topos_errors.iter().map(|s| s.as_str()));
         errors
     }
 }
@@ -615,7 +615,10 @@ mod tests {
     #[tokio::test]
     async fn test_spec_agent_intake() {
         let mut agent = SpecAgent::minimal();
-        let ctx = agent.intake("An Order has items and a status").await.unwrap();
+        let ctx = agent
+            .intake("An Order has items and a status")
+            .await
+            .unwrap();
 
         assert_eq!(ctx.phase, SpecPhase::Refine);
         assert!(!ctx.requirements.is_empty());
@@ -640,7 +643,8 @@ mod tests {
             .unwrap();
 
         assert!(
-            nodes.iter()
+            nodes
+                .iter()
                 .any(|node| node.subtype.as_deref() == Some("spec_agent_intake")),
             "expected at least one persisted spec_agent intake node"
         );

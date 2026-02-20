@@ -12,6 +12,19 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Governance Runtime
+
+Use the repo-local `dp` wrapper so governance gates are reproducible on a clean machine.
+
+```bash
+./scripts/dp review --json
+./scripts/dp verify --json
+./scripts/dp enforce pre-commit --policy dp-policy.json --json
+./scripts/dp enforce pre-push --policy dp-policy.json --json
+```
+
+`dp-policy.json` is the canonical policy source. `make check` is available at repo root.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -37,4 +50,3 @@ bd sync               # Sync with git
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-

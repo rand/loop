@@ -21,6 +21,10 @@
 //! - **Contracts**: Types, invariants, plus function pre/post conditions
 //! - **FullProofs**: Complete formal proofs of correctness properties
 //!
+//! Completeness mode is configured independently from formalization level:
+//! - **Baseline** (default): emits non-placeholder stubs without `TODO`/`sorry`
+//! - **Placeholder**: explicit opt-in for draft specs with `TODO`/`sorry`
+//!
 //! ## Example
 //!
 //! ```rust,ignore
@@ -107,10 +111,12 @@ pub mod types;
 
 // Re-exports for convenience
 pub use agent::{SpecAgent, WorkflowResult};
-pub use generators::{CrossRefGenerator, GeneratedSpec, LeanGenerator, SpecGenerator, ToposGenerator};
+pub use generators::{
+    CrossRefGenerator, GeneratedSpec, LeanGenerator, SpecGenerator, ToposGenerator,
+};
 pub use parser::{NLParser, ParseResult};
 pub use types::{
-    Ambiguity, AmbiguitySeverity, Answer, CrossReference, ExtractedRequirement,
+    Ambiguity, AmbiguitySeverity, Answer, CompletenessMode, CrossReference, ExtractedRequirement,
     FormalizationLevel, FormalizationResult, ProofResult, ProofStrategy, Question,
     QuestionCategory, RequirementType, SpecAgentConfig, SpecContext, SpecDomain, SpecPhase,
     VerificationResult,

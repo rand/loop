@@ -51,8 +51,8 @@ Empirically validate end-to-end system behavior across intended loop use cases (
 - Go scope: pass after compatibility fixes (`VG-GO-ALL-001-final`).
 
 ### Governance toolchain
-- Fail (environmental): `VG-DP-ENFORCE-PRE-COMMIT`, `VG-DP-REVIEW`, `VG-DP-VERIFY`, `VG-DP-ENFORCE-PRE-PUSH`.
-- Root cause: `dp` executable missing in runtime environment (`No such file or directory`).
+- Pass: `VG-DP-ENFORCE-PRE-COMMIT`, `VG-DP-REVIEW`, `VG-DP-VERIFY`, `VG-DP-ENFORCE-PRE-PUSH`.
+- Runtime path: repo-local `./scripts/dp` with `dp-policy.json` and root `make check` orchestration.
 
 ## Fixes Landed During Validation
 1. Go integration hardening:
@@ -67,12 +67,18 @@ Empirically validate end-to-end system behavior across intended loop use cases (
 - Added test coverage for persistence behavior.
 - Removed stale TODO alias note in `/Users/rand/src/loop/rlm-core/src/spec_agent/types.rs`.
 
-## Remaining Gaps (Tracked)
-1. `loop-7fk` (P1): integrate Claude Code adapter with real orchestrator execution (remove placeholder responses).
-2. `loop-3sj` (P1): bind MCP tool handlers to live adapter/memory services (remove placeholder handlers).
-3. `loop-xmy` (P2): reduce spec-agent generator TODO/sorry placeholders via completeness modes.
-4. `loop-rv2` (P2): bootstrap reproducible `dp` policy runtime so governance gates are executable locally.
+3. Spec-agent generator completeness hardening (`loop-xmy`):
+- Added configurable `CompletenessMode` with default non-placeholder baseline in `/Users/rand/src/loop/rlm-core/src/spec_agent/types.rs`.
+- Threaded mode through agent/generators and documented explicit placeholder opt-in.
+- Added tests for baseline vs placeholder behavior across data-structure + behavior requirements.
+- Evidence: `VG-SPEC-AGENT-COMPLETENESS-001.md`.
+
+4. Graph-analysis memory optimization (`loop-vu7`, `loop-y27`):
+- Added symbol interning for repeated names and typed arena allocation for temporary drift-analysis nodes in `/Users/rand/src/loop/rlm-core/src/sync/drift.rs`.
+- Added unit + property tests for interner behavior and drift order invariance.
+- Captured scope, migration notes, and explicit benchmark/profiling success metrics plan.
+- Evidence: `VG-GRAPH-MEMORY-001.md`.
 
 ## Conclusion
 - End-to-end runtime behavior for core loop and active consumer interop paths is empirically validated and green on current SHA.
-- Two substantive implementation gaps and one governance-runtime blocker remain and are explicitly tracked with actionable issues under `loop-8hi`.
+- Previously tracked follow-up gaps from this validation window are implemented and validated on current SHA.

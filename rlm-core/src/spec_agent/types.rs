@@ -27,10 +27,7 @@ impl FormalizationLevel {
 
     /// Returns true if this level includes invariants.
     pub fn includes_invariants(&self) -> bool {
-        matches!(
-            self,
-            Self::Invariants | Self::Contracts | Self::FullProofs
-        )
+        matches!(self, Self::Invariants | Self::Contracts | Self::FullProofs)
     }
 
     /// Returns true if this level includes contracts.
@@ -47,6 +44,24 @@ impl FormalizationLevel {
 impl Default for FormalizationLevel {
     fn default() -> Self {
         Self::Contracts
+    }
+}
+
+/// Completeness mode for generated Topos/Lean artifacts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CompletenessMode {
+    /// Generate executable/non-placeholder baseline stubs.
+    ///
+    /// This mode avoids `TODO` and `sorry` markers by emitting permissive
+    /// baseline definitions such as `True` predicates and trivial proofs.
+    Baseline,
+    /// Emit draft-oriented placeholders (`TODO`, `sorry`) for manual completion.
+    Placeholder,
+}
+
+impl Default for CompletenessMode {
+    fn default() -> Self {
+        Self::Baseline
     }
 }
 
@@ -96,7 +111,12 @@ impl ApplicationDomain {
         match self {
             Self::Algorithms => vec!["termination", "correctness", "complexity"],
             Self::DistributedSystems => {
-                vec!["safety", "liveness", "eventual_consistency", "linearizability"]
+                vec![
+                    "safety",
+                    "liveness",
+                    "eventual_consistency",
+                    "linearizability",
+                ]
             }
             Self::APIs => vec!["request_response", "idempotency", "validation"],
             Self::Security => vec![
@@ -145,6 +165,8 @@ pub struct SpecAgentConfig {
     pub domains: Vec<ApplicationDomain>,
     /// Strategy for proof attempts.
     pub proof_strategy: ProofStrategy,
+    /// Completeness mode used by Topos/Lean generators.
+    pub completeness_mode: CompletenessMode,
     /// Maximum number of clarification rounds.
     pub max_clarification_rounds: u32,
     /// Whether to generate cross-references between Topos and Lean.
@@ -163,6 +185,7 @@ impl Default for SpecAgentConfig {
             formalization_level: FormalizationLevel::Contracts,
             domains: vec![ApplicationDomain::ApplicationFlow],
             proof_strategy: ProofStrategy::BasicAuto,
+            completeness_mode: CompletenessMode::Baseline,
             max_clarification_rounds: 3,
             generate_cross_refs: true,
             validate_with_lean: true,
@@ -179,6 +202,7 @@ impl SpecAgentConfig {
             formalization_level: FormalizationLevel::Types,
             domains: Vec::new(),
             proof_strategy: ProofStrategy::Skip,
+            completeness_mode: CompletenessMode::Baseline,
             max_clarification_rounds: 1,
             generate_cross_refs: false,
             validate_with_lean: false,
@@ -214,6 +238,12 @@ impl SpecAgentConfig {
     /// Set the proof strategy.
     pub fn with_proof_strategy(mut self, strategy: ProofStrategy) -> Self {
         self.proof_strategy = strategy;
+        self
+    }
+
+    /// Set the completeness mode used by spec generators.
+    pub fn with_completeness_mode(mut self, mode: CompletenessMode) -> Self {
+        self.completeness_mode = mode;
         self
     }
 }
@@ -578,10 +608,19 @@ mod tests {
         let config = SpecAgentConfig::minimal();
         assert_eq!(config.formalization_level, FormalizationLevel::Types);
         assert!(!config.validate_with_lean);
+        assert_eq!(config.completeness_mode, CompletenessMode::Baseline);
 
         let config = SpecAgentConfig::full();
         assert_eq!(config.formalization_level, FormalizationLevel::FullProofs);
         assert_eq!(config.proof_strategy, ProofStrategy::Hammer);
+        assert_eq!(config.completeness_mode, CompletenessMode::Baseline);
+    }
+
+    #[test]
+    fn test_completeness_mode_builder() {
+        let config =
+            SpecAgentConfig::default().with_completeness_mode(CompletenessMode::Placeholder);
+        assert_eq!(config.completeness_mode, CompletenessMode::Placeholder);
     }
 
     #[test]

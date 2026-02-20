@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "Repo-local governance pipelines for deterministic dp review/verify/enforce runs.",
+  "pipelines": {
+    "review": [
+      {
+        "name": "typecheck",
+        "cmd": ["make", "typecheck"]
+      }
+    ],
+    "verify": [
+      {
+        "name": "check",
+        "cmd": ["make", "check"]
+      }
+    ],
+    "pre-commit": [
+      {
+        "name": "check",
+        "cmd": ["make", "check"]
+      }
+    ],
+    "pre-push": [
+      {
+        "name": "check",
+        "cmd": ["make", "check"]
+      }
+    ]
+  }
+}

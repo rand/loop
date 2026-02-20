@@ -82,6 +82,19 @@ cd ../go/rlmcore
 go test ./...
 ```
 
+### Governance Gates
+
+Run repository governance checks with the local `dp` runtime wrapper:
+
+```bash
+./scripts/dp review --json
+./scripts/dp verify --json
+./scripts/dp enforce pre-commit --policy dp-policy.json --json
+./scripts/dp enforce pre-push --policy dp-policy.json --json
+```
+
+`make check` is available at repo root and is the canonical enforcement command in `dp-policy.json`.
+
 ### Rust Usage
 
 ```rust
