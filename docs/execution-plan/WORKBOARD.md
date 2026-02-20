@@ -14,21 +14,21 @@ Owner: Orchestrator thread
 
 | Lane | Current Assignment | Status | Notes |
 |---|---|---|---|
-| Orchestrator | M7 tranche orchestration + safe-mode enforcement | in_progress | M7 plan published; execute task cards sequentially with evidence-first closure |
+| Orchestrator | Safe-mode governance + tracker hygiene | steady_state | M7 tranche is complete; maintain serialized heavy-command policy and status consistency |
 | Lane A | M7 core runtime closure (`M7-T01`..`M7-T08`) | complete | Runtime closure complete with evidence under `evidence/2026-02-20/milestone-M7/` |
 | Lane B | M7 docs/governance reconciliation (`M7-T10`) | complete | SPEC/governance reconciliation complete; consumer claims refreshed |
-| Lane C | Ops-Weekly cadence + post-M7 up-next critical backlog (`loop-azq`) | in_progress | Keep D-017 clean-clone policy active; execute cadence and decompose up-next critical refinements |
+| Lane C | Ops-Weekly cadence operations | steady_state | Keep D-017 clean-clone policy active; `loop-azq` backlog is closed |
 
 ## Next Queue by Lane
 
 - Lane A: complete
 - Lane B: complete
-- Lane C: continue Ops-Weekly cadence; decompose `loop-azq` into executable tranche tasks
+- Lane C: continue Ops-Weekly cadence; create/claim a new issue if cadence discovers regressions or new scope
 
 ## Lane Activation Rules
 
 - Lane A and Lane B are complete for M7 and should remain read-only unless regressions are discovered.
-- Lane C is the primary active lane for heavy compatibility/cadence and up-next critical refinement intake.
+- Lane C is the primary operational lane for compatibility cadence and post-M7 regression intake.
 - Never run heavy commands concurrently across lanes.
 
 ## Handoff Intake Checklist (Orchestrator)

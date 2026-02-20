@@ -162,6 +162,7 @@ rlm-core powers these projects:
 - [Documentation Portal](docs/README.md) - Role-based index and workflow-oriented navigation.
 - [User Guide](docs/user-guide/README.md) - New user to power-user guidance.
 - [Developer Guide](docs/developer-guide/README.md) - Setup, gates, and contribution workflow.
+- [API Docs Status](docs/developer-guide/api-docs-status.md) - What "documented" currently means, without fiction.
 - [Internals](docs/internals/README.md) - Architecture, OODA flow, and module map.
 - [Troubleshooting](docs/troubleshooting/README.md) - Incident triage and diagnostics checklists.
 

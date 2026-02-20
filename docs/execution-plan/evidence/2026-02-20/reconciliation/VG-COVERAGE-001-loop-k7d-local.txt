@@ -1,0 +1,9 @@
+./scripts/run_coverage.sh
+error: coverage gate unavailable locally because cargo-llvm-cov is not installed.
+
+Install when network access is available:
+  cargo install cargo-llvm-cov --locked
+
+Then rerun:
+  make coverage
+make: *** [coverage] Error 2

@@ -1,0 +1,47 @@
+name: rlm-core coverage
+
+on:
+  pull_request:
+    paths:
+      - "rlm-core/**"
+      - "rlm-core-derive/**"
+      - "scripts/run_coverage.sh"
+      - "Makefile"
+      - ".github/workflows/rlm-core-coverage.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "rlm-core/**"
+      - "rlm-core-derive/**"
+      - "scripts/run_coverage.sh"
+      - "Makefile"
+      - ".github/workflows/rlm-core-coverage.yml"
+
+jobs:
+  coverage:
+    name: Coverage Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Run coverage gate
+        env:
+          COVERAGE_MIN_LINES: "80"
+        run: make coverage
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlm-core-coverage
+          path: coverage/
+          if-no-files-found: error

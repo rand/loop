@@ -9,6 +9,11 @@
 **Scope**: ~520 Go files, ~80,000+ lines of code
 **Strategy**: Layered migration preserving Go TUI, replacing core RLM logic with Rust
 
+Migration status note (2026-02-20):
+- This spec is historical planning context.
+- Authoritative live outcome is closed task `loop-p95` (migration complete).
+- Unchecked phase checklists below are archival and not the live backlog.
+
 ---
 
 ## 1. Architecture Overview

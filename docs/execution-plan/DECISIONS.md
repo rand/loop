@@ -264,6 +264,47 @@ Use this file for architecture and contract decisions that affect more than one 
 - Preserves reproducibility by requiring clean-clone claim runs despite canonical local working-tree churn.
 - Impacted tasks/gates: loop-5va, Ops-Weekly, VG-LA-001, VG-LA-002, VG-CONTRACT-001.
 
+## D-019 Coverage Proof Uses Reproducible `llvm-cov` Gate With CI Canonical Evidence
+
+- Status: Accepted
+- Date: 2026-02-20
+- Context: Historical coverage closure claims were not backed by a reproducible, enforced coverage gate in this repository.
+- Decision:
+- Adopt `scripts/run_coverage.sh` + `make coverage` as the canonical coverage execution path.
+- Add CI workflow `.github/workflows/rlm-core-coverage.yml` as the canonical enforcement/evidence path.
+- Set line-coverage threshold policy to `>= 80%` (`COVERAGE_MIN_LINES`, default `80`).
+- Consequences:
+- Coverage evidence becomes repeatable and reviewable with concrete artifacts (`coverage/lcov.info`, `coverage/summary.txt`).
+- Local environments without `cargo-llvm-cov` can still proceed with explicit blocked evidence while CI remains authoritative.
+- Impacted tasks/gates: loop-k7d, VG-COVERAGE-001.
+
+## D-020 `rlm-claude-code` Migration Scope Is Component Delegation Until Binding Surface Expands
+
+- Status: Accepted
+- Date: 2026-02-20
+- Context: Early migration specs model full Python replacement, but Python bindings still do not expose orchestration/repl surfaces (`Orchestrator`, `ClaudeCodeAdapter`, `ReplPool`/`ReplHandle`).
+- Decision:
+- Treat component-level delegation as the supported migration end state for current scope.
+- Mark full replacement language in migration docs as archival target-state planning, not active backlog.
+- Consequences:
+- Removes ambiguity between executed migration reality and aspirational architecture.
+- Prevents false "partial implementation" interpretation for intentionally out-of-scope binding gaps.
+- Impacted tasks/gates: loop-cyl, loop-k7d, VG-CONTRACT-001, documentation reconciliation gates.
+
+## D-021 API Documentation Claims Must Distinguish Module-Level Baseline vs Item-Level Depth
+
+- Status: Accepted
+- Date: 2026-02-20
+- Context: Prior closure text implied complete public API docs while item-level rustdoc remained partial.
+- Decision:
+- Treat module-level docs as mandatory baseline.
+- Require item-level docs for newly introduced public API in the same change set.
+- Report legacy item-level rustdoc depth as incremental progress, not "fully complete."
+- Consequences:
+- Eliminates over-claims in project status reporting.
+- Preserves merge discipline for new API surfaces without blocking on historical backlog in a single tranche.
+- Impacted tasks/gates: loop-4w9 (historical interpretation), loop-k7d, docs/developer-guide/api-docs-status.md, doc review gates.
+
 ## Update Rule
 
 When adding a new decision:

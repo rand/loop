@@ -60,9 +60,9 @@ pub trait Signature: Send + Sync + 'static {
 ```
 
 **Acceptance Criteria**:
-- [ ] Trait compiles and is object-safe where possible
-- [ ] Default `to_prompt` generates structured prompt
-- [ ] Default `from_response` parses JSON or structured text
+- [x] Trait compiles and is object-safe where possible
+- [x] Default `to_prompt` generates structured prompt
+- [x] Default `from_response` parses JSON or structured text
 
 ### SPEC-20.02: Field Specification
 
@@ -97,9 +97,9 @@ pub enum FieldType {
 ```
 
 **Acceptance Criteria**:
-- [ ] FieldType covers common Rust types
-- [ ] Nested types (List, Object) work recursively
-- [ ] Enum validates against allowed values
+- [x] FieldType covers common Rust types
+- [x] Nested types (List, Object) work recursively
+- [x] Enum validates against allowed values
 
 ### SPEC-20.03: Signature Validation
 
@@ -124,9 +124,9 @@ pub enum ValidationError {
 ```
 
 **Acceptance Criteria**:
-- [ ] Inputs validated before execution
-- [ ] Outputs validated before returning to caller
-- [ ] Clear error messages with field context
+- [x] Inputs validated before execution
+- [x] Outputs validated before returning to caller
+- [x] Clear error messages with field context
 
 ### SPEC-20.04: Derive Macro Attributes
 
@@ -161,9 +161,9 @@ pub struct AnalyzeCode {
 - `#[field(enum_values = "a,b,c")]` - Explicit enum value list for field validation
 
 **Acceptance Criteria**:
-- [ ] Macro generates correct Signature impl
-- [ ] All attributes parsed correctly
-- [ ] Compile-time errors for invalid usage
+- [x] Macro generates correct Signature impl
+- [x] All attributes parsed correctly
+- [x] Compile-time errors for invalid usage
 
 ### SPEC-20.05: Type Inference
 
@@ -200,8 +200,8 @@ Errors at compile time for invalid signatures.
 | Invalid attribute syntax | "Invalid attribute: expected #[input(desc = \"...\")]" |
 
 **Acceptance Criteria**:
-- [ ] All invalid usages produce compile errors
-- [ ] Error messages are helpful and actionable
+- [x] All invalid usages produce compile errors
+- [x] Error messages are helpful and actionable
 
 ### SPEC-20.07: SUBMIT Function
 
@@ -230,9 +230,9 @@ def SUBMIT(outputs: dict) -> NoReturn:
 4. Includes `submit_result` in execute response to Rust orchestrator
 
 **Acceptance Criteria**:
-- [ ] SUBMIT() terminates execution immediately
-- [ ] Validation against registered signature
-- [ ] Clear errors for missing/invalid fields
+- [x] SUBMIT() terminates execution immediately
+- [x] Validation against registered signature
+- [x] Clear errors for missing/invalid fields
 
 ### SPEC-20.08: SUBMIT Behavior
 
@@ -265,9 +265,9 @@ pub enum SubmitResult {
 - Multiple SUBMIT() calls: only first is processed
 
 **Acceptance Criteria**:
-- [ ] Immediate termination on SUBMIT()
-- [ ] All validation rules enforced
-- [ ] Multiple calls handled gracefully
+- [x] Immediate termination on SUBMIT()
+- [x] All validation rules enforced
+- [x] Multiple calls handled gracefully
 
 ### SPEC-20.09: Validation Errors
 
@@ -304,9 +304,9 @@ impl SubmitError {
 ```
 
 **Acceptance Criteria**:
-- [ ] All error variants have clear messages
-- [ ] Value preview helps debugging
-- [ ] Errors are actionable
+- [x] All error variants have clear messages
+- [x] Value preview helps debugging
+- [x] Errors are actionable
 
 ### SPEC-20.10: REPL Protocol Extension
 
@@ -359,9 +359,9 @@ JSON-RPC protocol for signature registration and execute-response submit payload
 ```
 
 **Acceptance Criteria**:
-- [ ] `register_signature` method implemented
-- [ ] `clear_signature` method implemented
-- [ ] Execute responses include optional `submit_result` payload for SUBMIT outcomes
+- [x] `register_signature` method implemented
+- [x] `clear_signature` method implemented
+- [x] Execute responses include optional `submit_result` payload for SUBMIT outcomes
 
 ### SPEC-20.11: Module Trait
 
@@ -389,9 +389,9 @@ pub trait Module: Send + Sync {
 ```
 
 **Acceptance Criteria**:
-- [ ] Module trait is object-safe where needed
-- [ ] Predictors discoverable for optimization
-- [ ] LM propagation works
+- [x] Module trait is object-safe where needed
+- [x] Predictors discoverable for optimization
+- [x] LM propagation works
 
 ### SPEC-20.12: Predict Wrapper
 
@@ -429,9 +429,9 @@ impl<S: Signature> Module for Predict<S> {
 ```
 
 **Acceptance Criteria**:
-- [ ] Predict generates correct prompts
-- [ ] Demonstrations injected as few-shot examples
-- [ ] Config options respected
+- [x] Predict generates correct prompts
+- [x] Demonstrations injected as few-shot examples
+- [x] Config options respected
 
 ### SPEC-20.13: Composition Validation
 

@@ -13,7 +13,8 @@
 - **Lean FV Epic (loop-vce)**: 4/4 implementation phases closed
 
 **Current Follow-on Work**:
-- Post-M7 critical refinements are tracked in `loop-azq` and child tasks.
+- Post-M7 critical refinements (`loop-azq` + children) are closed.
+- No open implementation backlog currently exists in Beads; new scope starts via new issue intake.
 - Live state is maintained in `docs/execution-plan/STATUS.md`, `docs/execution-plan/TASK-REGISTRY.md`, and `bd status`.
 
 ---
@@ -69,14 +70,12 @@
 | `loop-cyl` | Migration: rlm-claude-code to rlm-core | Closed | Replaced legacy Python implementation with rlm-core delegation/runtime |
 | `loop-m0c` | Migration: recurse to rlm-core | Closed | Replaced legacy Go implementation with rlm-core CGO bridges |
 
-**Migration Strategy (from specs):**
+**Migration Strategy Notes (historical target vs executed reality):**
 
 **rlm-claude-code (loop-cyl):**
-1. Add rlm-core as optional dependency, feature-flagged
-2. Migrate orchestrator to use rlm-core Python bindings
-3. Migrate memory to rlm-core hypergraph
-4. Remove legacy Python implementation
-5. Full rlm-core native
+1. Historical target in early specs was full replacement.
+2. Executed reality is component-level delegation (feature-flagged) because Python bindings do not currently expose `Orchestrator`, `ClaudeCodeAdapter`, or `ReplPool`/`ReplHandle`.
+3. Python orchestration/repl remain intentionally local; delegated components use `rlm-core` bindings.
 
 **recurse (loop-m0c):**
 1. Add rlm-core Go bindings via CGO, parallel implementation
@@ -98,8 +97,8 @@
 - [x] Go bindings working with CGO
 - [x] recurse migrated to use rlm-core (`loop-m0c`)
 - [x] rlm-claude-code migrated to use rlm-core (`loop-cyl`)
-- [x] >80% test coverage on core crate
-- [x] All public APIs documented
+- [x] >80% test coverage on core crate (historical closure claim; reproducible `llvm-cov` CI gate is now the canonical proof path)
+- [x] All public APIs documented (historical closure interpreted as module-level docs; item-level rustdoc depth remains non-blocking and incremental)
 
 **loop-vce Acceptance Criteria:**
 - [x] Lean REPL executes commands and tactics
@@ -164,8 +163,8 @@ For current execution sequencing, use:
               ┌──────────────────────────────────────┐
               │      Active Follow-on Backlog        │
               │                                      │
-              │  loop-azq child tasks (SPEC gaps)   │
-              │  tracked in execution-plan docs      │
+              │  No open implementation backlog      │
+              │  (create issue from new findings)    │
               └──────────────────────────────────────┘
 ```
 
@@ -195,7 +194,7 @@ bd ready                    # Show ready-to-work issues
 bd list --status open       # Show open issues
 bd stats                    # Project statistics
 
-# Inspect current post-M7 backlog
+# Inspect historical post-M7 closure backlog
 bd show loop-azq
 bd children loop-azq
 

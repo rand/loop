@@ -6,13 +6,13 @@ This map defines lane ownership and safe-mode activation rules.
 
 Default on this machine:
 
-- Lane A: active execution lane for M7 runtime closure (heavy work allowed via wrapper)
-- Lane B: read-only by default (docs/governance lane)
-- Lane C: cadence + consumer lane (heavy work only when Lane A is idle)
+- Lane A: complete M7 runtime closure lane (historical)
+- Lane B: complete M7 docs/governance lane (historical)
+- Lane C: cadence + consumer operations lane (active steady-state)
 
-Lane A is the default heavy lane for M7; Lane B and Lane C may run heavy commands only when orchestrator explicitly marks them active in `WORKBOARD.md`.
+Heavy commands run in Lane C steady-state cadence windows; any new implementation tranche requires explicit activation in `WORKBOARD.md`.
 
-## Lane A - M7 Core Runtime Closure (Active)
+## Lane A - M7 Core Runtime Closure (Complete)
 
 Scope:
 
@@ -37,7 +37,7 @@ Primary file areas:
 - `/Users/rand/src/loop/docs/spec/`
 - `/Users/rand/src/loop/docs/execution-plan/`
 
-## Lane B - M7 Docs/Governance Reconciliation (Standby)
+## Lane B - M7 Docs/Governance Reconciliation (Complete)
 
 Scope:
 
@@ -59,18 +59,17 @@ Start condition:
 - Lane A has completed implementation-heavy tasks or is blocked.
 - Orchestrator marks Lane B active in `WORKBOARD.md`.
 
-## Lane C - Consumer Cadence and Interop Follow-up (Conditional)
+## Lane C - Consumer Cadence and Interop Follow-up (Steady-State)
 
 Scope:
 
 - Ongoing Ops-Weekly compatibility cadence
-- `M7-T09` io-rflx adapter fixture + calibration task
 
 Task order:
 
 1. Ops-Weekly cadence runs (steady-state)
-2. `M7-T09` once `M7-T08` is done
-3. Resume cadence ownership after M7 closure
+2. Open and claim a new scoped issue when cadence discovers regressions/new scope
+3. Execute fix + evidence loop, then return to cadence ownership
 
 Primary file areas:
 

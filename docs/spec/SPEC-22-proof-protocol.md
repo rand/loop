@@ -87,9 +87,9 @@ impl ProofSession {
 ```
 
 **Acceptance Criteria**:
-- [ ] ProofSession tracks all required state
-- [ ] SorryLocation captures full context
-- [ ] Session properly initializes from Lean diagnostics
+- [x] ProofSession tracks all required state
+- [x] SorryLocation captures full context
+- [x] Session properly initializes from Lean diagnostics
 
 ### SPEC-22.02: Session Status
 
@@ -141,9 +141,9 @@ impl ProofSessionStatus {
 ```
 
 **Acceptance Criteria**:
-- [ ] All status transitions valid
-- [ ] Limit reasons capture relevant details
-- [ ] end_reason() matches Numina format
+- [x] All status transitions valid
+- [x] Limit reasons capture relevant details
+- [x] end_reason() matches Numina format
 
 ### SPEC-22.03: Helper Lemma Management
 
@@ -201,9 +201,9 @@ impl HelperLemma {
 ```
 
 **Acceptance Criteria**:
-- [ ] Attribution matches Numina format
-- [ ] Helpers tracked with proof status
-- [ ] to_lean() produces valid Lean code
+- [x] Attribution matches Numina format
+- [x] Helpers tracked with proof status
+- [x] to_lean() produces valid Lean code
 
 ### SPEC-22.04: Protocol Enforcement
 
@@ -357,9 +357,9 @@ impl ProofProtocol {
 - Complex logic MUST be suggested for lemma extraction
 
 **Acceptance Criteria**:
-- [ ] Long comments detected and rejected
-- [ ] Consecutive comment detection works
-- [ ] Lemma extraction suggestions generated
+- [x] Long comments detected and rejected
+- [x] Consecutive comment detection works
+- [x] Lemma extraction suggestions generated
 
 ---
 

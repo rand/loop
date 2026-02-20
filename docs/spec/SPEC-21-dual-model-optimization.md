@@ -127,9 +127,9 @@ pub struct RoutingContext {
 ```
 
 **Acceptance Criteria**:
-- [ ] route_rlm() correctly applies switch strategy
-- [ ] Fallback to single-model when config not provided
-- [ ] RoutingContext captures all relevant state
+- [x] route_rlm() correctly applies switch strategy
+- [x] Fallback to single-model when config not provided
+- [x] RoutingContext captures all relevant state
 
 ### SPEC-21.03: Cost Tracking Integration
 
@@ -178,9 +178,9 @@ pub struct TierBreakdown {
 ```
 
 **Acceptance Criteria**:
-- [ ] Cost tracked separately by tier
-- [ ] Savings calculation accurate
-- [ ] Report includes tier breakdown
+- [x] Cost tracked separately by tier
+- [x] Savings calculation accurate
+- [x] Report includes tier breakdown
 
 ### SPEC-21.04: Default Configurations
 
@@ -240,9 +240,9 @@ impl DualModelConfig {
 | Budget Constrained | Sonnet | Haiku | 50-60% |
 
 **Acceptance Criteria**:
-- [ ] All default configs compile and work
-- [ ] Documented expected savings
-- [ ] Easy to customize from defaults
+- [x] All default configs compile and work
+- [x] Documented expected savings
+- [x] Easy to customize from defaults
 
 ---
 

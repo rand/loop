@@ -1,6 +1,6 @@
 # Quality Gates
 
-Loop uses layered quality gates: local correctness, policy enforcement, and release-grade verification.
+Loop uses layered quality gates: local correctness, coverage proof, policy enforcement, and release-grade verification.
 
 ## Gate Layers
 
@@ -14,7 +14,22 @@ Runs:
 - Type checks
 - Tests
 
-### Layer 2: Governance review
+### Layer 2: Coverage proof (CI-backed, locally runnable when tooling is available)
+
+```bash
+make coverage
+```
+
+Runs:
+- `scripts/run_coverage.sh`
+- `cargo llvm-cov` line-coverage gate (`COVERAGE_MIN_LINES`, default `80`)
+- Artifact output: `coverage/lcov.info`, `coverage/summary.txt`
+
+Notes:
+- If `cargo-llvm-cov` is missing locally, the script exits with actionable install guidance.
+- GitHub Actions workflow `rlm-core-coverage.yml` is the canonical enforcement path.
+
+### Layer 3: Governance review
 
 ```bash
 ./scripts/dp review --json
@@ -25,7 +40,7 @@ Purpose:
 - Consistent, machine-readable status
 - Standardized workflow enforcement
 
-### Layer 3: Enforcement gates
+### Layer 4: Enforcement gates
 
 ```bash
 ./scripts/dp enforce pre-commit --policy dp-policy.json --json
@@ -55,7 +70,8 @@ No partial-pass narratives.
 
 1. During iteration: targeted tests.
 2. Before commit: `make check`.
-3. Before push: full `dp` enforcement chain.
+3. Before push: `make coverage` (or verify CI coverage gate pass when local tool install is blocked).
+4. Before push: full `dp` enforcement chain.
 
 ## Evidence Logging
 

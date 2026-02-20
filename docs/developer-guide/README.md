@@ -7,6 +7,7 @@ This guide is for contributors changing code in Loop itself.
 1. [Setup](./setup.md)
 2. [Quality Gates](./quality-gates.md)
 3. [Contribution Workflow](./contribution-workflow.md)
+4. [API Docs Status](./api-docs-status.md)
 
 ## Development Contract
 

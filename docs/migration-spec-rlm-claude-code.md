@@ -11,7 +11,7 @@
 
 ---
 
-## ⚠️ Migration Reality (Updated Jan 2025)
+## ⚠️ Migration Reality (Updated Feb 2026)
 
 **Actual execution** of this migration revealed important constraints:
 
@@ -52,22 +52,27 @@ Instead of full replacement, the migration uses **component-level delegation**:
 | 7 | `smart_router.py` → `SmartRouter` | ✅ | `58e2bcf` |
 | 8 | Cleanup legacy code | ⏭️ **Deferred** | - |
 
+Authoritative live status for this repository is the closed Beads task `loop-cyl`:
+- Component delegation is complete and supported.
+- Full Python replacement remains intentionally out of scope until the Python bindings expose orchestration/repl surfaces (`Orchestrator`, `ClaudeCodeAdapter`, `ReplPool`/`ReplHandle`).
+
 ---
 
-## 1. Module Mapping
+## 1. Module Mapping (Historical Target vs Current Reality)
 
-### 1.1 Direct Replacements
+### 1.1 Direct Replacements (Historical Target-State Plan)
 
-These modules map directly to rlm-core equivalents:
+This table is archival target-state planning from early migration design.
+For live truth, use the "Migration Reality" section above.
 
 | rlm-claude-code Module | rlm-core Replacement | Notes |
 |------------------------|----------------------|-------|
-| `orchestrator.py` | `rlm_core.Orchestrator` | Main orchestration loop |
-| `intelligent_orchestrator.py` | `rlm_core.ClaudeCodeAdapter` | Adapter handles orchestration |
-| `local_orchestrator.py` | `rlm_core.Orchestrator` | Merge into main orchestrator |
+| `orchestrator.py` | `rlm_core.Orchestrator` | Target-state only; binding is not currently exposed |
+| `intelligent_orchestrator.py` | `rlm_core.ClaudeCodeAdapter` | Target-state only; binding is not currently exposed |
+| `local_orchestrator.py` | `rlm_core.Orchestrator` | Target-state only; binding is not currently exposed |
 | `complexity_classifier.py` | `rlm_core.PatternClassifier` | Uses `ActivationDecision` |
 | `auto_activation.py` | `rlm_core.PatternClassifier.should_activate()` | Built into classifier |
-| `repl_environment.py` | `rlm_core.ReplHandle`, `ReplPool` | Python REPL via subprocess |
+| `repl_environment.py` | `rlm_core.ReplHandle`, `ReplPool` | Target-state only; bindings not currently exposed |
 | `memory_store.py` | `rlm_core.SqliteMemoryStore` | Hypergraph memory |
 | `memory_backend.py` | `rlm_core.SqliteMemoryStore` | Unified backend |
 | `memory_evolution.py` | `rlm_core.SqliteMemoryStore` (tier operations) | Consolidate/promote/decay |
@@ -124,6 +129,10 @@ These modules remain in rlm-claude-code:
 ---
 
 ## 2. Migration Phases
+
+This phased checklist is historical planning context.
+Unchecked "Exit Criteria" items below are not the live backlog; they are preserved for traceability.
+Live scope/status is tracked in Beads (`loop-cyl`) and `docs/execution-plan/STATUS.md`.
 
 ### Phase 1: Add rlm-core Dependency
 

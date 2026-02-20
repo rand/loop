@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: check lint typecheck test review verify
+.PHONY: check lint typecheck test coverage review verify
 
 check: typecheck test
 
@@ -12,6 +12,9 @@ typecheck:
 
 test:
 	cd rlm-core && cargo test --quiet
+
+coverage:
+	./scripts/run_coverage.sh
 
 review: typecheck
 

@@ -69,10 +69,10 @@ pub enum Theme {
 ```
 
 **Acceptance Criteria**:
-- [ ] to_networkx_json() produces valid JSON
-- [ ] to_html() produces self-contained HTML
-- [ ] to_dot() produces valid Graphviz DOT
-- [ ] All formats render correctly
+- [x] to_networkx_json() produces valid JSON
+- [x] to_html() produces self-contained HTML
+- [x] to_dot() produces valid Graphviz DOT
+- [x] All formats render correctly
 
 ### SPEC-23.02: NetworkX JSON Schema
 
@@ -147,9 +147,9 @@ Schema for graph interchange.
 ```
 
 **Acceptance Criteria**:
-- [ ] JSON validates against schema
-- [ ] Importable into NetworkX Python library
-- [ ] All node/edge types represented
+- [x] JSON validates against schema
+- [x] Importable into NetworkX Python library
+- [x] All node/edge types represented
 
 ### SPEC-23.03: HTML Visualization Features
 

@@ -147,9 +147,9 @@ impl BootstrapFewShot {
 ```
 
 **Acceptance Criteria**:
-- [ ] Sensible defaults
-- [ ] Builder pattern for configuration
-- [ ] All parameters documented
+- [x] Sensible defaults
+- [x] Builder pattern for configuration
+- [x] All parameters documented
 
 ### SPEC-24.03: OptimizedModule
 
@@ -216,9 +216,9 @@ impl<S: Signature, M: Module<Signature = S>> OptimizedModule<S, M> {
 ```
 
 **Acceptance Criteria**:
-- [ ] Module trait implemented
-- [ ] Demonstrations accessible
-- [ ] Serialization works
+- [x] Module trait implemented
+- [x] Demonstrations accessible
+- [x] Serialization works
 
 ### SPEC-24.04: Optimization Process
 
@@ -301,9 +301,9 @@ impl Optimizer for BootstrapFewShot {
 7. Wrap module with demonstrations
 
 **Acceptance Criteria**:
-- [ ] Multi-round bootstrap works
-- [ ] Temperature=1.0 ensures diversity
-- [ ] Filtering and ranking correct
+- [x] Multi-round bootstrap works
+- [x] Temperature=1.0 ensures diversity
+- [x] Filtering and ranking correct
 
 ### SPEC-24.05: Metric Functions
 

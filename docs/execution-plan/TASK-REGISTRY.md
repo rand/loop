@@ -8,14 +8,15 @@ Single source of truth for execution tasks and dependencies.
 - `in_progress`: active
 - `blocked`: blocked by dependency or decision
 - `done`: complete with validation evidence
+- `steady_state`: recurring operational work with no active implementation defect/feature issue
 
 ## Lane Assignment
 
 - Lane A: `M7-T01`..`M7-T08` core runtime/spec closure (complete)
 - Lane B: M7 spec/governance reconciliation (`M7-T10`) and documentation-only maintenance (complete)
-- Lane C: consumer cadence + post-M7 interop upkeep
+- Lane C: consumer cadence + post-M7 interop upkeep (steady-state; `loop-azq` closed)
 
-## Priority Queue (Execution Order)
+## Priority Queue (Historical M7 Order + Current Steady-State)
 
 | Rank | Task ID | Status | Why Next |
 |---|---|---|---|
@@ -29,8 +30,9 @@ Single source of truth for execution tasks and dependencies.
 | 8 | M7-T08 (`loop-bih.8`) | done | Closed prompt/helper contract drift with submit semantics and helper-surface parity evidence (`M7-T08-validation-summary.md`) |
 | 9 | M7-T09 (`loop-bih.9`) | done | Delivered loop-owned io-rflx fixture corpus + calibration gate and captured RFLX/contract/perf evidence (`M7-T09-validation-summary.md`) |
 | 10 | M7-T10 (`loop-bih.10`) | done | Reconciled SPEC/governance metadata and refreshed consumer support claims (`M7-T10-validation-summary.md`) |
-| 11 | Ops-Weekly | in_progress | Continue steady-state compatibility cadence post-M7 completion |
-| 12 | Up-next critical SPEC refinements (`loop-azq`) | todo | Decompose and execute up-next critical spec/runtime refinements carried forward from SPEC-20..26 |
+| 11 | Ops-Weekly cadence | steady_state | Continue recurring compatibility cadence packet; open a fresh issue only on regressions/new scope |
+| 12 | Up-next critical SPEC refinements (`loop-azq`) | done | `loop-azq` and `loop-azq.1..9` implemented and closed |
+| 13 | New implementation scope intake | done | As of 2026-02-20 there are no open implementation issues; create/claim a new issue before edits |
 
 ## M0 Tasks (Foundation and Contracts)
 

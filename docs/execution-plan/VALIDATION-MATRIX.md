@@ -17,6 +17,7 @@ This matrix defines mandatory validation gates for milestone completion.
 - For M6 cadence tasks, `VG-CONTRACT-001` evidence must cite explicit ownership assignments and recurring schedule definitions.
 - For `VG-LA-002` promotion claims, evidence must be tied to committed consumer SHA state (D-015), not a dirty working tree.
 - For M7 gates, evidence must map each gate result to a specific M7 task ID (`M7-T01`..`M7-T10`).
+- For `VG-COVERAGE-001`, CI evidence from `.github/workflows/rlm-core-coverage.yml` is canonical when local environments cannot install `cargo-llvm-cov`.
 
 ## Core Loop Gates
 
@@ -29,6 +30,7 @@ This matrix defines mandatory validation gates for milestone completion.
 | VG-LOOP-REPL-001 | Python REPL unit tests | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core/python && uv run pytest -q'` | All tests pass | `.../VG-LOOP-REPL-001.txt` |
 | VG-LOOP-REPL-002 | Rust ignored REPL spawn integration | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini test_repl_spawn -- --ignored'` | Test passes | `.../VG-LOOP-REPL-002.txt` |
 | VG-LOOP-CORE-001 | Full `rlm-core` regression | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini'` | No failing tests | `.../VG-LOOP-CORE-001.txt` |
+| VG-COVERAGE-001 | Reproducible line-coverage gate (`rlm-core`) | `LOOP_MIN_AVAILABLE_MIB=4096 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop && make coverage'` | Coverage run succeeds and line coverage is >= 80% (`COVERAGE_MIN_LINES`) | `.../VG-COVERAGE-001.txt` plus `coverage/lcov.info` and `coverage/summary.txt` |
 | VG-LOOP-BATCH-001 | End-to-end `LLM_BATCH` runtime path (Rust host + Python REPL) | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop && (cd rlm-core && cargo test --no-default-features --features gemini test_llm_batch) && (cd rlm-core/python && uv run pytest -q tests/test_repl.py -k llm_batch)'` | Rust and Python targeted batch-path suites pass | `.../VG-LOOP-BATCH-001.txt` |
 | VG-LOOP-FALLBACK-001 | Orchestrator fallback extraction runtime behavior | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini fallback::'` | Fallback trigger and extraction orchestration tests pass | `.../VG-LOOP-FALLBACK-001.txt` |
 | VG-LOOP-SIG-002 | Typed-signature parity (enum and pre-exec input validation) | `LOOP_MIN_AVAILABLE_MIB=3072 /Users/rand/src/loop/scripts/safe_run.sh bash -lc 'cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini signature:: && cargo test --no-default-features --features gemini predict::'` | New typed-signature parity scenarios pass with deterministic errors | `.../VG-LOOP-SIG-002.txt` |
@@ -77,3 +79,5 @@ This matrix defines mandatory validation gates for milestone completion.
 | M5 | VG-PERF-001, VG-PERF-002, VG-EFFICACY-001 |
 | M6 | VG-CONTRACT-001 plus applicable prior consumer gates for any tuple newly claimed as supported |
 | M7 | VG-LOOP-BATCH-001, VG-LOOP-FALLBACK-001, VG-LOOP-SIG-002, VG-LOOP-DUAL-001, VG-LOOP-PROOF-001, VG-LOOP-VIZ-001, VG-LOOP-OPT-001, VG-LOOP-CONTEXT-001, VG-RFLX-002, VG-PERF-003, VG-DOC-SPEC-002, VG-CONTRACT-001 plus applicable consumer tuple gates (`VG-RCC-001`, `VG-LA-001`, `VG-RFLX-001`) |
+
+Post-M7 steady-state release-quality checks add `VG-COVERAGE-001` to the gate chain before compatibility claim updates.
