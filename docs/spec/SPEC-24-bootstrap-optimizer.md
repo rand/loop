@@ -2,7 +2,7 @@
 
 > DSPy-style automatic prompt optimization
 
-**Status**: Draft
+**Status**: Partially implemented (bootstrap optimization core, metric suite, reasoning capture summaries, and save/load persistence are implemented; advanced metric trait/object-safety refinements remain deferred)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-o9r
@@ -13,6 +13,17 @@
 ## Overview
 
 Implement DSPy-style BootstrapFewShot optimizer that automatically improves prompts by selecting high-quality demonstrations from training data.
+
+## Implementation Snapshot (2026-02-20)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-24.01 Optimizer trait and compile flow | Implemented | `Optimizer` + `BootstrapFewShot::compile` in `rlm-core/src/module/optimize.rs` |
+| SPEC-24.02 Bootstrap configuration/presets | Implemented | `BootstrapFewShot::{default,new,greedy,thorough}` and builder methods |
+| SPEC-24.03 OptimizedModule + persistence helpers | Implemented | `OptimizedModule::{save,load}` + roundtrip test in `rlm-core/src/module/optimize.rs` |
+| SPEC-24.04 Optimization process and selection | Implemented | thresholding, dedupe, round stats, and demo selection in `compile` |
+| SPEC-24.05 Metric functions | Implemented | `metrics` module (`exact_match`, `f1_score`, `jaccard_similarity`, `edit_distance_similarity`, `combine_weighted`) |
+| Reasoning capture parity (`M7-T07`) | Implemented (summary capture, toggleable via config) | `build_bootstrap_reasoning_summary`, `build_labeled_reasoning_summary`, reasoning on selected demonstrations |
 
 ## Background
 
@@ -430,13 +441,13 @@ let result = optimized.forward(inputs).await?;
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `test_bootstrap_basic` | Basic optimization | SPEC-24.04 |
-| `test_bootstrap_multi_round` | Multiple rounds | SPEC-24.04 |
-| `test_metric_exact` | Exact match metric | SPEC-24.05 |
-| `test_metric_f1` | F1 score metric | SPEC-24.05 |
-| `test_metric_composite` | Composite metric | SPEC-24.05 |
-| `test_optimized_forward` | Optimized forward | SPEC-24.03 |
-| `test_save_load` | Serialization | SPEC-24.03 |
+| `test_compile_captures_reasoning_when_enabled` | Reasoning summaries are captured for selected demos | SPEC-24.04 |
+| `test_compile_skips_reasoning_when_disabled` | Reasoning capture toggle is honored | SPEC-24.02, SPEC-24.04 |
+| `test_optimized_module_save_and_load_roundtrip` | Save/load persistence roundtrip for optimized state | SPEC-24.03 |
+| `test_metrics_exact_match` | Exact match metric | SPEC-24.05 |
+| `test_metrics_f1_score` | F1 score metric | SPEC-24.05 |
+| `test_metrics_combine_weighted` | Weighted composite metric | SPEC-24.05 |
+| `test_optimization_stats` | Optimization stats accounting | SPEC-24.03, SPEC-24.04 |
 
 ---
 

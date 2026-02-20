@@ -1,0 +1,3 @@
+safe_run: heavy command admitted (available=5923MiB, threshold=3000MiB)
+......                                                                   [100%]
+6 passed, 40 deselected in 0.17s

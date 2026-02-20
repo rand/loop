@@ -38,12 +38,13 @@
 
 use std::collections::HashSet;
 use std::marker::PhantomData;
+use std::path::Path;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use super::{Demonstration, Example, Module, Predictor};
+use super::{Demonstration, ErasedDemonstration, Example, Module, Predictor};
 use crate::error::{Error, Result};
 use crate::llm::LLMClient;
 use crate::signature::Signature;
@@ -235,12 +236,23 @@ impl Optimizer for BootstrapFewShot {
 
                         // Check if it meets threshold
                         if score >= self.metric_threshold {
+                            let reasoning = if self.include_reasoning {
+                                Some(build_bootstrap_reasoning_summary::<S>(
+                                    &predicted,
+                                    &example.outputs,
+                                    score,
+                                    round,
+                                ))
+                            } else {
+                                None
+                            };
+
                             let demo = ScoredDemo {
                                 inputs: example.inputs.clone(),
                                 outputs: predicted,
                                 gold_outputs: example.outputs.clone(),
                                 score,
-                                reasoning: None, // TODO: capture from trace
+                                reasoning,
                                 round,
                             };
                             all_candidates.push(demo);
@@ -263,7 +275,11 @@ impl Optimizer for BootstrapFewShot {
                 outputs: example.outputs.clone(),
                 gold_outputs: example.outputs.clone(),
                 score: 1.0,
-                reasoning: None,
+                reasoning: if self.include_reasoning {
+                    Some(build_labeled_reasoning_summary::<S>(&example.outputs))
+                } else {
+                    None
+                },
                 round: usize::MAX, // Sentinel for labeled demos
             };
             all_candidates.push(demo);
@@ -330,6 +346,31 @@ fn deduplicate_demos<S: Signature>(mut demos: Vec<ScoredDemo<S>>) -> Vec<ScoredD
     demos
 }
 
+fn build_bootstrap_reasoning_summary<S: Signature>(
+    predicted: &S::Outputs,
+    gold: &S::Outputs,
+    score: f64,
+    round: usize,
+) -> String {
+    let predicted_json =
+        serde_json::to_string(predicted).unwrap_or_else(|_| "<serialize_error>".to_string());
+    let gold_json = serde_json::to_string(gold).unwrap_or_else(|_| "<serialize_error>".to_string());
+    format!(
+        "bootstrap_round={round}; metric_score={score:.4}; predicted={predicted_json}; gold={gold_json}"
+    )
+}
+
+fn build_labeled_reasoning_summary<S: Signature>(gold: &S::Outputs) -> String {
+    let gold_json = serde_json::to_string(gold).unwrap_or_else(|_| "<serialize_error>".to_string());
+    format!("labeled_demo; metric_score=1.0000; gold={gold_json}")
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PersistedOptimizationState {
+    demonstrations: Vec<ErasedDemonstration>,
+    stats: OptimizationStats,
+}
+
 /// A module wrapped with optimized demonstrations.
 ///
 /// The optimized module injects the selected demonstrations into its
@@ -368,6 +409,56 @@ impl<S: Signature, M: Module<Sig = S>> OptimizedModule<S, M> {
     /// Unwrap and return the inner module.
     pub fn into_inner(self) -> M {
         self.inner
+    }
+
+    /// Save optimized demonstrations and stats to disk.
+    pub fn save(&self, path: impl AsRef<Path>) -> Result<()> {
+        let state = PersistedOptimizationState {
+            demonstrations: self
+                .demonstrations
+                .iter()
+                .map(ErasedDemonstration::from_typed)
+                .collect(),
+            stats: self.stats.clone(),
+        };
+
+        let serialized = serde_json::to_string_pretty(&state)?;
+        std::fs::write(path.as_ref(), serialized).map_err(|e| {
+            Error::Internal(format!("Failed to write optimized module state: {}", e))
+        })?;
+        Ok(())
+    }
+
+    /// Load optimized demonstrations and stats from disk for a module.
+    pub fn load(module: M, path: impl AsRef<Path>) -> Result<Self> {
+        let serialized = std::fs::read_to_string(path.as_ref()).map_err(|e| {
+            Error::Internal(format!("Failed to read optimized module state: {}", e))
+        })?;
+        let state: PersistedOptimizationState = serde_json::from_str(&serialized)?;
+        let demonstrations = state
+            .demonstrations
+            .into_iter()
+            .map(|demo| {
+                let inputs: S::Inputs = serde_json::from_value(demo.inputs)?;
+                let outputs: S::Outputs = serde_json::from_value(demo.outputs)?;
+
+                let mut typed = Demonstration::new(inputs, outputs);
+                if let Some(reasoning) = demo.reasoning {
+                    typed = typed.set_reasoning(reasoning);
+                }
+                if let Some(score) = demo.metric_score {
+                    typed = typed.with_metric_score(score);
+                }
+                Ok(typed)
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self {
+            inner: module,
+            demonstrations,
+            stats: state.stats,
+            _phantom: PhantomData,
+        })
     }
 }
 
@@ -682,6 +773,84 @@ pub mod metrics {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::signature::{FieldSpec, Signature};
+    use async_trait::async_trait;
+    use std::sync::Arc;
+    use tempfile::NamedTempFile;
+
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    struct MockInputs {
+        text: String,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    struct MockOutputs {
+        result: String,
+    }
+
+    struct MockSignature;
+
+    impl Signature for MockSignature {
+        type Inputs = MockInputs;
+        type Outputs = MockOutputs;
+
+        fn instructions() -> &'static str {
+            "Echo input text"
+        }
+
+        fn input_fields() -> Vec<FieldSpec> {
+            vec![]
+        }
+
+        fn output_fields() -> Vec<FieldSpec> {
+            vec![]
+        }
+    }
+
+    #[derive(Clone, Default)]
+    struct MockModule;
+
+    #[async_trait]
+    impl Module for MockModule {
+        type Sig = MockSignature;
+
+        async fn forward(&self, inputs: MockInputs) -> Result<MockOutputs> {
+            Ok(MockOutputs {
+                result: inputs.text,
+            })
+        }
+
+        fn predictors(&self) -> Vec<&dyn Predictor> {
+            Vec::new()
+        }
+
+        fn set_lm(&mut self, _lm: Arc<dyn LLMClient>) {}
+
+        fn get_lm(&self) -> Option<Arc<dyn LLMClient>> {
+            None
+        }
+    }
+
+    fn mock_trainset() -> Vec<Example<MockSignature>> {
+        vec![
+            Example::new(
+                MockInputs {
+                    text: "alpha".to_string(),
+                },
+                MockOutputs {
+                    result: "alpha".to_string(),
+                },
+            ),
+            Example::new(
+                MockInputs {
+                    text: "beta".to_string(),
+                },
+                MockOutputs {
+                    result: "beta".to_string(),
+                },
+            ),
+        ]
+    }
 
     #[test]
     fn test_bootstrap_config_default() {
@@ -820,5 +989,80 @@ mod tests {
         assert_eq!(stats.demonstrations_selected, 3);
         assert!((stats.max_score - 0.9).abs() < 0.001);
         assert!((stats.min_score - 0.6).abs() < 0.001);
+    }
+
+    #[tokio::test]
+    async fn test_compile_captures_reasoning_when_enabled() {
+        let optimizer = BootstrapFewShot::new()
+            .with_max_bootstrapped_demos(2)
+            .with_max_labeled_demos(0)
+            .with_max_rounds(1);
+        let module = MockModule;
+        let trainset = mock_trainset();
+        let metric: MetricFn<MockOutputs> = Arc::new(metrics::exact_match);
+
+        let optimized = optimizer
+            .compile(module, &trainset, metric)
+            .await
+            .expect("compile should succeed");
+        assert!(!optimized.demonstrations().is_empty());
+        assert!(optimized
+            .demonstrations()
+            .iter()
+            .all(|d| d.reasoning.is_some()));
+    }
+
+    #[tokio::test]
+    async fn test_compile_skips_reasoning_when_disabled() {
+        let optimizer = BootstrapFewShot::new()
+            .with_max_bootstrapped_demos(2)
+            .with_max_labeled_demos(0)
+            .with_max_rounds(1)
+            .without_reasoning();
+        let module = MockModule;
+        let trainset = mock_trainset();
+        let metric: MetricFn<MockOutputs> = Arc::new(metrics::exact_match);
+
+        let optimized = optimizer
+            .compile(module, &trainset, metric)
+            .await
+            .expect("compile should succeed");
+        assert!(optimized
+            .demonstrations()
+            .iter()
+            .all(|d| d.reasoning.is_none()));
+    }
+
+    #[tokio::test]
+    async fn test_optimized_module_save_and_load_roundtrip() {
+        let optimizer = BootstrapFewShot::new()
+            .with_max_bootstrapped_demos(2)
+            .with_max_labeled_demos(0)
+            .with_max_rounds(1);
+        let module = MockModule;
+        let trainset = mock_trainset();
+        let metric: MetricFn<MockOutputs> = Arc::new(metrics::exact_match);
+
+        let optimized = optimizer
+            .compile(module.clone(), &trainset, metric)
+            .await
+            .expect("compile should succeed");
+
+        let temp = NamedTempFile::new().expect("temp file should be created");
+        optimized
+            .save(temp.path())
+            .expect("optimized state should be saved");
+
+        let loaded = OptimizedModule::<MockSignature, MockModule>::load(module, temp.path())
+            .expect("optimized state should be loaded");
+
+        assert_eq!(
+            loaded.demonstrations().len(),
+            optimized.demonstrations().len()
+        );
+        assert_eq!(
+            loaded.stats().demonstrations_selected,
+            optimized.stats().demonstrations_selected
+        );
     }
 }
