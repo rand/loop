@@ -1,0 +1,755 @@
+safe_run: heavy command admitted (available=4225MiB, threshold=3000MiB)
+   Compiling rlm-core v0.1.0 (/Users/rand/src/loop/rlm-core)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> src/module/compose.rs:305:9
+    |
+305 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:605:13
+    |
+605 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_field`, and `output` are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:827:13
+    |
+824 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+827 |             severity: String,
+    |             ^^^^^^^^
+...
+831 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 10 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.67s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 591 tests
+test adapters::claude_code::adapter::tests::test_adapter_creation ... ok
+test adapters::claude_code::adapter::tests::test_available_tools ... ok
+test adapters::claude_code::adapter::tests::test_find_skills ... ok
+test adapters::claude_code::adapter::tests::test_export_skills ... ok
+test adapters::claude_code::adapter::tests::test_adapter_status ... ok
+test adapters::claude_code::adapter::tests::test_handle_pre_compact ... ok
+test adapters::claude_code::hooks::tests::test_hook_registry ... ok
+test adapters::claude_code::hooks::tests::test_hook_result_abort ... ok
+test adapters::claude_code::hooks::tests::test_hook_result_fail ... ok
+test adapters::claude_code::hooks::tests::test_hook_result_ok ... ok
+test adapters::claude_code::hooks::tests::test_hook_trigger_display ... ok
+test adapters::claude_code::hooks::tests::test_session_start_handler ... ok
+test adapters::claude_code::adapter::tests::test_export_tools_schema ... ok
+test adapters::claude_code::mcp::tests::test_mcp_tool_with_schema ... ok
+test adapters::claude_code::mcp::tests::test_mcp_tool_creation ... ok
+test adapters::claude_code::hooks::tests::test_hook_context_builder ... ok
+test adapters::claude_code::mcp::tests::test_registry_execute ... ok
+test adapters::claude_code::mcp::tests::test_registry_default_tools ... ok
+test adapters::claude_code::mcp::tests::test_registry_execute_unknown ... ok
+test adapters::claude_code::mcp::tests::test_tool_example ... ok
+test adapters::claude_code::skills::tests::test_builtin_skills ... ok
+test adapters::claude_code::mcp::tests::test_registry_export_schema ... ok
+test adapters::claude_code::skills::tests::test_registry_by_category ... ok
+test adapters::claude_code::mcp::tests::test_registry_tools_by_category ... ok
+test adapters::claude_code::skills::tests::test_registry_defaults ... ok
+test adapters::claude_code::skills::tests::test_registry_export ... ok
+test adapters::claude_code::skills::tests::test_registry_find_matching ... ok
+test adapters::claude_code::skills::tests::test_skill_creation ... ok
+test adapters::claude_code::skills::tests::test_skill_disabled ... ok
+test adapters::claude_code::skills::tests::test_skill_matches_keyword ... ok
+test adapters::claude_code::skills::tests::test_skill_matches_trigger ... ok
+test adapters::claude_code::types::tests::test_adapter_config_default ... ok
+test adapters::claude_code::types::tests::test_adapter_config_testing ... ok
+test adapters::claude_code::types::tests::test_compact_data_builder ... ok
+test adapters::claude_code::types::tests::test_prompt_enhancement ... ok
+test adapters::claude_code::types::tests::test_rlm_request_builder ... ok
+test adapters::claude_code::types::tests::test_rlm_response_skip ... ok
+test adapters::claude_code::types::tests::test_session_context_builder ... ok
+test adapters::claude_code::types::tests::test_rlm_response_success ... ok
+test adapters::tui::adapter::tests::test_config_builder ... ok
+test adapters::tui::adapter::tests::test_adapter_creation ... ok
+test adapters::tui::adapter::tests::test_budget_recording ... ok
+test adapters::tui::adapter::tests::test_event_subscription ... ok
+test adapters::tui::adapter::tests::test_execution_lifecycle ... ok
+test adapters::tui::adapter::tests::test_reset ... ok
+test adapters::tui::events::tests::test_alert_level_from_budget_alert ... ok
+test adapters::tui::events::tests::test_budget_update ... ok
+test adapters::tui::events::tests::test_event_bridge_creation ... ok
+test adapters::tui::adapter::tests::test_trajectory_processing ... ok
+test adapters::tui::events::tests::test_event_bridge_emit ... ok
+test adapters::tui::events::tests::test_execution_status_display ... ok
+test adapters::tui::events::tests::test_event_bridge_subscribe ... ok
+test adapters::tui::events::tests::test_status_update ... ok
+test adapters::tui::events::tests::test_tui_event_type_name ... ok
+test adapters::tui::panels::tests::test_budget_panel_limits ... ok
+test adapters::tui::panels::tests::test_event_style_from_type ... ok
+test adapters::tui::panels::tests::test_repl_entry_creation ... ok
+test adapters::tui::panels::tests::test_repl_panel_success_rate ... ok
+test adapters::tui::panels::tests::test_tier_counts ... ok
+test adapters::tui::panels::tests::test_trace_panel_data ... ok
+test adapters::tui::panels::tests::test_truncate_preview ... ok
+test complexity::tests::test_active_signals ... ok
+test adapters::tui::events::tests::test_tui_event_serialization ... ok
+test adapters::claude_code::adapter::tests::test_handle_session_start ... ok
+test adapters::claude_code::adapter::tests::test_mode_change ... ok
+test adapters::claude_code::adapter::tests::test_store_and_query_memory ... ok
+test complexity::tests::test_force_activation ... ok
+test complexity::tests::test_signals_score ... ok
+test context::externalize::tests::test_context_variable_creation ... ok
+test context::externalize::tests::test_context_variable_requires_chunking ... ok
+test context::externalize::tests::test_context_variable_size_warning ... ok
+test context::externalize::tests::test_externalization_config ... ok
+test context::externalize::tests::test_externalized_context_from_session ... ok
+test context::externalize::tests::test_growth_rate ... ok
+test context::externalize::tests::test_helper_module_generation ... ok
+test context::externalize::tests::test_repl_setup_code ... ok
+test context::externalize::tests::test_root_prompt_generation ... ok
+test context::externalize::tests::test_size_tracker ... ok
+test context::types::tests::test_last_messages ... ok
+test context::types::tests::test_message_creation ... ok
+test context::types::tests::test_message_with_metadata ... ok
+test context::types::tests::test_session_context ... ok
+test context::types::tests::test_spans_multiple_directories ... ok
+test context::types::tests::test_tool_output ... ok
+test dp_integration::commands::tests::test_command_result ... ok
+test dp_integration::commands::tests::test_extract_spec_arg ... ok
+test dp_integration::commands::tests::test_parse_coverage_command ... ok
+test dp_integration::commands::tests::test_parse_list_command ... ok
+test dp_integration::commands::tests::test_parse_review_command ... ok
+test dp_integration::commands::tests::test_parse_show_command ... ok
+test dp_integration::commands::tests::test_parse_verify_command ... ok
+test dp_integration::coverage::tests::test_coverage_tracker ... ok
+test dp_integration::coverage::tests::test_extract_specs_from_markdown ... ok
+test dp_integration::coverage::tests::test_extract_test_traces ... ok
+test complexity::tests::test_classifier_user_wants_fast ... ok
+test adapters::claude_code::adapter::tests::test_execute_skip ... ok
+test complexity::tests::test_classifier_complex_query ... ok
+test complexity::tests::test_classifier_thorough_override ... ok
+test complexity::tests::test_classifier_multi_file ... ok
+test adapters::claude_code::adapter::tests::test_handle_prompt_submit ... ok
+test complexity::tests::test_classifier_simple_query ... ok
+test dp_integration::proof_status::tests::test_proof_statistics ... ok
+test adapters::claude_code::hooks::tests::test_prompt_analysis_handler ... ok
+test dp_integration::proof_status::tests::test_proof_evidence_status_update ... ok
+test dp_integration::review::tests::test_critical_specs_fail ... ok
+test dp_integration::review::tests::test_critical_specs_pass ... ok
+test dp_integration::review::tests::test_review_issue_builder ... ok
+test dp_integration::review::tests::test_formalization_coverage_fail ... ok
+test dp_integration::types::tests::test_coverage_summary ... ok
+test dp_integration::review::tests::test_sorry_blocking ... ok
+test adapters::claude_code::adapter::tests::test_execute_activate ... ok
+test dp_integration::review::tests::test_formalization_coverage_pass ... ok
+test dp_integration::review::tests::test_sorry_non_blocking ... ok
+test dp_integration::review::tests::test_strict_config ... ok
+test dp_integration::types::tests::test_spec_id_format ... ok
+test dp_integration::types::tests::test_proof_status ... ok
+test dp_integration::types::tests::test_spec_coverage_status ... ok
+test dp_integration::types::tests::test_spec_id_parse ... ok
+test dp_integration::types::tests::test_theorem_info ... ok
+test epistemic::claims::tests::test_empty_input ... ok
+test epistemic::claims::tests::test_hedged_claims ... ok
+test dp_integration::coverage::tests::test_extract_theorems_from_lean ... ok
+test epistemic::claims::tests::test_meta_commentary_skip ... ok
+test epistemic::kl::tests::test_aggregate_bits ... ok
+test epistemic::kl::tests::test_aggregate_with_correlation ... ok
+test epistemic::kl::tests::test_bernoulli_kl_asymmetric ... ok
+test epistemic::kl::tests::test_bernoulli_kl_extreme ... ok
+test epistemic::kl::tests::test_bernoulli_kl_positive ... ok
+test epistemic::kl::tests::test_bernoulli_kl_same_distribution ... ok
+test epistemic::kl::tests::test_binary_entropy ... ok
+test epistemic::kl::tests::test_jeffreys_symmetric ... ok
+test epistemic::claims::tests::test_high_specificity_filter ... ok
+test epistemic::kl::tests::test_jensen_shannon_bounded ... ok
+test epistemic::kl::tests::test_kl_interval ... ok
+test epistemic::kl::tests::test_jensen_shannon_symmetric ... ok
+test epistemic::kl::tests::test_kl_interval_bounds_valid ... ok
+test epistemic::kl::tests::test_kl_interval_contains_estimate ... ok
+test epistemic::kl::tests::test_mutual_information ... ok
+test epistemic::kl::tests::test_required_bits ... ok
+test epistemic::kl::tests::test_surprise ... ok
+test epistemic::claims::tests::test_evidence_linking ... ok
+test epistemic::memory_gate::tests::test_config_presets ... ok
+test epistemic::memory_gate::tests::test_gate_stats ... ok
+test epistemic::memory_gate::tests::test_requires_verification ... ok
+test epistemic::memory_gate::tests::test_threshold_gate_hedge_words ... ok
+test epistemic::memory_gate::tests::test_threshold_gate_low_confidence ... ok
+test epistemic::memory_gate::tests::test_threshold_gate_universal_claim ... ok
+test dp_integration::proof_status::tests::test_scan_lean_content ... ok
+test epistemic::claims::tests::test_sentence_splitting ... ok
+test epistemic::claims::tests::test_basic_extraction ... ok
+test epistemic::claims::tests::test_category_classification ... ok
+test epistemic::claims::tests::test_short_claims_filtered ... ok
+test epistemic::claims::tests::test_skip_questions ... ok
+test epistemic::proptest::tests::budget_gap_is_difference ... ok
+test epistemic::proptest::tests::confidence_is_bounded ... ok
+test epistemic::claims::tests::test_specificity_estimation ... ok
+test epistemic::proptest::tests::grounding_status_consistent_with_gap ... ok
+test epistemic::proptest::tests::entropy_is_symmetric ... ok
+test epistemic::proptest::tests::entropy_bits_conversion_is_correct ... ok
+test epistemic::proptest::tests::entropy_at_half_is_one_bit ... ok
+test epistemic::proptest::tests::entropy_is_non_negative ... ok
+test epistemic::proptest::tests::entropy_maximized_at_half ... ok
+test epistemic::proptest::tests::cross_entropy_geq_entropy ... ok
+test epistemic::proptest::tests::js_is_bounded ... ok
+test epistemic::proptest::tests::is_grounded_matches_gap ... ok
+test epistemic::proptest::tests::kl_divergence_is_non_negative ... ok
+test epistemic::proptest::tests::js_is_symmetric ... ok
+test epistemic::proptest::tests::kl_equals_cross_minus_entropy ... ok
+test epistemic::proptest::tests::kl_is_asymmetric ... ok
+test epistemic::proptest::tests::kl_interval_estimate_matches_direct ... ok
+test epistemic::proptest::tests::kl_interval_bounds_are_valid ... ok
+test epistemic::proptest::tests::kl_divergence_is_zero_for_identical ... ok
+test epistemic::proptest::tests::js_is_zero_for_identical ... ok
+test epistemic::proptest::tests::kl_bits_conversion_is_correct ... ok
+test epistemic::proptest::tests::probability_from_samples_has_valid_bounds ... ok
+test epistemic::proptest::tests::probability_point_has_no_uncertainty ... ok
+test epistemic::proptest::tests::kl_positive_when_different ... ok
+test epistemic::proptest::tests::observed_bits_uses_kl ... ok
+test epistemic::proptest::tests::more_samples_reduce_uncertainty ... ok
+test epistemic::scrubber::tests::test_items_by_type ... ok
+test epistemic::scrubber::tests::test_aggressive_scrub ... ok
+test epistemic::scrubber::tests::test_empty_scrub ... ok
+test epistemic::tests::test_module_exports ... ok
+test epistemic::scrubber::tests::test_scrub_citations ... ok
+test epistemic::scrubber::tests::test_preserve_structure ... ok
+test epistemic::scrubber::tests::test_scrub_code_blocks ... ok
+test epistemic::types::tests::test_budget_result ... ok
+test epistemic::scrubber::tests::test_scrub_paths ... ok
+test epistemic::scrubber::tests::test_scrub_inline_code ... ok
+test epistemic::scrubber::tests::test_custom_pattern ... ok
+test epistemic::types::tests::test_claim_creation ... ok
+test epistemic::types::tests::test_grounding_status ... ok
+test epistemic::types::tests::test_kl_divergence ... ok
+test epistemic::types::tests::test_probability_bounds ... ok
+test epistemic::types::tests::test_probability_from_samples ... ok
+test epistemic::types::tests::test_verification_stats ... ok
+test epistemic::verifier::tests::test_calculate_stats ... ok
+test epistemic::verifier::tests::test_parse_probability ... ok
+test epistemic::verifier::tests::test_verification_config_presets ... ok
+test epistemic::scrubber::tests::test_p0_prompt_creation ... ok
+test ffi::tests::test_available_features ... ok
+test ffi::tests::test_error_handling ... ok
+test ffi::tests::test_cost_tracker_lifecycle ... ok
+test ffi::tests::test_available_features_matches_has_feature_contract ... ok
+test ffi::tests::test_has_feature ... ok
+test ffi::tests::test_init_shutdown ... ok
+test ffi::tests::test_kl_divergence_functions ... ok
+test ffi::tests::test_message_lifecycle ... ok
+test ffi::tests::test_node_lifecycle ... ok
+test ffi::tests::test_orchestrator_config ... ok
+test ffi::tests::test_orchestrator_mode ... ok
+test ffi::tests::test_session_context_lifecycle ... ok
+test ffi::tests::test_session_context_messages ... ok
+test ffi::tests::test_string_free_null_safe ... ok
+test epistemic::scrubber::tests::test_scrub_specific ... ok
+test ffi::tests::test_reasoning_trace ... ok
+test ffi::tests::test_trajectory_event_lifecycle ... ok
+test lean::repl::tests::test_lean_repl_execute ... ignored, requires Lean REPL installed
+test lean::repl::tests::test_lean_repl_spawn ... ignored, requires Lean REPL installed
+test lean::repl::tests::test_lean_repl_type_check ... ignored, requires Lean REPL installed
+test ffi::tests::test_version ... ok
+test ffi::tests::test_version_components ... ok
+test lean::repl::tests::test_lean_repl_config_default ... ok
+test lean::repl::tests::test_lean_repl_config_with_project ... ok
+test lean::types::tests::test_lean_command_serialization ... ok
+test lean::types::tests::test_lean_response_deserialization ... ok
+test lean::types::tests::test_lean_response_with_error ... ok
+test lean::types::tests::test_project_template ... ok
+test lean::types::tests::test_proof_state ... ok
+test llm::batch::tests::test_batch_query_result_failure ... ok
+test llm::batch::tests::test_batch_query_result_success ... ok
+test llm::batch::tests::test_batched_query_creation ... ok
+test llm::batch::tests::test_batched_query_from_prompts ... ok
+test llm::batch::tests::test_batched_query_with_context ... ok
+test llm::batch::tests::test_batched_results_errors ... ok
+test llm::batch::tests::test_batched_results_ordering ... ok
+test llm::batch::tests::test_batched_results_responses ... ok
+test llm::batch::tests::test_max_parallel_bounds ... ok
+test ffi::tests::test_memory_store_lifecycle ... ok
+test ffi::tests::test_pattern_classifier ... ok
+test llm::cache::tests::test_apply_cache_markers ... ok
+test llm::cache::tests::test_cache_stats_hit_rate ... ok
+test llm::cache::tests::test_find_cache_breakpoints ... ok
+test llm::client::tests::test_client_config_builder ... ok
+test llm::client::tests::test_multi_provider_client ... ok
+test llm::cache::tests::test_cache_entry_expiry ... ok
+test llm::cache::tests::test_cache_key_generation ... ok
+test llm::cache::tests::test_cache_key_from_content ... ok
+test llm::router::tests::test_base_tier_mapping ... ok
+test llm::cache::tests::test_cache_cleanup ... ok
+test llm::cache::tests::test_prompt_cache_operations ... ok
+test llm::router::tests::test_dual_model_config_aggressive ... ok
+test llm::router::tests::test_dual_model_config_balanced ... ok
+test llm::router::tests::test_dual_model_config_quality_first ... ok
+test llm::router::tests::test_dual_model_extraction_model_defaults_to_recursive ... ok
+test llm::router::tests::test_dual_model_select_model_for_extraction_tier ... ok
+test llm::router::tests::test_dual_model_select_model ... ok
+test llm::client::tests::test_openai_available_models ... ok
+test llm::client::tests::test_anthropic_available_models ... ok
+test ffi::tests::test_claim_extractor ... ok
+test llm::router::tests::test_router_provider_preference ... ok
+test llm::router::tests::test_debugging_query_uses_balanced_tier ... ok
+test llm::router::tests::test_router_caching_requirement ... ok
+test llm::router::tests::test_route_with_config_fallback ... ok
+test llm::router::tests::test_router_depth_adjustment ... ok
+test llm::router::tests::test_route_rlm_for_extraction_tier ... ok
+test llm::router::tests::test_route_rlm_tiered_cost_accounting ... ok
+test llm::router::tests::test_routing_context_builder ... ok
+test llm::router::tests::test_switch_strategy_depth ... ok
+test llm::router::tests::test_route_rlm ... ok
+test llm::router::tests::test_switch_strategy_hybrid ... ok
+test llm::router::tests::test_switch_strategy_query_type ... ok
+test llm::router::tests::test_switch_strategy_token_budget ... ok
+test llm::types::tests::test_chat_message_builder ... ok
+test llm::router::tests::test_simple_query_uses_fast_tier ... ok
+test llm::types::tests::test_completion_request_builder ... ok
+test llm::types::tests::test_cost_tracker ... ok
+test llm::types::tests::test_cost_tracker_record_tiered_includes_extraction ... ok
+test llm::types::tests::test_model_cost_calculation ... ok
+test llm::types::tests::test_model_tier_ordering ... ok
+test llm::types::tests::test_token_usage_effective ... ok
+test llm::router::tests::test_query_type_classification ... ok
+test epistemic::tests::test_quick_hallucination_check ... ok
+test memory::schema::tests::test_wal_mode ... ok
+test memory::schema::tests::test_initialize_schema ... ok
+test memory::types::tests::test_hyperedge_binary ... ok
+test memory::types::tests::test_node_builder ... ok
+test memory::types::tests::test_node_id_parse ... ok
+test memory::types::tests::test_node_creation ... ok
+test memory::types::tests::test_node_query_builder ... ok
+test memory::types::tests::test_tier_ordering ... ok
+test memory::types::tests::test_tier_transitions ... ok
+test module::compose::tests::test_chain_name_format ... ok
+test module::compose::tests::test_parallel_name_format ... ok
+test module::example::tests::test_demonstration_creation ... ok
+test memory::schema::tests::test_idempotent_initialization ... ok
+test module::example::tests::test_erased_demonstration ... ok
+test module::example::tests::test_example_creation ... ok
+test module::example::tests::test_example_with_metadata ... ok
+test module::optimize::tests::test_bootstrap_config_builder ... ok
+test module::optimize::tests::test_bootstrap_config_default ... ok
+test module::optimize::tests::test_bootstrap_presets ... ok
+test module::optimize::tests::test_metrics_combine_weighted ... ok
+test module::optimize::tests::test_metrics_contains ... ok
+test module::optimize::tests::test_metrics_exact_match ... ok
+test module::optimize::tests::test_metrics_f1_score ... ok
+test module::optimize::tests::test_metrics_jaccard ... ok
+test module::optimize::tests::test_optimization_stats ... ok
+test module::predict::tests::test_format_inputs ... ok
+test module::optimize::tests::test_metrics_edit_distance ... ok
+test module::predict::tests::test_predict_config ... ok
+test module::predict::tests::test_predict_creation ... ok
+test module::predict::tests::test_system_prompt_generation ... ok
+test module::tests::test_module_config_builder ... ok
+test module::tests::test_module_config_default ... ok
+test module::predict::tests::test_predict_forward_input_validation_happens_pre_exec ... ok
+test memory::store::tests::test_add_and_get_edge ... ok
+test orchestrator::tests::fallback::test_max_iterations_triggers_fallback_extraction ... ok
+test orchestrator::tests::fallback::test_max_llm_calls_triggers_fallback_extraction ... ok
+test orchestrator::tests::fallback::test_timeout_triggers_fallback_before_step_execution ... ok
+test orchestrator::tests::fallback::test_submit_success_bypasses_fallback_extraction ... ok
+test orchestrator::tests::test_builder ... ok
+test orchestrator::tests::test_builder_applies_mode_default_dual_model ... ok
+test orchestrator::tests::test_config_defaults ... ok
+test orchestrator::tests::test_execution_mode_default_dual_model_config ... ok
+test orchestrator::tests::test_execution_mode_user_override ... ok
+test memory::store::tests::test_add_and_get_node ... ok
+test orchestrator::tests::test_execution_mode_from_signals ... ok
+test orchestrator::tests::test_mode_budgets ... ok
+test orchestrator::tests::fallback::test_submit_validation_error_is_terminal_without_fallback ... ok
+test proof::ai_assistant::tests::test_build_system_prompt ... ok
+test proof::ai_assistant::tests::test_build_prompt ... ok
+test proof::ai_assistant::tests::test_config_builder ... ok
+test proof::ai_assistant::tests::test_config_default ... ok
+test memory::store::tests::test_promote ... ok
+test proof::ai_assistant::tests::test_parse_suggestions_json ... ok
+test proof::ai_assistant::tests::test_generate_proof ... ok
+test proof::ai_assistant::tests::test_parse_suggestions_with_preamble ... ok
+test orchestrator::tests::test_orchestration_routing_runtime_tracks_root_recursive_extraction ... ok
+test memory::store::tests::test_query_nodes_by_type ... ok
+test proof::ai_assistant::tests::test_suggest_tactics_fallback ... ok
+test proof::ai_assistant::tests::test_suggest_tactics_json ... ok
+test proof::engine::tests::test_automation_creation ... ok
+test proof::engine::tests::test_builder ... ok
+test proof::engine::tests::test_config_default ... ok
+test proof::engine::tests::test_create_context ... ok
+test proof::engine::tests::test_mark_for_human ... ok
+test proof::engine::tests::test_record_success ... ok
+test proof::session::tests::test_helper_lemma ... ok
+test proof::session::tests::test_proof_session_status ... ok
+test proof::session::tests::test_proof_session ... ok
+test proof::session::tests::test_protocol_enforcer_target ... ok
+test proof::session::tests::test_protocol_enforcer_nl_prohibition ... ok
+test memory::store::tests::test_stats ... ok
+test proof::session::tests::test_select_target ... ok
+test proof::session::tests::test_sorry_location ... ok
+test proof::session::tests::test_tactic_limit ... ok
+test proof::session::tests::test_token_limit ... ok
+test proof::tactics::tests::test_domain_specific_tactics ... ok
+test proof::tactics::tests::test_sorry_placeholder ... ok
+test memory::store::tests::test_evolution_history ... ok
+test memory::store::tests::test_full_text_search ... ok
+test proof::tactics::tests::test_tactic_variations ... ok
+test proof::tactics::tests::test_tactic_sequence ... ok
+test proof::tactics::tests::test_tactics_for_tier ... ok
+test proof::tactics::tests::test_tactics_for_goal ... ok
+test proof::types::tests::test_automation_tier_escalation ... ok
+test proof::types::tests::test_boost_tactic ... ok
+test proof::types::tests::test_proof_attempt ... ok
+test proof::types::tests::test_proof_stats ... ok
+test proof::types::tests::test_proof_strategy ... ok
+test proof::types::tests::test_spec_domain_inference ... ok
+test proof::types::tests::test_tactic_result ... ok
+test reasoning::query::tests::test_analyzer_action_outcomes ... ok
+test reasoning::query::tests::test_analyzer_chosen_options ... ok
+test reasoning::query::tests::test_analyzer_narrative ... ok
+test reasoning::query::tests::test_analyzer_rejected_options ... ok
+test reasoning::query::tests::test_analyzer_decision_paths ... ok
+test reasoning::query::tests::test_analyzer_overall_confidence ... ok
+test reasoning::query::tests::test_compare_traces ... ok
+test reasoning::query::tests::test_decision_path_summary ... ok
+test reasoning::query::tests::test_analyzer_winning_path ... ok
+test reasoning::query::tests::test_trace_query_builder ... ok
+test reasoning::store::tests::test_git_info_roundtrip ... ok
+test reasoning::trace::tests::test_dfs_iteration ... ok
+test reasoning::trace::tests::test_get_tree ... ok
+test reasoning::trace::tests::test_git_linking ... ok
+test reasoning::trace::tests::test_log_action ... ok
+test reasoning::trace::tests::test_log_decision ... ok
+test reasoning::trace::tests::test_mermaid_export ... ok
+test reasoning::trace::tests::test_trace_creation ... ok
+test reasoning::trace::tests::test_trace_stats ... ok
+test reasoning::trace::tests::test_tree_path_to ... ok
+test reasoning::types::tests::test_decision_node_builder ... ok
+test reasoning::types::tests::test_decision_node_creation ... ok
+test reasoning::types::tests::test_decision_point ... ok
+test reasoning::types::tests::test_edge_label_valid_connections ... ok
+test reasoning::types::tests::test_node_type_mermaid ... ok
+test reasoning::query::tests::test_query_execution ... ok
+test reasoning::types::tests::test_trace_edge_creation ... ok
+test reasoning::types::tests::test_trace_id_roundtrip ... ok
+test reasoning::store::tests::test_list_traces ... ok
+test reasoning::visualize::tests::test_dot_config ... ok
+test reasoning::visualize::tests::test_dot_export ... ok
+test reasoning::visualize::tests::test_escape_dot_string ... ok
+test reasoning::store::tests::test_delete_trace ... ok
+test reasoning::visualize::tests::test_html_config ... ok
+test reasoning::visualize::tests::test_html_config_builder ... ok
+test reasoning::visualize::tests::test_truncate_string ... ok
+test reasoning::visualize::tests::test_html_export ... ok
+test repl::tests::test_execute_result_into_fallback_loop_step ... ok
+test reasoning::store::tests::test_find_by_session ... ok
+test repl::tests::test_execute_result_without_submit ... ok
+test reasoning::visualize::tests::test_networkx_json_export ... ok
+test repl::tests::test_llm_batch_host_resolution_roundtrip ... ignored, requires Python environment with rlm-repl installed
+test repl::tests::test_json_rpc_request ... ok
+test repl::tests::test_llm_batch_operation_to_query_rejects_non_string_prompt ... ok
+test repl::tests::test_llm_batch_operation_to_query ... ok
+test repl::tests::test_repl_config_default ... ok
+test repl::tests::test_repl_spawn ... ignored, requires Python environment with rlm-repl installed
+test repl::tests::test_llm_batch_results_payload_mixed_success_failure ... ok
+test repl::tests::test_submit_result_roundtrip_multiple_submits ... ignored, requires Python environment with rlm-repl installed
+test repl::tests::test_submit_result_roundtrip_no_signature ... ignored, requires Python environment with rlm-repl installed
+test repl::tests::test_submit_result_roundtrip_success ... ignored, requires Python environment with rlm-repl installed
+test repl::tests::test_submit_result_roundtrip_type_mismatch ... ignored, requires Python environment with rlm-repl installed
+test repl::tests::test_submit_result_roundtrip_validation_error ... ignored, requires Python environment with rlm-repl installed
+test signature::fallback::tests::test_execution_limits_presets ... ok
+test repl::tests::test_signature_registration_params ... ok
+test signature::fallback::tests::test_execution_result_extracted ... ok
+test signature::fallback::tests::test_execution_result_failed ... ok
+test signature::fallback::tests::test_execution_result_map ... ok
+test signature::fallback::tests::test_execution_result_submitted ... ok
+test repl::tests::test_execute_result_with_submit ... ok
+test signature::fallback::tests::test_execution_result_trigger_accessor ... ok
+test signature::fallback::tests::test_fallback_trigger_display ... ok
+test signature::fallback::tests::test_extraction_prompt ... ok
+test reasoning::store::tests::test_store_stats ... ok
+test signature::fallback::tests::test_parse_extraction_response ... ok
+test signature::fallback::tests::test_parse_extraction_response_failure ... ok
+test signature::fallback::tests::test_parse_extraction_response_markdown ... ok
+test signature::fallback::tests::test_repl_history ... ok
+test signature::fallback::tests::test_should_trigger ... ok
+test signature::submit::tests::test_serialization ... ok
+test signature::submit::tests::test_signature_registration ... ok
+test reasoning::query::tests::test_query_goal_contains ... ok
+test signature::submit::tests::test_submit_error_from_validation_error ... ok
+test signature::submit::tests::test_submit_error_messages ... ok
+test signature::submit::tests::test_submit_result_validation_error ... ok
+test signature::submit::tests::test_submit_result_success ... ok
+test signature::tests::derive_tests::test_derive_field_enum_values_attribute ... ok
+test signature::tests::derive_tests::test_derive_field_enum_values_validation_in_from_response ... ok
+test signature::tests::derive_tests::test_derive_generated_structs ... ok
+test signature::tests::derive_tests::test_derive_from_response ... ok
+test signature::tests::derive_tests::test_derive_input_fields ... ok
+test signature::tests::derive_tests::test_derive_instructions ... ok
+test signature::tests::derive_tests::test_derive_output_fields ... ok
+test reasoning::store::tests::test_find_by_commit ... ok
+test signature::tests::derive_tests::test_derive_type_inference ... ok
+test signature::tests::derive_tests::test_derive_to_prompt ... ok
+test signature::tests::test_from_response_empty ... ok
+test signature::tests::test_extract_json_raw ... ok
+test signature::tests::test_from_response_invalid_json ... ok
+test signature::tests::test_from_response_json ... ok
+test signature::tests::test_enum_validation_in_response ... ok
+test signature::tests::test_from_response_markdown ... ok
+test signature::tests::test_extract_json_code_block ... ok
+test repl::tests::test_repl_spawn_error_includes_context ... ok
+test signature::tests::test_from_response_validation_error ... ok
+test signature::tests::test_output_schema ... ok
+test signature::tests::test_parse_error_display ... ok
+test signature::types::tests::test_display_label ... ok
+test signature::tests::test_to_prompt ... ok
+test signature::types::tests::test_field_spec_builder ... ok
+test reasoning::store::tests::test_node_types_preserved ... ok
+test reasoning::store::tests::test_save_and_load_trace ... ok
+test signature::types::tests::test_field_spec_creation ... ok
+test signature::types::tests::test_field_spec_with_default ... ok
+test signature::types::tests::test_field_type_compatibility ... ok
+test signature::types::tests::test_field_type_json_schema ... ok
+test signature::types::tests::test_field_type_prompt_hints ... ok
+test signature::types::tests::test_nested_object_compatibility ... ok
+test signature::types::tests::test_to_prompt_line ... ok
+test signature::types::tests::test_serialization ... ok
+test signature::validation::tests::test_apply_defaults ... ok
+test signature::validation::tests::test_error_user_message ... ok
+test signature::validation::tests::test_nested_error_path ... ok
+test signature::validation::tests::test_validate_fields_missing_required ... ok
+test signature::validation::tests::test_validate_enum ... ok
+test signature::validation::tests::test_serialization ... ok
+test signature::validation::tests::test_validate_fields_optional_missing ... ok
+test signature::validation::tests::test_validate_fields_optional_null ... ok
+test signature::validation::tests::test_validate_fields_success ... ok
+test signature::validation::tests::test_validate_fields_type_mismatch ... ok
+test signature::validation::tests::test_validate_nested_object ... ok
+test spec_agent::agent::tests::test_spec_agent_config ... ok
+test signature::validation::tests::test_validate_list ... ok
+test spec_agent::agent::tests::test_workflow_result_helpers ... ok
+test spec_agent::generators::tests::test_infer_type ... ok
+test spec_agent::generators::tests::test_to_namespace ... ok
+test spec_agent::generators::tests::test_to_field_name ... ok
+test spec_agent::generators::tests::test_cross_ref_generator ... ok
+test spec_agent::agent::tests::test_spec_agent_intake ... ok
+test spec_agent::agent::tests::test_spec_agent_workflow ... ok
+test spec_agent::generators::tests::test_spec_generator_combined ... ok
+test spec_agent::generators::tests::test_lean_generator_basic ... ok
+test spec_agent::agent::tests::test_spec_agent_refine_no_questions ... ok
+test spec_agent::parser::tests::test_detect_domains_api ... ok
+test spec_agent::agent::tests::test_spec_agent_formalize ... ok
+test spec_agent::generators::tests::test_topos_generator_basic ... ok
+test spec_agent::parser::tests::test_extract_entities ... ok
+test spec_agent::parser::tests::test_parse_behavior ... ok
+test spec_agent::parser::tests::test_to_snake_case ... ok
+test spec_agent::parser::tests::test_to_pascal_case ... ok
+test spec_agent::types::tests::test_config_builders ... ok
+test spec_agent::types::tests::test_formalization_level_includes ... ok
+test spec_agent::types::tests::test_spec_context_advance_phase ... ok
+test spec_agent::parser::tests::test_parse_data_structure ... ok
+test spec_agent::types::tests::test_spec_domain_patterns ... ok
+test spec_agent::types::tests::test_spec_context_creation ... ok
+test spec_agent::types::tests::test_spec_phase_navigation ... ok
+test sync::drift::tests::test_detect_concept_drift_missing_structure ... ok
+test spec_agent::parser::tests::test_generate_questions_for_ambiguities ... ok
+test sync::drift::tests::test_drift_detector_type_compatibility ... ok
+test sync::drift::tests::test_parse_lean_structures ... ok
+test sync::drift::tests::test_parse_lean_theorems ... ok
+test sync::drift::tests::test_field_diff_detection ... ok
+test sync::drift::tests::test_parse_topos_behaviors ... ok
+test sync::drift::tests::test_parse_topos_concepts ... ok
+test spec_agent::parser::tests::test_find_ambiguities ... ok
+test sync::engine::tests::test_generate_report ... ok
+test sync::engine::tests::test_dual_track_sync_creation ... ok
+test spec_agent::parser::tests::test_detect_domains_security ... ok
+test sync::engine::tests::test_set_formalization_level ... ok
+test spec_agent::parser::tests::test_parse_constraint ... ok
+test spec_agent::generators::tests::test_lean_generator_with_contracts ... ok
+test sync::generators::tests::test_convenience_functions ... ok
+test sync::generators::tests::test_lean_generator_structure ... ok
+test sync::generators::tests::test_lean_generator_structure_with_invariants ... ok
+test sync::generators::tests::test_lean_generator_theorem ... ok
+test sync::generators::tests::test_lean_generator_theorem_with_contracts ... ok
+test sync::generators::tests::test_lean_type_mapping ... ok
+test sync::generators::tests::test_module_generation ... ok
+test sync::generators::tests::test_topos_generator_concept ... ok
+test sync::generators::tests::test_type_mapping ... ok
+test sync::types::tests::test_drift_creation ... ok
+test sync::types::tests::test_drift_report ... ok
+test sync::types::tests::test_formalization_level ... ok
+test sync::types::tests::test_sync_result ... ok
+test sync::types::tests::test_sync_suggestion ... ok
+test topos::client::tests::test_config_default ... ok
+test topos::client::tests::test_parse_counts ... ok
+test topos::client::tests::test_parse_diagnostics ... ok
+test topos::client::tests::test_parse_untasked ... ok
+test topos::index::tests::test_add_and_get_links ... ok
+test topos::index::tests::test_find_element_context ... ok
+test topos::index::tests::test_find_lean_artifact_context ... ok
+test sync::engine::tests::test_scan_empty_dirs ... ok
+test topos::parser::tests::test_infer_link_type ... ok
+test topos::index::tests::test_serialization ... ok
+test topos::index::tests::test_index_lean_file ... ok
+test topos::parser::tests::test_parse_topos_annotations ... ok
+test topos::parser::tests::test_parse_spec_annotations ... ok
+test sync::engine::tests::test_scan_with_files ... ok
+test sync::engine::tests::test_detect_drift_missing_structure ... ok
+test topos::types::tests::test_lean_ref_canonical ... ok
+test topos::types::tests::test_lean_ref_parse ... ok
+test topos::types::tests::test_topos_ref_canonical ... ok
+test sync::engine::tests::test_sync_topos_to_lean ... ok
+test topos::parser::tests::test_parse_lean_annotations_with_modifier ... ok
+test topos::index::tests::test_index_topos_file ... ok
+test sync::engine::tests::test_detect_drift_missing_link ... ok
+test topos::types::tests::test_topos_ref_parse ... ok
+test topos::parser::tests::test_parse_lean_annotations_simple ... ok
+test trajectory::tests::test_broadcast_emitter_creation ... ok
+test trajectory::tests::test_budget_config_default ... ok
+test trajectory::tests::test_budget_depth_limit ... ok
+test trajectory::tests::test_budget_manager_alerts ... ok
+test trajectory::tests::test_budget_should_stop ... ok
+test trajectory::tests::test_budget_unlimited ... ok
+test trajectory::tests::test_collecting_emitter ... ok
+test trajectory::tests::test_collecting_emitter_filters_by_verbosity ... ok
+test trajectory::tests::test_cost_summary ... ok
+test trajectory::tests::test_event_creation ... ok
+test trajectory::tests::test_event_log_line ... ok
+test trajectory::tests::test_event_verbosity_levels ... ok
+test trajectory::tests::test_event_with_metadata ... ok
+test trajectory::tests::test_export_json_lines ... ok
+test trajectory::tests::test_model_pricing ... ok
+test trajectory::tests::test_null_emitter ... ok
+test trajectory::tests::test_pricing_with_cache ... ok
+test trajectory::tests::test_verbosity_ordering ... ok
+
+test result: ok. 581 passed; 0 failed; 10 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+   Doc-tests rlm_core
+
+running 40 tests
+test src/adapters/claude_code/mod.rs - adapters::claude_code (line 15) ... ignored
+test src/context/mod.rs - context (line 11) ... ignored
+test src/dp_integration/mod.rs - dp_integration (line 27) ... ignored
+test src/dp_integration/mod.rs - dp_integration (line 37) ... ignored
+test src/epistemic/mod.rs - epistemic (line 28) ... ignored
+test src/epistemic/mod.rs - epistemic (line 56) ... ignored
+test src/lib.rs - (line 15) ... ignored
+test src/llm/batch.rs - llm::batch (line 10) ... ignored
+test src/llm/mod.rs - llm (line 9) ... ignored
+test src/memory/mod.rs - memory (line 13) ... ignored
+test src/module/compose.rs - module::compose::Chain (line 37) ... ignored
+test src/module/compose.rs - module::compose::ParallelVec (line 185) ... ignored
+test src/module/mod.rs - module (line 16) ... ignored
+test src/module/optimize.rs - module::optimize (line 16) ... ignored
+test src/module/optimize.rs - module::optimize::metrics::combine_weighted (line 654) ... ignored
+test src/module/predict.rs - module::predict::Predict (line 85) ... ignored
+test src/proof/mod.rs - proof (line 13) ... ignored
+test src/proof/mod.rs - proof (line 57) ... ignored
+test src/proof/session.rs - proof::session (line 16) ... ignored
+test src/reasoning/mod.rs - reasoning (line 15) ... ignored
+test src/reasoning/mod.rs - reasoning (line 51) ... ignored
+test src/reasoning/mod.rs - reasoning (line 73) ... ignored
+test src/reasoning/visualize.rs - reasoning::visualize (line 10) ... ignored
+test src/reasoning/visualize.rs - reasoning::visualize::ReasoningTrace::to_dot (line 324) ... ignored
+test src/reasoning/visualize.rs - reasoning::visualize::ReasoningTrace::to_html (line 421) ... ignored
+test src/reasoning/visualize.rs - reasoning::visualize::ReasoningTrace::to_networkx_json (line 258) ... ignored
+test src/repl.rs - repl::ReplHandle::register_signature (line 452) ... ignored
+test src/signature/fallback.rs - signature::fallback (line 15) ... ignored
+test src/signature/mod.rs - signature (line 18) ... ignored
+test src/signature/mod.rs - signature::Signature (line 186) ... ignored
+test src/spec_agent/mod.rs - spec_agent (line 26) ... ignored
+test src/spec_agent/mod.rs - spec_agent (line 64) ... ignored
+test src/sync/mod.rs - sync (line 31) ... ignored
+test src/sync/mod.rs - sync (line 72) ... ignored
+test src/sync/mod.rs - sync (line 80) ... ignored
+test src/topos/mod.rs - topos (line 44) ... ignored
+test src/signature/types.rs - signature::types::FieldSpec (line 17) ... ok
+test src/dp_integration/types.rs - dp_integration::types::SpecId::parse (line 31) ... ok
+test src/llm/router.rs - llm::router::DualModelConfig (line 226) ... ok
+test src/signature/validation.rs - signature::validation::validate_fields (line 198) ... ok
+
+test result: ok. 4 passed; 0 failed; 36 ignored; 0 measured; 0 filtered out; finished in 1.34s
+

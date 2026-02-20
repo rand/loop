@@ -10,6 +10,10 @@
 use crate::complexity::{ActivationDecision, TaskComplexitySignals};
 use crate::context::SessionContext;
 use crate::error::Result;
+use crate::llm::{
+    CostTracker, DualModelConfig, ModelCallTier, RoutingContext, RoutingDecision, SmartRouter,
+    TokenUsage,
+};
 use crate::signature::{
     ExecutionLimits, ExecutionResult, FallbackExtractor, FallbackTrigger, ReplHistory, Signature,
     SubmitResult,
@@ -53,6 +57,9 @@ pub struct OrchestratorConfig {
     pub total_token_budget: u64,
     /// Total cost budget in USD
     pub cost_budget_usd: f64,
+    /// Optional dual-model routing configuration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dual_model: Option<DualModelConfig>,
 }
 
 impl Default for OrchestratorConfig {
@@ -64,6 +71,7 @@ impl Default for OrchestratorConfig {
             max_tokens_per_call: 4096,
             total_token_budget: 100_000,
             cost_budget_usd: 1.0,
+            dual_model: None,
         }
     }
 }
@@ -100,6 +108,15 @@ impl ExecutionMode {
             Self::Fast => 2,
             Self::Balanced => 3,
             Self::Thorough => 5,
+        }
+    }
+
+    /// Get the default dual-model configuration for this execution mode.
+    pub fn default_dual_model_config(&self) -> DualModelConfig {
+        match self {
+            Self::Micro | Self::Fast => DualModelConfig::aggressive(),
+            Self::Balanced => DualModelConfig::balanced(),
+            Self::Thorough => DualModelConfig::quality_first(),
         }
     }
 
@@ -235,6 +252,12 @@ impl OrchestratorBuilder {
         self
     }
 
+    /// Set dual-model configuration explicitly.
+    pub fn dual_model(mut self, dual_model: DualModelConfig) -> Self {
+        self.config.dual_model = Some(dual_model);
+        self
+    }
+
     /// Set the execution mode.
     pub fn execution_mode(mut self, mode: ExecutionMode) -> Self {
         self.mode = Some(mode);
@@ -243,12 +266,102 @@ impl OrchestratorBuilder {
 
     /// Build the configuration.
     pub fn build_config(self) -> OrchestratorConfig {
-        self.config
+        let mut config = self.config;
+        if config.dual_model.is_none() {
+            if let Some(mode) = self.mode {
+                config.dual_model = Some(mode.default_dual_model_config());
+            }
+        }
+        config
     }
 
     /// Get the execution mode, or default based on config.
     pub fn get_mode(&self) -> ExecutionMode {
         self.mode.unwrap_or(ExecutionMode::Balanced)
+    }
+}
+
+/// Orchestrator-side dual-model routing runtime.
+///
+/// This bridges `SmartRouter` dual-model decisions into orchestration paths and
+/// keeps tiered cost accounting (`root`/`recursive`/`extraction`) in sync with
+/// model selection.
+pub struct OrchestrationRoutingRuntime {
+    router: SmartRouter,
+    dual_model: DualModelConfig,
+    cost_tracker: CostTracker,
+    tokens_used: u64,
+}
+
+impl OrchestrationRoutingRuntime {
+    /// Create a routing runtime from execution mode defaults.
+    pub fn for_mode(mode: ExecutionMode) -> Self {
+        Self::new(SmartRouter::new(), mode.default_dual_model_config())
+    }
+
+    /// Create a routing runtime with explicit router and dual-model config.
+    pub fn new(router: SmartRouter, dual_model: DualModelConfig) -> Self {
+        Self {
+            router,
+            dual_model,
+            cost_tracker: CostTracker::new(),
+            tokens_used: 0,
+        }
+    }
+
+    /// Access the active dual-model config.
+    pub fn dual_model_config(&self) -> &DualModelConfig {
+        &self.dual_model
+    }
+
+    /// Route a root/recursive orchestration call at a given depth.
+    pub fn route_recursive(&self, query: &str, depth: u32) -> (RoutingDecision, ModelCallTier) {
+        let context = RoutingContext::new().with_depth(depth);
+        let decision = self
+            .router
+            .route_rlm(query, &context, &self.dual_model, self.tokens_used);
+        let tier = if self.dual_model.is_using_root(depth, self.tokens_used) {
+            ModelCallTier::Root
+        } else {
+            ModelCallTier::Recursive
+        };
+        (decision, tier)
+    }
+
+    /// Route an extraction/fallback call at a given depth.
+    pub fn route_extraction(&self, query: &str, depth: u32) -> (RoutingDecision, ModelCallTier) {
+        let context = RoutingContext::new().with_depth(depth);
+        let decision = self.router.route_rlm_for_tier(
+            query,
+            &context,
+            &self.dual_model,
+            self.tokens_used,
+            ModelCallTier::Extraction,
+        );
+        (decision, ModelCallTier::Extraction)
+    }
+
+    /// Record token/cost usage for an orchestration call.
+    pub fn record_usage(
+        &mut self,
+        decision: &RoutingDecision,
+        usage: &TokenUsage,
+        cost: Option<f64>,
+        tier: ModelCallTier,
+    ) {
+        self.cost_tracker
+            .record_tiered(&decision.model.id, usage, cost, tier);
+        self.tokens_used += usage.input_tokens + usage.output_tokens;
+    }
+
+    /// Read current tiered cost tracker state.
+    pub fn cost_tracker(&self) -> &CostTracker {
+        &self.cost_tracker
+    }
+
+    /// Total tokens recorded by this runtime.
+    pub fn tokens_used(&self) -> u64 {
+        self.tokens_used
     }
 }
 
@@ -497,6 +610,83 @@ mod tests {
             ExecutionMode::Balanced.typical_budget_usd()
                 < ExecutionMode::Thorough.typical_budget_usd()
         );
+    }
+
+    #[test]
+    fn test_execution_mode_default_dual_model_config() {
+        let micro = ExecutionMode::Micro.default_dual_model_config();
+        let thorough = ExecutionMode::Thorough.default_dual_model_config();
+        assert_eq!(micro.switch_strategy, crate::llm::SwitchStrategy::Depth { depth: 1 });
+        assert_eq!(thorough.switch_strategy, crate::llm::SwitchStrategy::Depth { depth: 3 });
+    }
+
+    #[test]
+    fn test_builder_applies_mode_default_dual_model() {
+        let config = OrchestratorBuilder::new()
+            .execution_mode(ExecutionMode::Fast)
+            .build_config();
+
+        let dual = config.dual_model.expect("expected dual-model config from mode");
+        assert_eq!(dual.switch_strategy, crate::llm::SwitchStrategy::Depth { depth: 1 });
+    }
+
+    #[test]
+    fn test_orchestration_routing_runtime_tracks_root_recursive_extraction() {
+        let mut runtime = OrchestrationRoutingRuntime::for_mode(ExecutionMode::Balanced);
+
+        let (root_decision, root_tier) = runtime.route_recursive("Design system architecture", 0);
+        assert_eq!(root_tier, ModelCallTier::Root);
+        assert_eq!(root_decision.model.id, runtime.dual_model_config().root_model.id);
+
+        let root_usage = TokenUsage {
+            input_tokens: 1200,
+            output_tokens: 600,
+            cache_read_tokens: None,
+            cache_creation_tokens: None,
+        };
+        runtime.record_usage(&root_decision, &root_usage, Some(0.03), root_tier);
+
+        let (recursive_decision, recursive_tier) = runtime.route_recursive("Extract findings", 2);
+        assert_eq!(recursive_tier, ModelCallTier::Recursive);
+        assert_eq!(
+            recursive_decision.model.id,
+            runtime.dual_model_config().recursive_model.id
+        );
+
+        let recursive_usage = TokenUsage {
+            input_tokens: 500,
+            output_tokens: 200,
+            cache_read_tokens: None,
+            cache_creation_tokens: None,
+        };
+        runtime.record_usage(&recursive_decision, &recursive_usage, Some(0.004), recursive_tier);
+
+        let (extraction_decision, extraction_tier) =
+            runtime.route_extraction("Extract final answer", 2);
+        assert_eq!(extraction_tier, ModelCallTier::Extraction);
+        assert_eq!(
+            extraction_decision.model.id,
+            runtime.dual_model_config().extraction_model().id
+        );
+
+        let extraction_usage = TokenUsage {
+            input_tokens: 300,
+            output_tokens: 120,
+            cache_read_tokens: None,
+            cache_creation_tokens: None,
+        };
+        runtime.record_usage(
+            &extraction_decision,
+            &extraction_usage,
+            Some(0.002),
+            extraction_tier,
+        );
+
+        assert_eq!(runtime.tokens_used(), 2920);
+        let breakdown = runtime.cost_tracker().tier_breakdown();
+        assert_eq!(breakdown.root_requests, 1);
+        assert_eq!(breakdown.recursive_requests, 1);
+        assert_eq!(breakdown.extraction_requests, 1);
     }
 
     mod fallback {

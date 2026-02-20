@@ -2,7 +2,7 @@
 
 > Cost-optimized model selection for RLM orchestration
 
-**Status**: Draft
+**Status**: Partially implemented (router and orchestrator-boundary dual-model routing are implemented; full end-to-end orchestrator trait wiring remains in progress)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-z6x
@@ -12,6 +12,16 @@
 ## Overview
 
 Implement explicit dual-model configuration for RLM orchestration, enabling 30-50% cost savings by using premium models for root orchestration and budget models for recursive sub-queries.
+
+## Implementation Snapshot (2026-02-20)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-21.01 DualModelConfig | Implemented (without custom function strategy) | `rlm-core/src/llm/router.rs` |
+| SPEC-21.02 SmartRouter integration | Implemented | `SmartRouter::route_rlm`, `route_rlm_for_tier`, `route_with_config` in `rlm-core/src/llm/router.rs` |
+| SPEC-21.03 Tiered cost tracking | Implemented | `CostTracker::record_tiered` + `TierBreakdown` in `rlm-core/src/llm/types.rs` |
+| SPEC-21.04 Default configurations | Implemented | `DualModelConfig::{aggressive,balanced,quality_first,budget,token_limited}` |
+| Orchestrator mode boundary integration (`M7-T04`) | Implemented | `ExecutionMode::default_dual_model_config`, `OrchestrationRoutingRuntime`, `OrchestratorBuilder::dual_model` in `rlm-core/src/orchestrator.rs` |
 
 ## Background
 
@@ -44,9 +54,9 @@ pub struct DualModelConfig {
 #[derive(Debug, Clone)]
 pub enum SwitchStrategy {
     /// Switch at specified recursion depth
-    Depth(u32),
+    Depth { depth: u32 },
     /// Switch after token budget consumed
-    TokenBudget(u64),
+    TokenBudget { tokens: u64 },
     /// Switch based on query classification
     QueryType {
         /// Use root only for reasoning tasks
@@ -57,15 +67,17 @@ pub enum SwitchStrategy {
         depth: u32,
         tokens: u64
     },
-    /// Custom: user-provided function
-    Custom(Arc<dyn Fn(&RoutingContext) -> bool + Send + Sync>),
+    /// Always stay on root model
+    AlwaysRoot,
+    /// Always stay on recursive model
+    AlwaysRecursive,
 }
 ```
 
 **Acceptance Criteria**:
 - [ ] DualModelConfig serializable to/from JSON
 - [ ] SwitchStrategy covers common use cases
-- [ ] Custom strategy allows user flexibility
+- [ ] Custom strategy allows user flexibility (currently deferred)
 
 ### SPEC-21.02: SmartRouter Integration
 
@@ -79,10 +91,11 @@ impl SmartRouter {
         query: &str,
         context: &RoutingContext,
         config: &DualModelConfig,
-    ) -> ModelSpec {
+        tokens_used: u64,
+    ) -> RoutingDecision {
         let use_root = match &config.switch_strategy {
-            SwitchStrategy::Depth(d) => context.depth < *d,
-            SwitchStrategy::TokenBudget(t) => context.tokens_used < *t,
+            SwitchStrategy::Depth { depth } => context.depth < *depth,
+            SwitchStrategy::TokenBudget { tokens } => tokens_used < *tokens,
             SwitchStrategy::QueryType { reasoning_only } => {
                 !reasoning_only || self.classify_query(query).is_reasoning()
             }
@@ -104,10 +117,12 @@ impl SmartRouter {
 #[derive(Debug, Clone)]
 pub struct RoutingContext {
     pub depth: u32,
-    pub tokens_used: u64,
-    pub query_type: Option<QueryType>,
-    pub parent_model: Option<ModelSpec>,
-    pub budget_remaining: Option<f64>,
+    pub max_depth: u32,
+    pub remaining_budget: Option<f64>,
+    pub preferred_provider: Option<Provider>,
+    pub require_caching: bool,
+    pub require_vision: bool,
+    pub require_tools: bool,
 }
 ```
 
@@ -126,20 +141,17 @@ impl CostTracker {
     pub fn record_tiered(
         &mut self,
         model: &str,
-        tier: ModelTier,
+        tier: ModelCallTier,
         tokens: TokenUsage,
         cost_usd: f64,
     );
 
-    /// Get cost breakdown by tier
-    pub fn cost_by_tier(&self) -> HashMap<ModelTier, TierCost>;
-
     /// Get cost report with tier breakdown
-    pub fn tiered_report(&self) -> TieredCostReport;
+    pub fn tier_breakdown(&self) -> TierBreakdown;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ModelTier {
+pub enum ModelCallTier {
     Root,       // Premium orchestration model
     Recursive,  // Budget recursive model
     Extraction, // Extraction/fallback model
@@ -155,10 +167,13 @@ pub struct TierCost {
 }
 
 #[derive(Debug, Clone)]
-pub struct TieredCostReport {
-    pub tiers: Vec<TierCost>,
-    pub total_cost_usd: f64,
-    pub savings_vs_root_only: f64,  // Estimated savings
+pub struct TierBreakdown {
+    pub root_cost: f64,
+    pub recursive_cost: f64,
+    pub extraction_cost: f64,
+    pub total_cost: f64,
+    pub estimated_single_model_cost: f64,
+    pub savings_percentage: f64,
 }
 ```
 
@@ -178,7 +193,7 @@ impl DualModelConfig {
         Self {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_haiku(),
-            switch_strategy: SwitchStrategy::Depth(1),
+            switch_strategy: SwitchStrategy::Depth { depth: 1 },
             extraction_model: Some(ModelSpec::claude_haiku()),
         }
     }
@@ -187,8 +202,8 @@ impl DualModelConfig {
     pub fn balanced() -> Self {
         Self {
             root_model: ModelSpec::claude_opus(),
-            recursive_model: ModelSpec::claude_sonnet(),
-            switch_strategy: SwitchStrategy::Depth(2),
+            recursive_model: ModelSpec::claude_haiku(),
+            switch_strategy: SwitchStrategy::Depth { depth: 2 },
             extraction_model: Some(ModelSpec::claude_haiku()),
         }
     }
@@ -198,21 +213,17 @@ impl DualModelConfig {
         Self {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_sonnet(),
-            switch_strategy: SwitchStrategy::Depth(3),
+            switch_strategy: SwitchStrategy::Depth { depth: 3 },
             extraction_model: Some(ModelSpec::claude_sonnet()),
         }
     }
 
-    /// Budget constrained: hybrid strategy
-    pub fn budget_constrained(max_usd: f64) -> Self {
-        let token_budget = (max_usd / 0.00001) as u64; // Approximate
+    /// Budget-focused profile
+    pub fn budget() -> Self {
         Self {
             root_model: ModelSpec::claude_sonnet(),
             recursive_model: ModelSpec::claude_haiku(),
-            switch_strategy: SwitchStrategy::Hybrid {
-                depth: 1,
-                tokens: token_budget,
-            },
+            switch_strategy: SwitchStrategy::Depth { depth: 1 },
             extraction_model: Some(ModelSpec::claude_haiku()),
         }
     }
@@ -240,9 +251,16 @@ impl DualModelConfig {
 ### Orchestrator Integration
 
 ```rust
-impl<O: Orchestrator> O {
-    pub fn with_dual_model(self, config: DualModelConfig) -> Self;
-    pub fn dual_model_config(&self) -> Option<&DualModelConfig>;
+impl OrchestratorBuilder {
+    pub fn dual_model(self, config: DualModelConfig) -> Self;
+}
+
+pub struct OrchestrationRoutingRuntime { /* ... */ }
+impl OrchestrationRoutingRuntime {
+    pub fn for_mode(mode: ExecutionMode) -> Self;
+    pub fn route_recursive(&self, query: &str, depth: u32) -> (RoutingDecision, ModelCallTier);
+    pub fn route_extraction(&self, query: &str, depth: u32) -> (RoutingDecision, ModelCallTier);
+    pub fn record_usage(&mut self, decision: &RoutingDecision, usage: &TokenUsage, cost: Option<f64>, tier: ModelCallTier);
 }
 ```
 
@@ -267,14 +285,14 @@ impl ExecutionMode {
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `test_switch_depth` | Switch at correct depth | SPEC-21.01 |
-| `test_switch_tokens` | Switch after token budget | SPEC-21.01 |
-| `test_switch_hybrid` | Hybrid strategy | SPEC-21.01 |
-| `test_route_rlm` | SmartRouter integration | SPEC-21.02 |
-| `test_cost_by_tier` | Tier cost tracking | SPEC-21.03 |
-| `test_savings_calculation` | Savings estimate | SPEC-21.03 |
-| `test_default_aggressive` | Aggressive config | SPEC-21.04 |
-| `test_default_balanced` | Balanced config | SPEC-21.04 |
+| `llm::router::tests::test_switch_strategy_depth` | Switch at correct depth | SPEC-21.01 |
+| `llm::router::tests::test_switch_strategy_token_budget` | Switch after token budget | SPEC-21.01 |
+| `llm::router::tests::test_switch_strategy_hybrid` | Hybrid strategy | SPEC-21.01 |
+| `llm::router::tests::test_route_rlm` + `test_route_rlm_for_extraction_tier` | SmartRouter integration | SPEC-21.02 |
+| `llm::router::tests::test_route_rlm_tiered_cost_accounting` + `llm::types::tests::test_cost_tracker_record_tiered_includes_extraction` | Tier cost tracking | SPEC-21.03 |
+| `orchestrator::tests::test_orchestration_routing_runtime_tracks_root_recursive_extraction` | Orchestrator boundary routing + accounting integration | SPEC-21.02, SPEC-21.03 |
+| `llm::router::tests::test_dual_model_config_aggressive` | Aggressive config | SPEC-21.04 |
+| `llm::router::tests::test_dual_model_config_balanced` | Balanced config | SPEC-21.04 |
 
 ---
 

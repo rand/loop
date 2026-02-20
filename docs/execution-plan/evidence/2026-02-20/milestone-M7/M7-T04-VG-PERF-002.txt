@@ -1,0 +1,18 @@
+M5 perf harness run starting
+date: UTC 2026-02-20 00:13:35
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7
+loop_min_available_mib: 3000
+budget_pct: 10
+
+[harness:baseline] running...
+Wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-baseline.json
+[harness:baseline] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-baseline.json
+[harness:candidate] running...
+Wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-candidate.json
+[harness:candidate] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-candidate.json
+Wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-VG-PERF-001.json
+Wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-VG-PERF-002.json
+Wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-perf-summary.md
+
+M5 perf harness run completed
+summary: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-perf-summary.md

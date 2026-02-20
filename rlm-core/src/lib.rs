@@ -62,15 +62,15 @@ pub use error::{Error, Result};
 pub use llm::{
     AnthropicClient, BatchConfig, BatchExecutor, BatchQueryResult, BatchedLLMQuery,
     BatchedQueryResults, ClientConfig, CompletionRequest, CompletionResponse, CostTracker,
-    DualModelConfig, LLMClient, ModelSpec, ModelTier, Provider, QueryType, RoutingContext,
-    SmartRouter, SwitchStrategy, TierBreakdown,
+    DualModelConfig, LLMClient, ModelCallTier, ModelSpec, ModelTier, Provider, QueryType,
+    RoutingContext, SmartRouter, SwitchStrategy, TierBreakdown,
 };
 pub use memory::{Node, NodeId, NodeType, SqliteMemoryStore, Tier};
 pub use module::{
     chain_direct, BootstrapFewShot, Chain, Demonstration, Example, Module, ModuleConfig,
     OptimizationStats, OptimizedModule, Optimizer, ParallelVec, Predict, PredictConfig, Predictor,
 };
-pub use orchestrator::{FallbackLoop, FallbackLoopStep, Orchestrator};
+pub use orchestrator::{FallbackLoop, FallbackLoopStep, OrchestrationRoutingRuntime, Orchestrator};
 pub use repl::{ExecuteResult, ReplConfig, ReplHandle, ReplPool};
 pub use topos::{
     IndexBuilder, LeanRef, Link, LinkIndex, LinkType, ToposClient, ToposClientConfig, ToposRef,

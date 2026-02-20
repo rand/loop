@@ -1,6 +1,6 @@
 # Status Tracker
 
-Last updated: 2026-02-19
+Last updated: 2026-02-20
 
 ## Execution Mode
 
@@ -20,7 +20,7 @@ Last updated: 2026-02-19
 | M4 Consumers | Complete | M4-T01 through M4-T04 complete; cross-repo pipeline script validated |
 | M5 Performance | Complete | M5-T01 through M5-T03 complete; no >10% regression observed in comparison report |
 | M6 Rollout/governance | Complete | M6-T01 through M6-T03 complete; steady-state cadence/ownership policy active |
-| M7 Spec completion | In progress | `M7-T01` and `M7-T02` complete; remaining SPEC-20..27 + interop follow-up tracked in `M7-T03`..`M7-T10` |
+| M7 Spec completion | In progress | `M7-T01`..`M7-T04` complete; remaining SPEC-22..27 + interop follow-up tracked in `M7-T05`..`M7-T10` |
 
 ## Baseline Findings
 
@@ -93,13 +93,13 @@ Last updated: 2026-02-19
 | R39 | Closed G-001 / M7-T01 by wiring Rust host `llm_batch` resolution path (`ReplHandle::resolve_pending_llm_batches`) and refreshing M7-T01 gate artifacts | `evidence/2026-02-19/milestone-M7/M7-T01-validation-summary.md` |
 | R40 | Closed `loop-bih.2` after landing SPEC-27 fallback loop runtime wiring and corresponding gate evidence | `bd show loop-bih.2` |
 | R41 | Closed M7-T03 typed-signature parity by adding derive enum field semantics (`#[field(enum_values = \"...\")]`), deterministic pre-exec input validation in `Predict::forward`, and optional-null validation parity | `evidence/2026-02-19/milestone-M7/M7-T03-validation-summary.md` |
+| R42 | Closed M7-T04 by wiring dual-model defaults at orchestrator mode boundaries (`ExecutionMode::default_dual_model_config`, `OrchestrationRoutingRuntime`) and extending tiered accounting to root/recursive/extraction with passing dual/core/perf gates | `evidence/2026-02-20/milestone-M7/M7-T04-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | M7-T04 (`loop-bih.4`) | Integrate dual-model orchestration behavior (SPEC-21) |
-| P1 | M7-T05 (`loop-bih.5`) | Remove proof-engine placeholders and persist learning/session behavior (SPEC-22) |
+| P0 | M7-T05 (`loop-bih.5`) | Remove proof-engine placeholders and persist learning/session behavior (SPEC-22) |
 | P1 | M7-T06 (`loop-bih.6`) | Complete visualization integration/export parity (SPEC-23) |
 | P1 | M7-T07 (`loop-bih.7`) | Complete optimizer reasoning/persistence/metric parity (SPEC-24) |
 | P1 | M7-T08 (`loop-bih.8`) | Align context externalization prompt contract/runtime helpers (SPEC-25) |

@@ -18,7 +18,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
-use super::types::{ModelSpec, ModelTier, Provider};
+use super::types::{ModelCallTier, ModelSpec, ModelTier, Provider};
 
 /// Query type classification for routing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -240,6 +240,12 @@ pub struct DualModelConfig {
     /// Strategy for determining when to switch models.
     pub switch_strategy: SwitchStrategy,
 
+    /// Optional override model for extraction/fallback calls.
+    ///
+    /// If not set, extraction calls default to `recursive_model`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extraction_model: Option<ModelSpec>,
+
     /// Optional name for this configuration (for logging/debugging).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -252,6 +258,7 @@ impl DualModelConfig {
             root_model,
             recursive_model,
             switch_strategy: SwitchStrategy::default(),
+            extraction_model: None,
             name: None,
         }
     }
@@ -268,6 +275,12 @@ impl DualModelConfig {
         self
     }
 
+    /// Set a dedicated extraction model.
+    pub fn with_extraction_model(mut self, model: ModelSpec) -> Self {
+        self.extraction_model = Some(model);
+        self
+    }
+
     /// Aggressive configuration: maximize cost savings.
     ///
     /// - Uses Opus for root only
@@ -278,6 +291,7 @@ impl DualModelConfig {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_haiku(),
             switch_strategy: SwitchStrategy::Depth { depth: 1 },
+            extraction_model: Some(ModelSpec::claude_haiku()),
             name: Some("aggressive".to_string()),
         }
     }
@@ -292,6 +306,7 @@ impl DualModelConfig {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_haiku(),
             switch_strategy: SwitchStrategy::Depth { depth: 2 },
+            extraction_model: Some(ModelSpec::claude_haiku()),
             name: Some("balanced".to_string()),
         }
     }
@@ -306,6 +321,7 @@ impl DualModelConfig {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_sonnet(),
             switch_strategy: SwitchStrategy::Depth { depth: 3 },
+            extraction_model: Some(ModelSpec::claude_sonnet()),
             name: Some("quality_first".to_string()),
         }
     }
@@ -320,6 +336,7 @@ impl DualModelConfig {
             root_model: ModelSpec::claude_sonnet(),
             recursive_model: ModelSpec::claude_haiku(),
             switch_strategy: SwitchStrategy::Depth { depth: 1 },
+            extraction_model: Some(ModelSpec::claude_haiku()),
             name: Some("budget".to_string()),
         }
     }
@@ -333,8 +350,14 @@ impl DualModelConfig {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_haiku(),
             switch_strategy: SwitchStrategy::TokenBudget { tokens: premium_tokens },
+            extraction_model: Some(ModelSpec::claude_haiku()),
             name: Some(format!("token_limited_{}", premium_tokens)),
         }
+    }
+
+    /// Get the configured extraction model, defaulting to recursive model.
+    pub fn extraction_model(&self) -> &ModelSpec {
+        self.extraction_model.as_ref().unwrap_or(&self.recursive_model)
     }
 
     /// Select the appropriate model based on current state.
@@ -348,6 +371,21 @@ impl DualModelConfig {
             &self.recursive_model
         } else {
             &self.root_model
+        }
+    }
+
+    /// Select model for an explicit orchestration tier.
+    pub fn select_model_for_tier(
+        &self,
+        _depth: u32,
+        _tokens_used: u64,
+        _query_type: Option<QueryType>,
+        tier: ModelCallTier,
+    ) -> &ModelSpec {
+        match tier {
+            ModelCallTier::Root => &self.root_model,
+            ModelCallTier::Recursive => &self.recursive_model,
+            ModelCallTier::Extraction => self.extraction_model(),
         }
     }
 
@@ -579,26 +617,59 @@ impl SmartRouter {
         tokens_used: u64,
     ) -> RoutingDecision {
         let query_type = QueryType::classify(query);
+        let call_tier = if config
+            .switch_strategy
+            .should_use_recursive(context.depth, tokens_used, Some(query_type))
+        {
+            ModelCallTier::Recursive
+        } else {
+            ModelCallTier::Root
+        };
 
-        // Use dual-model config to select model
-        let model = config.select_model(context.depth, tokens_used, Some(query_type));
+        self.route_rlm_for_tier(query, context, config, tokens_used, call_tier)
+    }
 
-        // Determine which tier we're using
-        let tier = model.tier;
-        let is_root = config.is_using_root(context.depth, tokens_used);
+    /// Route an RLM query for an explicit orchestration call tier.
+    ///
+    /// This is used by orchestrator paths that know the phase of the call
+    /// (root/recursive/extraction) and need deterministic tiered accounting.
+    pub fn route_rlm_for_tier(
+        &self,
+        query: &str,
+        context: &RoutingContext,
+        config: &DualModelConfig,
+        tokens_used: u64,
+        call_tier: ModelCallTier,
+    ) -> RoutingDecision {
+        let query_type = QueryType::classify(query);
+
+        let model = match call_tier {
+            ModelCallTier::Root | ModelCallTier::Recursive => {
+                config.select_model_for_tier(context.depth, tokens_used, Some(query_type), call_tier)
+            }
+            ModelCallTier::Extraction => config.select_model_for_tier(
+                context.depth,
+                tokens_used,
+                Some(query_type),
+                ModelCallTier::Extraction,
+            ),
+        };
+
+        let tier_label = match call_tier {
+            ModelCallTier::Root => "root",
+            ModelCallTier::Recursive => "recursive",
+            ModelCallTier::Extraction => "extraction",
+        };
 
         let reason = format!(
             "RLM {} model at depth {} (strategy: {:?}, query: {:?})",
-            if is_root { "root" } else { "recursive" },
-            context.depth,
-            config.switch_strategy,
-            query_type,
+            tier_label, context.depth, config.switch_strategy, query_type,
         );
 
         RoutingDecision {
             model: model.clone(),
             query_type,
-            tier,
+            tier: model.tier,
             reason,
             estimated_cost: None,
         }
@@ -933,6 +1004,19 @@ mod tests {
     }
 
     #[test]
+    fn test_dual_model_extraction_model_defaults_to_recursive() {
+        let config = DualModelConfig::new(ModelSpec::claude_opus(), ModelSpec::claude_haiku());
+        assert_eq!(config.extraction_model().id, "claude-3-5-haiku-20241022");
+    }
+
+    #[test]
+    fn test_dual_model_select_model_for_extraction_tier() {
+        let config = DualModelConfig::quality_first();
+        let model = config.select_model_for_tier(10, 200_000, Some(QueryType::Extraction), ModelCallTier::Extraction);
+        assert_eq!(model.id, "claude-3-5-sonnet-20241022");
+    }
+
+    #[test]
     fn test_route_rlm() {
         let router = SmartRouter::new();
         let config = DualModelConfig::aggressive();
@@ -948,6 +1032,83 @@ mod tests {
         let decision = router.route_rlm("Extract entities", &context, &config, 0);
         assert_eq!(decision.model.id, "claude-3-5-haiku-20241022");
         assert!(decision.reason.contains("recursive"));
+    }
+
+    #[test]
+    fn test_route_rlm_for_extraction_tier() {
+        let router = SmartRouter::new();
+        let config = DualModelConfig::aggressive();
+        let context = RoutingContext::new().with_depth(4);
+
+        let decision = router.route_rlm_for_tier(
+            "Extract final answer from history",
+            &context,
+            &config,
+            50_000,
+            ModelCallTier::Extraction,
+        );
+        assert_eq!(decision.model.id, "claude-3-5-haiku-20241022");
+        assert!(decision.reason.contains("extraction"));
+    }
+
+    #[test]
+    fn test_route_rlm_tiered_cost_accounting() {
+        let router = SmartRouter::new();
+        let config = DualModelConfig::balanced();
+        let mut tracker = crate::llm::CostTracker::new();
+
+        let root_ctx = RoutingContext::new().with_depth(0);
+        let root = router.route_rlm("Design architecture", &root_ctx, &config, 0);
+        tracker.record_tiered(
+            &root.model.id,
+            &crate::llm::TokenUsage {
+                input_tokens: 1000,
+                output_tokens: 400,
+                cache_read_tokens: None,
+                cache_creation_tokens: None,
+            },
+            Some(0.025),
+            ModelCallTier::Root,
+        );
+
+        let recursive_ctx = RoutingContext::new().with_depth(3);
+        let recursive = router.route_rlm("Extract entities", &recursive_ctx, &config, 1400);
+        tracker.record_tiered(
+            &recursive.model.id,
+            &crate::llm::TokenUsage {
+                input_tokens: 600,
+                output_tokens: 220,
+                cache_read_tokens: None,
+                cache_creation_tokens: None,
+            },
+            Some(0.003),
+            ModelCallTier::Recursive,
+        );
+
+        let extraction = router.route_rlm_for_tier(
+            "Extract final answer",
+            &recursive_ctx,
+            &config,
+            2020,
+            ModelCallTier::Extraction,
+        );
+        tracker.record_tiered(
+            &extraction.model.id,
+            &crate::llm::TokenUsage {
+                input_tokens: 350,
+                output_tokens: 100,
+                cache_read_tokens: None,
+                cache_creation_tokens: None,
+            },
+            Some(0.0015),
+            ModelCallTier::Extraction,
+        );
+
+        let breakdown = tracker.tier_breakdown();
+        assert_eq!(breakdown.root_requests, 1);
+        assert_eq!(breakdown.recursive_requests, 1);
+        assert_eq!(breakdown.extraction_requests, 1);
+        assert!(breakdown.total_cost > 0.0);
     }
 
     #[test]

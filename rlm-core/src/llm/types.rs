@@ -40,6 +40,18 @@ pub enum ModelTier {
     Fast = 2,
 }
 
+/// Orchestration call tier for dual-model accounting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ModelCallTier {
+    /// Root orchestration call (premium model in dual-model mode)
+    Root,
+    /// Recursive sub-call (budget model in dual-model mode)
+    Recursive,
+    /// Extraction/fallback call
+    Extraction,
+}
+
 /// Model definition with pricing and capabilities.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelSpec {
@@ -443,6 +455,9 @@ pub struct CostTracker {
     /// Costs from recursive (budget) model calls
     #[serde(default)]
     pub recursive_costs: TierCosts,
+    /// Costs from extraction/fallback model calls
+    #[serde(default)]
+    pub extraction_costs: TierCosts,
 }
 
 /// Costs breakdown by model tier (for dual-model optimization).
@@ -513,6 +528,32 @@ impl CostTracker {
         // Merge tier costs
         self.root_costs.merge(&other.root_costs);
         self.recursive_costs.merge(&other.recursive_costs);
+        self.extraction_costs.merge(&other.extraction_costs);
+    }
+
+    /// Record usage with an explicit orchestration tier.
+    pub fn record_tiered(
+        &mut self,
+        model: &str,
+        usage: &TokenUsage,
+        cost: Option<f64>,
+        tier: ModelCallTier,
+    ) {
+        // Record in main tracker
+        self.record(model, usage, cost);
+
+        let tier_costs = match tier {
+            ModelCallTier::Root => &mut self.root_costs,
+            ModelCallTier::Recursive => &mut self.recursive_costs,
+            ModelCallTier::Extraction => &mut self.extraction_costs,
+        };
+
+        tier_costs.input_tokens += usage.input_tokens;
+        tier_costs.output_tokens += usage.output_tokens;
+        tier_costs.request_count += 1;
+        if let Some(c) = cost {
+            tier_costs.cost += c;
+        }
     }
 
     /// Record usage with tier information (for dual-model optimization).
@@ -530,22 +571,16 @@ impl CostTracker {
         cost: Option<f64>,
         is_root: bool,
     ) {
-        // Record in main tracker
-        self.record(model, usage, cost);
-
-        // Record in appropriate tier
-        let tier_costs = if is_root {
-            &mut self.root_costs
-        } else {
-            &mut self.recursive_costs
-        };
-
-        tier_costs.input_tokens += usage.input_tokens;
-        tier_costs.output_tokens += usage.output_tokens;
-        tier_costs.request_count += 1;
-        if let Some(c) = cost {
-            tier_costs.cost += c;
-        }
+        self.record_tiered(
+            model,
+            usage,
+            cost,
+            if is_root {
+                ModelCallTier::Root
+            } else {
+                ModelCallTier::Recursive
+            },
+        );
     }
 
     /// Get a breakdown report of costs by tier.
@@ -562,6 +597,12 @@ impl CostTracker {
             0.0
         };
 
+        let extraction_pct = if self.total_cost > 0.0 {
+            (self.extraction_costs.cost / self.total_cost) * 100.0
+        } else {
+            0.0
+        };
+
         TierBreakdown {
             root_cost: self.root_costs.cost,
             root_requests: self.root_costs.request_count,
@@ -571,6 +612,10 @@ impl CostTracker {
             recursive_requests: self.recursive_costs.request_count,
             recursive_tokens: self.recursive_costs.input_tokens + self.recursive_costs.output_tokens,
             recursive_percentage: recursive_pct,
+            extraction_cost: self.extraction_costs.cost,
+            extraction_requests: self.extraction_costs.request_count,
+            extraction_tokens: self.extraction_costs.input_tokens + self.extraction_costs.output_tokens,
+            extraction_percentage: extraction_pct,
             total_cost: self.total_cost,
             estimated_single_model_cost: self.estimate_single_model_cost(),
             savings_percentage: self.calculate_savings_percentage(),
@@ -583,7 +628,7 @@ impl CostTracker {
     fn estimate_single_model_cost(&self) -> f64 {
         // Rough estimate: assume recursive calls would cost 3x more with premium model
         // This is based on typical Opus vs Haiku pricing ratios
-        self.root_costs.cost + (self.recursive_costs.cost * 3.0)
+        self.root_costs.cost + (self.recursive_costs.cost * 3.0) + (self.extraction_costs.cost * 3.0)
     }
 
     /// Calculate the percentage savings from dual-model optimization.
@@ -632,6 +677,15 @@ pub struct TierBreakdown {
     pub recursive_tokens: u64,
     /// Percentage of total cost from recursive model
     pub recursive_percentage: f64,
+
+    /// Cost from extraction/fallback model
+    pub extraction_cost: f64,
+    /// Number of extraction/fallback requests
+    pub extraction_requests: u64,
+    /// Total tokens from extraction/fallback model
+    pub extraction_tokens: u64,
+    /// Percentage of total cost from extraction/fallback model
+    pub extraction_percentage: f64,
 
     /// Total actual cost
     pub total_cost: f64,
@@ -706,6 +760,44 @@ mod tests {
 
         let model_costs = tracker.by_model.get("claude-3-5-sonnet").unwrap();
         assert_eq!(model_costs.request_count, 2);
+    }
+
+    #[test]
+    fn test_cost_tracker_record_tiered_includes_extraction() {
+        let mut tracker = CostTracker::new();
+
+        let root = TokenUsage {
+            input_tokens: 1000,
+            output_tokens: 500,
+            cache_read_tokens: None,
+            cache_creation_tokens: None,
+        };
+        tracker.record_tiered("claude-3-opus", &root, Some(0.03), ModelCallTier::Root);
+
+        let recursive = TokenUsage {
+            input_tokens: 800,
+            output_tokens: 300,
+            cache_read_tokens: None,
+            cache_creation_tokens: None,
+        };
+        tracker.record_tiered("claude-3-5-haiku", &recursive, Some(0.004), ModelCallTier::Recursive);
+
+        let extraction = TokenUsage {
+            input_tokens: 400,
+            output_tokens: 150,
+            cache_read_tokens: None,
+            cache_creation_tokens: None,
+        };
+        tracker.record_tiered("claude-3-5-haiku", &extraction, Some(0.002), ModelCallTier::Extraction);
+
+        let breakdown = tracker.tier_breakdown();
+        assert!((breakdown.root_cost - 0.03).abs() < 1e-6);
+        assert!((breakdown.recursive_cost - 0.004).abs() < 1e-6);
+        assert!((breakdown.extraction_cost - 0.002).abs() < 1e-6);
+        assert_eq!(breakdown.root_requests, 1);
+        assert_eq!(breakdown.recursive_requests, 1);
+        assert_eq!(breakdown.extraction_requests, 1);
+        assert!(breakdown.savings_percentage >= 0.0);
     }
 
     #[test]

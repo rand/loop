@@ -56,5 +56,5 @@ pub use router::{
 pub use types::{
     CacheControl, ChatMessage, ChatRole, CompletionRequest, CompletionResponse, CostTracker,
     EmbeddingRequest, EmbeddingResponse, ModelCosts, ModelSpec, ModelTier, Provider, StopReason,
-    TierBreakdown, TierCosts, TokenUsage,
+    ModelCallTier, TierBreakdown, TierCosts, TokenUsage,
 };
