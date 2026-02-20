@@ -242,7 +242,10 @@ impl DPCommandHandler {
                         }
 
                         if !spec.test_traces.is_empty() {
-                            out.push_str(&format!("  Tests: {} trace(s)\n", spec.test_traces.len()));
+                            out.push_str(&format!(
+                                "  Tests: {} trace(s)\n",
+                                spec.test_traces.len()
+                            ));
                         }
                     }
                     out.push('\n');
@@ -261,8 +264,9 @@ impl DPCommandHandler {
                 out
             }
 
-            OutputFormat::Json => serde_json::to_string_pretty(&report)
-                .map_err(|e| Error::Internal(e.to_string()))?,
+            OutputFormat::Json => {
+                serde_json::to_string_pretty(&report).map_err(|e| Error::Internal(e.to_string()))?
+            }
 
             OutputFormat::Markdown => {
                 let mut out = String::new();
@@ -337,10 +341,7 @@ impl DPCommandHandler {
                     let thm_evidence = evidence.iter().find(|e| e.theorem_name == theorem.name);
 
                     if let Some(ev) = thm_evidence {
-                        output.push_str(&format!(
-                            "  Theorem: {} - {}\n",
-                            theorem.name, ev.status
-                        ));
+                        output.push_str(&format!("  Theorem: {} - {}\n", theorem.name, ev.status));
                         if ev.sorry_count > 0 {
                             output.push_str(&format!("    Sorry count: {}\n", ev.sorry_count));
                             all_passed = false;
@@ -376,7 +377,10 @@ impl DPCommandHandler {
                     }
                 };
 
-                output.push_str(&format!("{} {} - {}\n", status_char, spec.spec_id, spec.proof_status));
+                output.push_str(&format!(
+                    "{} {} - {}\n",
+                    status_char, spec.spec_id, spec.proof_status
+                ));
             }
         }
 
@@ -387,7 +391,10 @@ impl DPCommandHandler {
 
             for result in &results {
                 let status = if result.passed { "PASS" } else { "FAIL" };
-                output.push_str(&format!("[{}] {}: {}\n", status, result.check_name, result.summary));
+                output.push_str(&format!(
+                    "[{}] {}: {}\n",
+                    status, result.check_name, result.summary
+                ));
 
                 for issue in &result.issues {
                     output.push_str(&format!("  - {}\n", issue.message));
@@ -483,7 +490,10 @@ impl DPCommandHandler {
         let mut output = String::new();
 
         output.push_str(&format!("{}\n", spec.spec_id));
-        output.push_str(&format!("{}\n\n", "=".repeat(spec.spec_id.to_string().len())));
+        output.push_str(&format!(
+            "{}\n\n",
+            "=".repeat(spec.spec_id.to_string().len())
+        ));
 
         output.push_str(&format!("Requirement: {}\n", spec.requirement_text));
         output.push_str(&format!("Status: {}\n", spec.proof_status));
@@ -725,10 +735,22 @@ mod tests {
     #[test]
     fn test_parse_coverage_command() {
         let cmd = DPCommandHandler::parse_command("/dp:spec coverage").unwrap();
-        assert!(matches!(cmd, DPCommand::Coverage { with_lean: false, .. }));
+        assert!(matches!(
+            cmd,
+            DPCommand::Coverage {
+                with_lean: false,
+                ..
+            }
+        ));
 
         let cmd = DPCommandHandler::parse_command("/dp:spec coverage --with-lean").unwrap();
-        assert!(matches!(cmd, DPCommand::Coverage { with_lean: true, .. }));
+        assert!(matches!(
+            cmd,
+            DPCommand::Coverage {
+                with_lean: true,
+                ..
+            }
+        ));
 
         let cmd =
             DPCommandHandler::parse_command("/dp:spec coverage --with-lean --format=json").unwrap();
@@ -776,13 +798,7 @@ mod tests {
         ));
 
         let cmd = DPCommandHandler::parse_command("/dp:spec list --sorry").unwrap();
-        assert!(matches!(
-            cmd,
-            DPCommand::List {
-                sorry: true,
-                ..
-            }
-        ));
+        assert!(matches!(cmd, DPCommand::List { sorry: true, .. }));
     }
 
     #[test]

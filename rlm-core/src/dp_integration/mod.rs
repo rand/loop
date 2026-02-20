@@ -68,6 +68,4 @@ pub use commands::{DPCommand, DPCommandHandler, DPCommandResult};
 pub use coverage::{CoverageScanner, SpecCoverageTracker};
 pub use proof_status::{LeanProofScanner, ProofEvidence};
 pub use review::{FormalizationReview, ReviewCheck, ReviewResult};
-pub use types::{
-    CoverageReport, CoverageSummary, ProofStatus, SpecCoverage, SpecId, TheoremInfo,
-};
+pub use types::{CoverageReport, CoverageSummary, ProofStatus, SpecCoverage, SpecId, TheoremInfo};

@@ -280,8 +280,10 @@ static ARCHITECTURE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 static THOROUGH_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)(thorough|careful|detailed|deep|exhaustive|comprehensive|make\s+sure|be\s+careful)")
-        .expect("invalid regex")
+    Regex::new(
+        r"(?i)(thorough|careful|detailed|deep|exhaustive|comprehensive|make\s+sure|be\s+careful)",
+    )
+    .expect("invalid regex")
 });
 
 static FAST_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
@@ -413,8 +415,10 @@ mod tests {
         let classifier = PatternClassifier::new();
         let ctx = SessionContext::new();
 
-        let decision =
-            classifier.should_activate("Analyze the architecture and find all security issues", &ctx);
+        let decision = classifier.should_activate(
+            "Analyze the architecture and find all security issues",
+            &ctx,
+        );
         assert!(decision.should_activate);
         assert!(decision.signals.architecture_analysis);
         assert!(decision.signals.security_review_task);
@@ -430,8 +434,7 @@ mod tests {
         ctx.cache_file("/tests/test.rs", "");
         ctx.cache_file("/src/utils/helpers.rs", "");
 
-        let decision =
-            classifier.should_activate("How do these files interact?", &ctx);
+        let decision = classifier.should_activate("How do these files interact?", &ctx);
         assert!(decision.should_activate);
         assert!(decision.signals.requires_cross_context_reasoning);
         assert!(decision.signals.files_span_multiple_modules);

@@ -1,0 +1,60 @@
+{
+  "label": "candidate-run1",
+  "timestamp_utc": "2026-02-20T12:43:25Z",
+  "environment": {
+    "platform": "macOS-26.3-arm64-arm-64bit",
+    "python_version": "3.12.11",
+    "processor": "arm",
+    "loop_commit": "75f806f85985302c498e9d8e4915af6f144ed6ad",
+    "cwd": "/Users/rand/src/loop/rlm-core/python"
+  },
+  "config": {
+    "startup_iters": 5,
+    "exec_iters": 20,
+    "submit_iters": 20,
+    "batch_iters": 20,
+    "batch_size": 8
+  },
+  "metrics": {
+    "startup_latency_ms": {
+      "count": 5,
+      "min_ms": 90.01570800319314,
+      "max_ms": 111.85379099333659,
+      "mean_ms": 94.91817499801982,
+      "p50_ms": 90.81791699281894,
+      "p95_ms": 107.81861619325355
+    },
+    "execute_latency_no_submit_ms": {
+      "count": 20,
+      "min_ms": 0.048834001063369215,
+      "max_ms": 0.26712501130532473,
+      "mean_ms": 0.07929779967525974,
+      "p50_ms": 0.056020500778686255,
+      "p95_ms": 0.21151105975150136
+    },
+    "execute_latency_with_submit_ms": {
+      "count": 20,
+      "min_ms": 0.054459000239148736,
+      "max_ms": 0.1948749995790422,
+      "mean_ms": 0.09039585129357874,
+      "p50_ms": 0.07208349416032434,
+      "p95_ms": 0.15905144609860147
+    },
+    "batch": {
+      "cycle_latency_ms": {
+        "count": 20,
+        "min_ms": 0.12337500811554492,
+        "max_ms": 0.3897080023307353,
+        "mean_ms": 0.18144999994547106,
+        "p50_ms": 0.15812499623280019,
+        "p95_ms": 0.2684243445401081
+      },
+      "successful_cycles": 20,
+      "total_cycles": 20,
+      "error_count": 0,
+      "error_rate": 0.0,
+      "batch_size": 8,
+      "throughput_ops_per_sec": 5511.160100857083
+    }
+  }
+}

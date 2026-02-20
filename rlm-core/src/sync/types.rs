@@ -462,10 +462,7 @@ impl FormalizationLevel {
 
     /// Check if invariants should be generated.
     pub fn includes_invariants(&self) -> bool {
-        matches!(
-            self,
-            Self::Invariants | Self::Contracts | Self::FullProofs
-        )
+        matches!(self, Self::Invariants | Self::Contracts | Self::FullProofs)
     }
 
     /// Check if contracts should be generated.

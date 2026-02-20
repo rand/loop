@@ -156,15 +156,27 @@ impl AIProofAssistant {
     pub async fn validate_tactic(
         &self,
         repl: &mut LeanRepl,
-        _goal: &Goal,
+        goal: &Goal,
         tactic: &str,
     ) -> Result<TacticResult> {
         let start = std::time::Instant::now();
 
-        // We need a proof state to validate against
-        // For now, we'll try to apply the tactic to proof state 0
-        // In practice, this would need to be connected to the actual proof state
-        let response = repl.apply_tactic(tactic, 0);
+        let proof_state = match repl.active_proof_state_id() {
+            Some(id) => id,
+            None => {
+                let elapsed_ms = start.elapsed().as_millis() as u64;
+                return Ok(TacticResult::failure(
+                    tactic,
+                    format!(
+                        "Missing proof state for goal `{}`; initialize proof state before validating tactics",
+                        goal.target
+                    ),
+                    elapsed_ms,
+                ));
+            }
+        };
+
+        let response = repl.apply_tactic(tactic, proof_state);
         let elapsed_ms = start.elapsed().as_millis() as u64;
 
         match response {
@@ -245,7 +257,11 @@ Example response:
         if !context.history.is_empty() {
             prompt.push_str("\n## Previously Tried Tactics\n");
             for result in &context.history {
-                let status = if result.success { "succeeded" } else { "failed" };
+                let status = if result.success {
+                    "succeeded"
+                } else {
+                    "failed"
+                };
                 prompt.push_str(&format!("- `{}` ({})\n", result.tactic, status));
             }
             prompt.push_str("\nAvoid suggesting tactics that have already failed.\n");
@@ -277,7 +293,8 @@ Example response:
         };
 
         // Parse the JSON
-        let parsed: std::result::Result<Vec<SuggestionJson>, _> = serde_json::from_str(json_content);
+        let parsed: std::result::Result<Vec<SuggestionJson>, _> =
+            serde_json::from_str(json_content);
 
         match parsed {
             Ok(suggestions) => {
@@ -459,9 +476,9 @@ Respond with a JSON array of tactics in the order they should be applied:
                         if line.is_empty() || line.starts_with('#') || line.starts_with("//") {
                             None
                         } else if let Some(start) = line.find('`') {
-                            line[start + 1..].find('`').map(|end| {
-                                line[start + 1..start + 1 + end].to_string()
-                            })
+                            line[start + 1..]
+                                .find('`')
+                                .map(|end| line[start + 1..start + 1 + end].to_string())
                         } else {
                             None
                         }

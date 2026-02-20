@@ -230,7 +230,10 @@ impl SubmitError {
     /// Get a human-readable error message.
     pub fn to_user_message(&self) -> String {
         match self {
-            Self::MissingField { field, expected_type } => {
+            Self::MissingField {
+                field,
+                expected_type,
+            } => {
                 format!(
                     "Missing required field '{}' (expected {})",
                     field,
@@ -291,9 +294,13 @@ impl std::error::Error for SubmitError {}
 impl From<ValidationError> for SubmitError {
     fn from(err: ValidationError) -> Self {
         match err {
-            ValidationError::MissingField { field, expected_type } => {
-                Self::MissingField { field, expected_type }
-            }
+            ValidationError::MissingField {
+                field,
+                expected_type,
+            } => Self::MissingField {
+                field,
+                expected_type,
+            },
             ValidationError::TypeMismatch {
                 field,
                 expected,
@@ -314,21 +321,20 @@ impl From<ValidationError> for SubmitError {
                 value,
                 allowed,
             },
-            ValidationError::ConstraintViolated { field, constraint } => {
-                Self::ValidationFailed {
-                    field,
-                    reason: constraint,
-                }
-            }
+            ValidationError::ConstraintViolated { field, constraint } => Self::ValidationFailed {
+                field,
+                reason: constraint,
+            },
             ValidationError::NestedError { path, error } => {
                 // Flatten nested errors by prefixing the path
                 match *error {
-                    ValidationError::MissingField { field, expected_type } => {
-                        Self::MissingField {
-                            field: format!("{}.{}", path, field),
-                            expected_type,
-                        }
-                    }
+                    ValidationError::MissingField {
+                        field,
+                        expected_type,
+                    } => Self::MissingField {
+                        field: format!("{}.{}", path, field),
+                        expected_type,
+                    },
                     other => Self::from(other),
                 }
             }
@@ -400,12 +406,8 @@ mod tests {
         assert!(missing.to_user_message().contains("name"));
         assert!(missing.to_user_message().contains("string"));
 
-        let type_mismatch = SubmitError::type_mismatch(
-            "age",
-            FieldType::Integer,
-            "string",
-            "\"twenty\"",
-        );
+        let type_mismatch =
+            SubmitError::type_mismatch("age", FieldType::Integer, "string", "\"twenty\"");
         assert!(type_mismatch.to_user_message().contains("age"));
         assert!(type_mismatch.to_user_message().contains("integer"));
 

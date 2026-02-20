@@ -11,8 +11,6 @@ Run with: pytest tests/integration/test_upgrade_compatibility.py -v
 """
 
 import pytest
-import sys
-from typing import Tuple
 
 
 # ============================================================================
@@ -20,14 +18,31 @@ from typing import Tuple
 # ============================================================================
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def rlm_core():
-    """Import rlm_core, skip if not available."""
+    """Import rlm_core and assert compatibility helpers are available."""
     try:
         import rlm_core
-        return rlm_core
-    except ImportError:
-        pytest.skip("rlm_core not installed - build with: maturin develop --features full")
+    except ImportError as exc:
+        pytest.fail(
+            "rlm_core import failed for integration compatibility gate. "
+            "Build/install with: maturin develop --features full"
+        )
+
+    required_exports = (
+        "version",
+        "version_tuple",
+        "has_feature",
+        "available_features",
+    )
+    missing = [name for name in required_exports if not hasattr(rlm_core, name)]
+    if missing:
+        pytest.fail(
+            "rlm_core package is missing required compatibility exports: "
+            f"{', '.join(missing)}"
+        )
+
+    return rlm_core
 
 
 # ============================================================================

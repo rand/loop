@@ -227,10 +227,7 @@ impl TraceEdgeLabel {
                 vec![Goal, Decision, Action],
                 vec![Goal, Decision, Action, Observation],
             ),
-            Self::Invalidates => (
-                vec![Outcome, Observation],
-                vec![Option, Decision, Action],
-            ),
+            Self::Invalidates => (vec![Outcome, Observation], vec![Option, Decision, Action]),
         }
     }
 }
@@ -498,7 +495,10 @@ mod tests {
             .with_confidence(0.9)
             .with_metadata("file", "/src/auth.rs");
 
-        assert_eq!(action.reason, Some("Standard approach for stateless auth".to_string()));
+        assert_eq!(
+            action.reason,
+            Some("Standard approach for stateless auth".to_string())
+        );
         assert_eq!(action.confidence, 0.9);
         assert!(action.get_metadata("file").is_some());
     }

@@ -1,29 +1,73 @@
 {
   "version": 1,
-  "description": "Repo-local governance pipelines for deterministic dp review/verify/enforce runs.",
+  "description": "Release-grade governance pipelines for deterministic dp review/verify/enforce runs.",
   "pipelines": {
     "review": [
       {
         "name": "typecheck",
         "cmd": ["make", "typecheck"]
+      },
+      {
+        "name": "rustdoc-contract",
+        "cmd": ["make", "rustdoc-check"]
       }
     ],
     "verify": [
       {
         "name": "check",
         "cmd": ["make", "check"]
+      },
+      {
+        "name": "rustdoc-contract",
+        "cmd": ["make", "rustdoc-check"]
+      },
+      {
+        "name": "python-integration-truth",
+        "cmd": ["make", "py-integration-gate"]
+      },
+      {
+        "name": "property-invariants",
+        "cmd": ["make", "proptest-gate"]
+      },
+      {
+        "name": "claude-adapter-e2e",
+        "cmd": ["make", "claude-adapter-gate"]
       }
     ],
     "pre-commit": [
       {
         "name": "check",
         "cmd": ["make", "check"]
+      },
+      {
+        "name": "rustdoc-contract",
+        "cmd": ["make", "rustdoc-check"]
       }
     ],
     "pre-push": [
       {
         "name": "check",
         "cmd": ["make", "check"]
+      },
+      {
+        "name": "rustdoc-contract",
+        "cmd": ["make", "rustdoc-check"]
+      },
+      {
+        "name": "python-integration-truth",
+        "cmd": ["make", "py-integration-gate"]
+      },
+      {
+        "name": "property-invariants",
+        "cmd": ["make", "proptest-gate"]
+      },
+      {
+        "name": "claude-adapter-e2e",
+        "cmd": ["make", "claude-adapter-gate"]
+      },
+      {
+        "name": "ignored-repl-stability",
+        "cmd": ["make", "ignored-repl-gate"]
       }
     ]
   }

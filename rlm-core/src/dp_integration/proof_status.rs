@@ -128,8 +128,9 @@ impl LeanProofScanner {
 
     /// Scan a Lean file for proof status.
     pub fn scan_file(&self, path: &Path) -> Result<Vec<ProofEvidence>> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| Error::Internal(format!("Failed to read file {}: {}", path.display(), e)))?;
+        let content = std::fs::read_to_string(path).map_err(|e| {
+            Error::Internal(format!("Failed to read file {}: {}", path.display(), e))
+        })?;
         self.scan_content(&content, path)
     }
 
@@ -253,8 +254,13 @@ impl LeanProofScanner {
             return Ok(true); // No REPL, assume OK
         };
 
-        let content = std::fs::read_to_string(file_path)
-            .map_err(|e| Error::Internal(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+        let content = std::fs::read_to_string(file_path).map_err(|e| {
+            Error::Internal(format!(
+                "Failed to read file {}: {}",
+                file_path.display(),
+                e
+            ))
+        })?;
 
         // Try to type-check the file
         let response = repl.execute(&content)?;
@@ -353,7 +359,11 @@ impl ProofStatistics {
 
     /// Most used tactics.
     pub fn top_tactics(&self, n: usize) -> Vec<(String, usize)> {
-        let mut tactics: Vec<_> = self.tactic_usage.iter().map(|(k, v)| (k.clone(), *v)).collect();
+        let mut tactics: Vec<_> = self
+            .tactic_usage
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect();
         tactics.sort_by(|a, b| b.1.cmp(&a.1));
         tactics.truncate(n);
         tactics
@@ -365,8 +375,10 @@ pub fn map_specs_to_evidence(
     specs: &HashMap<SpecId, TheoremInfo>,
     evidence: &[ProofEvidence],
 ) -> HashMap<SpecId, ProofEvidence> {
-    let evidence_by_name: HashMap<&str, &ProofEvidence> =
-        evidence.iter().map(|e| (e.theorem_name.as_str(), e)).collect();
+    let evidence_by_name: HashMap<&str, &ProofEvidence> = evidence
+        .iter()
+        .map(|e| (e.theorem_name.as_str(), e))
+        .collect();
 
     let mut result = HashMap::new();
 
@@ -399,7 +411,9 @@ theorem complex_proof (h : P) : P ∨ Q := by
 "#;
 
         let scanner = LeanProofScanner::new();
-        let evidence = scanner.scan_content(content, Path::new("test.lean")).unwrap();
+        let evidence = scanner
+            .scan_content(content, Path::new("test.lean"))
+            .unwrap();
 
         assert_eq!(evidence.len(), 3);
 

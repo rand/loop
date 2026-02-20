@@ -1,0 +1,11 @@
+M5 perf harness run starting
+date: UTC 2026-02-20 12:42:26
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-missing-baseline
+loop_min_available_mib: 3072
+run_repeats: 1
+budget_pct: 10
+min_abs_latency_ms: 2.0
+min_abs_throughput_drop_ops: 150.0
+max_error_rate_delta: 0.01
+allow_same_commit: 0
+

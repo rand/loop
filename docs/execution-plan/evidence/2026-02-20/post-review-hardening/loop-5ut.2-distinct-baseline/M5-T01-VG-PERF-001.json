@@ -1,0 +1,65 @@
+{
+  "gate": "VG-PERF-001",
+  "budget_pct": 10.0,
+  "min_abs_latency_ms": 2.0,
+  "aggregation": "median_across_runs",
+  "baseline_files": [
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-19/milestone-M5/M5-T01-baseline.json"
+  ],
+  "candidate_files": [
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-distinct-baseline/M5-T01-candidate.json",
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-distinct-baseline/M5-T01-candidate.run2.json"
+  ],
+  "baseline_commits": [
+    "50cd8cfe95f3179a4f15a445199fa9b1d1fe91f9"
+  ],
+  "candidate_commits": [
+    "75f806f85985302c498e9d8e4915af6f144ed6ad"
+  ],
+  "allow_same_commit": false,
+  "checks": {
+    "startup_p50": {
+      "baseline_ms": 111.28783300046052,
+      "candidate_ms": 90.85918749769917,
+      "regression_pct": -18.356584859260238,
+      "abs_delta_ms": -20.428645502761356,
+      "pass": true
+    },
+    "startup_p95": {
+      "baseline_ms": 153.7344499996834,
+      "candidate_ms": 100.01384569623042,
+      "regression_pct": -34.94376459119189,
+      "abs_delta_ms": -53.72060430345297,
+      "pass": true
+    },
+    "execute_no_submit_p50": {
+      "baseline_ms": 0.05941649942542426,
+      "candidate_ms": 0.06313525227596983,
+      "regression_pct": 6.258788192685616,
+      "abs_delta_ms": 0.0037187528505455703,
+      "pass": true
+    },
+    "execute_no_submit_p95": {
+      "baseline_ms": 0.14166314977046565,
+      "candidate_ms": 0.2048729249509052,
+      "regression_pct": 44.61977252578194,
+      "abs_delta_ms": 0.06320977518043955,
+      "pass": true
+    },
+    "execute_with_submit_p50": {
+      "baseline_ms": 0.0665419993310934,
+      "candidate_ms": 0.06652074807789177,
+      "regression_pct": -0.031936601567810224,
+      "abs_delta_ms": -2.125125320162624e-05,
+      "pass": true
+    },
+    "execute_with_submit_p95": {
+      "baseline_ms": 0.151570849448035,
+      "candidate_ms": 0.14224847000150478,
+      "regression_pct": -6.150509468330409,
+      "abs_delta_ms": -0.009322379446530221,
+      "pass": true
+    }
+  },
+  "pass": true
+}

@@ -24,11 +24,11 @@ pub const DECIDABLE_TACTICS: &[&str] = &[
 
 /// Extended decidable tactics (may take longer but still terminate).
 pub const DECIDABLE_EXTENDED: &[&str] = &[
-    "simp_all",      // Simplify everywhere
-    "decide!",       // Decidable with computation
-    "omega",         // Linear arithmetic (repeated for emphasis)
-    "rfl",           // Reflexivity
-    "exact?",        // Try to find exact match (library_search lite)
+    "simp_all", // Simplify everywhere
+    "decide!",  // Decidable with computation
+    "omega",    // Linear arithmetic (repeated for emphasis)
+    "rfl",      // Reflexivity
+    "exact?",   // Try to find exact match (library_search lite)
 ];
 
 // ============================================================================
@@ -38,26 +38,26 @@ pub const DECIDABLE_EXTENDED: &[&str] = &[
 /// Automation tactics that use search-based proof.
 /// These may not terminate on all inputs.
 pub const AUTOMATION_TACTICS: &[&str] = &[
-    "aesop",        // Proof search automation
-    "linarith",     // Linear arithmetic reasoning
-    "ring",         // Ring identities
-    "norm_num",     // Numeric normalization
-    "positivity",   // Positivity of expressions
-    "nlinarith",    // Nonlinear arithmetic (can be slow)
-    "polyrith",     // Polynomial arithmetic (requires Mathlib)
-    "field_simp",   // Field simplification
+    "aesop",      // Proof search automation
+    "linarith",   // Linear arithmetic reasoning
+    "ring",       // Ring identities
+    "norm_num",   // Numeric normalization
+    "positivity", // Positivity of expressions
+    "nlinarith",  // Nonlinear arithmetic (can be slow)
+    "polyrith",   // Polynomial arithmetic (requires Mathlib)
+    "field_simp", // Field simplification
 ];
 
 /// Structural automation tactics.
 pub const STRUCTURAL_TACTICS: &[&str] = &[
-    "constructor",   // Apply constructor
-    "cases",         // Case analysis
-    "induction",     // Induction
-    "rcases",        // Recursive case analysis
-    "obtain",        // Destructure exists
-    "ext",           // Extensionality
-    "funext",        // Function extensionality
-    "congr",         // Congruence
+    "constructor", // Apply constructor
+    "cases",       // Case analysis
+    "induction",   // Induction
+    "rcases",      // Recursive case analysis
+    "obtain",      // Destructure exists
+    "ext",         // Extensionality
+    "funext",      // Function extensionality
+    "congr",       // Congruence
 ];
 
 /// Introduction and elimination tactics.
@@ -140,15 +140,7 @@ pub const LOGIC_TACTICS: &[&str] = &[
 
 /// Tactics for type theory/equality proofs.
 pub const TYPE_THEORY_TACTICS: &[&str] = &[
-    "rfl",
-    "congr",
-    "subst",
-    "simp",
-    "rw",
-    "conv",
-    "calc",
-    "trans",
-    "symm",
+    "rfl", "congr", "subst", "simp", "rw", "conv", "calc", "trans", "symm",
 ];
 
 /// Tactics for data structure proofs.
@@ -204,7 +196,14 @@ pub fn domain_specific_tactics(domain: SpecDomain) -> Vec<&'static str> {
         SpecDomain::General => {
             // Mix of common tactics
             vec![
-                "simp", "rfl", "trivial", "decide", "aesop", "constructor", "cases", "exact?",
+                "simp",
+                "rfl",
+                "trivial",
+                "decide",
+                "aesop",
+                "constructor",
+                "cases",
+                "exact?",
             ]
         }
     }
@@ -227,9 +226,12 @@ pub fn tactics_for_goal(goal: &Goal) -> Vec<&'static str> {
     }
 
     // Check for inequality goals
-    if target.contains(" < ") || target.contains(" > ")
-        || target.contains("<=") || target.contains(">=")
-        || target.contains("le ") || target.contains("lt ")
+    if target.contains(" < ")
+        || target.contains(" > ")
+        || target.contains("<=")
+        || target.contains(">=")
+        || target.contains("le ")
+        || target.contains("lt ")
     {
         tactics.push("linarith");
         tactics.push("omega");
@@ -439,8 +441,7 @@ mod tests {
 
     #[test]
     fn test_tactic_variations() {
-        let goal = Goal::from_string("x = y")
-            .with_hypothesis("h", "x = y");
+        let goal = Goal::from_string("x = y").with_hypothesis("h", "x = y");
 
         let simp_vars = tactic_variations("simp", &goal);
         assert!(simp_vars.contains(&"simp".to_string()));

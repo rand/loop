@@ -606,7 +606,11 @@ fn validate() -> bool { true }
 ```
 This validates the input."#;
 
-        let p0_prompt = create_p0_prompt(context, "The validate function returns a boolean", &scrubber);
+        let p0_prompt = create_p0_prompt(
+            context,
+            "The validate function returns a boolean",
+            &scrubber,
+        );
 
         assert!(!p0_prompt.prompt.contains("fn validate"));
         assert!(p0_prompt.prompt.contains("REDACTED"));
@@ -620,7 +624,11 @@ This validates the input."#;
 
         let result = scrubber.scrub(text);
         // May or may not have scrubbed content depending on patterns
-        assert_eq!(result.scrubbed_text.len(), text.len() - result.total_chars_scrubbed() + result.scrubbed_count() * "[EVIDENCE REDACTED]".len());
+        assert_eq!(
+            result.scrubbed_text.len(),
+            text.len() - result.total_chars_scrubbed()
+                + result.scrubbed_count() * "[EVIDENCE REDACTED]".len()
+        );
     }
 
     #[test]

@@ -279,7 +279,10 @@ impl ReplHistory {
             let mut result = self.entries[..take_start].to_vec();
             result.push(HistoryEntry {
                 entry_type: HistoryEntryType::Output,
-                content: format!("... [{} entries omitted] ...", self.entries.len() - max_entries),
+                content: format!(
+                    "... [{} entries omitted] ...",
+                    self.entries.len() - max_entries
+                ),
                 timestamp_ms: 0,
             });
             result.extend(self.entries[self.entries.len() - take_end..].to_vec());
@@ -420,7 +423,11 @@ impl<S: Signature> FallbackExtractor<S> {
             .map(|(k, v)| {
                 let v_str = v.to_string();
                 let truncated = if v_str.len() > 1000 {
-                    Value::String(format!("{}... [truncated, {} chars total]", &v_str[..1000], v_str.len()))
+                    Value::String(format!(
+                        "{}... [truncated, {} chars total]",
+                        &v_str[..1000],
+                        v_str.len()
+                    ))
                 } else {
                     v.clone()
                 };
@@ -466,13 +473,18 @@ impl<S: Signature> FallbackExtractor<S> {
                 super::types::FieldType::Integer => Value::String("<integer>".to_string()),
                 super::types::FieldType::Float => Value::String("<number>".to_string()),
                 super::types::FieldType::Boolean => Value::String("<true|false>".to_string()),
-                super::types::FieldType::List(_) => Value::Array(vec![Value::String("<items>".to_string())]),
+                super::types::FieldType::List(_) => {
+                    Value::Array(vec![Value::String("<items>".to_string())])
+                }
                 _ => Value::String("<value>".to_string()),
             };
             obj.insert(field.name, placeholder);
         }
 
-        obj.insert("_confidence".to_string(), Value::String("<0.0-1.0>".to_string()));
+        obj.insert(
+            "_confidence".to_string(),
+            Value::String("<0.0-1.0>".to_string()),
+        );
 
         serde_json::to_string_pretty(&Value::Object(obj)).unwrap_or_default()
     }
@@ -612,8 +624,9 @@ fn extract_json_block(response: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::types::{FieldSpec, FieldType};
+    use super::*;
+    use proptest::prelude::*;
     use serde::{Deserialize, Serialize};
 
     // Test signature
@@ -640,8 +653,7 @@ mod tests {
         fn output_fields() -> Vec<FieldSpec> {
             vec![
                 FieldSpec::new("answer", FieldType::String).with_description("The answer"),
-                FieldSpec::new("confidence", FieldType::Float)
-                    .with_description("Confidence score"),
+                FieldSpec::new("confidence", FieldType::Float).with_description("Confidence score"),
             ]
         }
     }
@@ -797,7 +809,9 @@ Here is the extracted data:
 
     #[test]
     fn test_fallback_trigger_display() {
-        assert!(FallbackTrigger::MaxIterations.to_string().contains("iterations"));
+        assert!(FallbackTrigger::MaxIterations
+            .to_string()
+            .contains("iterations"));
         assert!(FallbackTrigger::MaxLLMCalls.to_string().contains("LLM"));
         assert!(FallbackTrigger::Timeout.to_string().contains("timeout"));
     }
@@ -820,8 +834,84 @@ Here is the extracted data:
             ExecutionResult::extracted(2, 0.7, FallbackTrigger::MaxIterations);
         assert_eq!(extracted.trigger(), Some(FallbackTrigger::MaxIterations));
 
-        let failed: ExecutionResult<i32> =
-            ExecutionResult::failed("x", FallbackTrigger::Timeout);
+        let failed: ExecutionResult<i32> = ExecutionResult::failed("x", FallbackTrigger::Timeout);
         assert_eq!(failed.trigger(), Some(FallbackTrigger::Timeout));
+    }
+
+    fn trigger_strategy() -> impl Strategy<Value = FallbackTrigger> {
+        prop_oneof![
+            Just(FallbackTrigger::MaxIterations),
+            Just(FallbackTrigger::MaxLLMCalls),
+            Just(FallbackTrigger::Timeout),
+            Just(FallbackTrigger::Manual),
+        ]
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(96))]
+
+        #[test]
+        fn prop_execution_result_extracted_clamps_confidence(
+            raw_confidence in -10.0f64..10.0f64,
+            trigger in trigger_strategy(),
+        ) {
+            let outputs = TestOutputs {
+                answer: "prop".to_string(),
+                confidence: 0.5,
+            };
+            let result: ExecutionResult<TestOutputs> =
+                ExecutionResult::extracted(outputs, raw_confidence, trigger);
+
+            let observed = result.confidence();
+            prop_assert!(observed >= 0.0 && observed <= 1.0);
+            prop_assert!((observed - raw_confidence.clamp(0.0, 1.0)).abs() < f64::EPSILON);
+            prop_assert_eq!(result.trigger(), Some(trigger));
+        }
+
+        #[test]
+        fn prop_execution_result_map_preserves_metadata_for_extracted(
+            value in any::<i32>(),
+            raw_confidence in -5.0f64..5.0f64,
+            trigger in trigger_strategy(),
+        ) {
+            let result = ExecutionResult::extracted(value, raw_confidence, trigger);
+            let mapped = result.map(|v| format!("value={}", v));
+
+            prop_assert!(mapped.is_extracted());
+            prop_assert_eq!(mapped.trigger(), Some(trigger));
+            prop_assert!(mapped.confidence() >= 0.0 && mapped.confidence() <= 1.0);
+            prop_assert!(mapped.outputs().unwrap().starts_with("value="));
+        }
+
+        #[test]
+        fn prop_should_trigger_prioritizes_limits(
+            max_iterations in 1usize..16,
+            max_llm_calls in 1usize..16,
+            timeout_ms in 100u64..20_000u64,
+            iteration_count in 0usize..24,
+            llm_call_count in 0usize..24,
+            total_time_ms in 0u64..30_000u64,
+        ) {
+            let extractor = FallbackExtractor::<TestSignature>::new();
+            let limits = ExecutionLimits::new(max_iterations, max_llm_calls, timeout_ms);
+
+            let history = ReplHistory {
+                entries: Vec::new(),
+                iteration_count,
+                llm_call_count,
+                total_time_ms,
+            };
+            let trigger = extractor.should_trigger(&history, &limits);
+
+            if iteration_count >= max_iterations {
+                prop_assert_eq!(trigger, Some(FallbackTrigger::MaxIterations));
+            } else if llm_call_count >= max_llm_calls {
+                prop_assert_eq!(trigger, Some(FallbackTrigger::MaxLLMCalls));
+            } else if total_time_ms >= timeout_ms {
+                prop_assert_eq!(trigger, Some(FallbackTrigger::Timeout));
+            } else {
+                prop_assert_eq!(trigger, None);
+            }
+        }
     }
 }

@@ -298,7 +298,10 @@ impl PyModelSpec {
     }
 
     fn __repr__(&self) -> String {
-        format!("ModelSpec(id={:?}, tier={:?})", self.inner.id, self.inner.tier)
+        format!(
+            "ModelSpec(id={:?}, tier={:?})",
+            self.inner.id, self.inner.tier
+        )
     }
 }
 

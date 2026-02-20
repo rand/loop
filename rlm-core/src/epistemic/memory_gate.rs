@@ -223,17 +223,11 @@ impl<V: EpistemicVerifier> MemoryGate<V> {
         let mut specificity = 0.5;
 
         // Identifiers increase specificity
-        let identifier_count = content
-            .chars()
-            .filter(|c| c.is_uppercase())
-            .count();
+        let identifier_count = content.chars().filter(|c| c.is_uppercase()).count();
         specificity += (identifier_count as f64 * 0.02).min(0.2);
 
         // Numbers increase specificity
-        let number_count = content
-            .chars()
-            .filter(|c| c.is_numeric())
-            .count();
+        let number_count = content.chars().filter(|c| c.is_numeric()).count();
         specificity += (number_count as f64 * 0.01).min(0.15);
 
         // Length affects specificity (longer = potentially more specific)
@@ -316,11 +310,7 @@ impl<V: EpistemicVerifier> MemoryGate<V> {
     }
 
     /// Batch evaluate multiple nodes.
-    pub async fn evaluate_batch(
-        &self,
-        nodes: &[Node],
-        context: &str,
-    ) -> Vec<Result<GateDecision>> {
+    pub async fn evaluate_batch(&self, nodes: &[Node], context: &str) -> Vec<Result<GateDecision>> {
         let mut results = Vec::new();
 
         for node in nodes {
@@ -334,7 +324,11 @@ impl<V: EpistemicVerifier> MemoryGate<V> {
     pub fn create_event(&self, node: &Node, decision: &GateDecision) -> TrajectoryEvent {
         let content = format!(
             "Memory gate: {} - {} ({})",
-            if decision.allowed { "ALLOWED" } else { "REJECTED" },
+            if decision.allowed {
+                "ALLOWED"
+            } else {
+                "REJECTED"
+            },
             &node.content[..node.content.len().min(50)],
             decision.reason
         );
@@ -399,7 +393,14 @@ impl ThresholdGate {
 
         // Check for hedge words
         let content_lower = node.content.to_lowercase();
-        let hedge_words = ["might", "could", "possibly", "perhaps", "maybe", "uncertain"];
+        let hedge_words = [
+            "might",
+            "could",
+            "possibly",
+            "perhaps",
+            "maybe",
+            "uncertain",
+        ];
         let has_hedge = hedge_words.iter().any(|w| content_lower.contains(w));
 
         if has_hedge {
@@ -479,8 +480,7 @@ impl GateStats {
         if let Some(ref budget) = decision.budget_result {
             // Running average
             let n = self.total_evaluated as f64;
-            self.avg_budget_gap =
-                self.avg_budget_gap * (n - 1.0) / n + budget.budget_gap / n;
+            self.avg_budget_gap = self.avg_budget_gap * (n - 1.0) / n + budget.budget_gap / n;
         }
     }
 }
@@ -535,7 +535,10 @@ mod tests {
 
         let decision = gate.evaluate(&node);
         assert!(decision.allowed);
-        assert_eq!(decision.recommendation, GateRecommendation::AllowWithPenalty);
+        assert_eq!(
+            decision.recommendation,
+            GateRecommendation::AllowWithPenalty
+        );
         assert!(decision.adjusted_confidence.unwrap() < node.confidence);
     }
 

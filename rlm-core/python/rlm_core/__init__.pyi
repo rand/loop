@@ -6,6 +6,24 @@ from enum import IntEnum
 
 __version__: str
 
+# Compatibility helpers
+def version() -> str: ...
+def version_tuple() -> tuple[int, int, int]: ...
+def has_feature(feature_name: str) -> bool: ...
+def available_features() -> list[str]: ...
+
+# Optional adversarial compatibility types
+class IssueSeverity(IntEnum):
+    Critical = 0
+    High = 1
+    Medium = 2
+    Low = 3
+    Info = 4
+
+class ValidationContext: ...
+class ValidationResult: ...
+class AdversarialConfig: ...
+
 # Context types
 
 class Role(IntEnum):

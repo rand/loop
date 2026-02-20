@@ -403,12 +403,12 @@ impl PyIssueLocation {
 
     fn __repr__(&self) -> String {
         if let Some(ref file) = self.inner.file {
-            format!(
-                "IssueLocation(file={:?}, line={:?})",
-                file, self.inner.line
-            )
+            format!("IssueLocation(file={:?}, line={:?})", file, self.inner.line)
         } else {
-            format!("IssueLocation(response_span={:?})", self.inner.response_span)
+            format!(
+                "IssueLocation(response_span={:?})",
+                self.inner.response_span
+            )
         }
     }
 }
@@ -491,7 +491,10 @@ impl PyIssue {
 
     #[getter]
     fn location(&self) -> Option<PyIssueLocation> {
-        self.inner.location.clone().map(|l| PyIssueLocation { inner: l })
+        self.inner
+            .location
+            .clone()
+            .map(|l| PyIssueLocation { inner: l })
     }
 
     #[getter]
@@ -736,7 +739,9 @@ impl PyValidationResult {
         self.inner
             .blocking_issues()
             .iter()
-            .map(|i| PyIssue { inner: (*i).clone() })
+            .map(|i| PyIssue {
+                inner: (*i).clone(),
+            })
             .collect()
     }
 

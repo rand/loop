@@ -504,9 +504,12 @@ impl FormalizationReview {
                     .map(|e| format!(": {}", e))
                     .unwrap_or_default();
 
-                ReviewIssue::blocking(format!("Spec {} has failed proof{}", spec.spec_id, error_msg))
-                    .for_spec(spec.spec_id.clone())
-                    .with_suggestion("Fix the type errors in the proof")
+                ReviewIssue::blocking(format!(
+                    "Spec {} has failed proof{}",
+                    spec.spec_id, error_msg
+                ))
+                .for_spec(spec.spec_id.clone())
+                .with_suggestion("Fix the type errors in the proof")
             })
             .collect();
 
@@ -678,7 +681,10 @@ mod tests {
         let sorry_result = results.iter().find(|r| r.check_name == "sorry_status");
 
         // Should pass but have warnings
-        assert!(sorry_result.is_some(), "sorry_status check should be present");
+        assert!(
+            sorry_result.is_some(),
+            "sorry_status check should be present"
+        );
         assert!(sorry_result.map(|r| r.passed).unwrap_or(false));
         assert!(!sorry_result.map(|r| r.warnings.is_empty()).unwrap_or(true));
     }

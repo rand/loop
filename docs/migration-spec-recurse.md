@@ -13,6 +13,10 @@ Migration status note (2026-02-20):
 - This spec is historical planning context.
 - Authoritative live outcome is closed task `loop-p95` (migration complete).
 - Unchecked phase checklists below are archival and not the live backlog.
+- Live execution authority is `bd status` plus:
+  - `docs/execution-plan/STATUS.md`
+  - `docs/execution-plan/TASK-REGISTRY.md`
+  - `docs/execution-plan/WORKBOARD.md`
 
 ---
 

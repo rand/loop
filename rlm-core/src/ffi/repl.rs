@@ -203,9 +203,7 @@ pub unsafe extern "C" fn rlm_repl_handle_resolve_operation(
 /// - `handle` must be a valid pointer.
 /// - The returned string must be freed with `rlm_string_free()`.
 #[no_mangle]
-pub unsafe extern "C" fn rlm_repl_handle_list_variables(
-    handle: *mut RlmReplHandle,
-) -> *mut c_char {
+pub unsafe extern "C" fn rlm_repl_handle_list_variables(handle: *mut RlmReplHandle) -> *mut c_char {
     if handle.is_null() {
         set_last_error("null handle pointer");
         return std::ptr::null_mut();
@@ -274,7 +272,11 @@ pub unsafe extern "C" fn rlm_repl_handle_is_alive(handle: *mut RlmReplHandle) ->
         set_last_error("null handle pointer");
         return -1;
     }
-    if (*handle).0.is_alive() { 1 } else { 0 }
+    if (*handle).0.is_alive() {
+        1
+    } else {
+        0
+    }
 }
 
 // ============================================================================

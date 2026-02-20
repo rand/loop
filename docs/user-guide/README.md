@@ -20,6 +20,8 @@ You will learn:
 - How to run and interpret governance gates
 - How to move from problem statement to validated output
 
+If your day-to-day work routes through Claude integration, read [Claude Code Adapter Guide](./claude-code-adapter.md) next.
+
 ### Advanced
 Start with [Power User Playbook](./power-user-playbook.md).
 
@@ -32,8 +34,9 @@ You will learn:
 
 1. Validate repository health quickly.
 2. Run feature work with policy gates.
-3. Generate formalized spec artifacts from natural language requirements.
-4. Diagnose and recover from failing checks.
+3. Run Claude adapter scenarios with confidence in capability boundaries.
+4. Generate formalized spec artifacts from natural language requirements.
+5. Diagnose and recover from failing checks.
 
 ## If You Only Read One Thing
 

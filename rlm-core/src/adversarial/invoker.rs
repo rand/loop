@@ -277,9 +277,9 @@ impl FreshInvokerBuilder {
 
     /// Build the invoker.
     pub fn build(self) -> Result<Box<dyn FreshContextInvoker>> {
-        let api_key = self.api_key.ok_or_else(|| {
-            Error::Config("API key required for fresh invoker".to_string())
-        })?;
+        let api_key = self
+            .api_key
+            .ok_or_else(|| Error::Config("API key required for fresh invoker".to_string()))?;
 
         if self.pooled {
             Ok(Box::new(PooledFreshInvoker::new(
@@ -327,9 +327,7 @@ mod tests {
 
     #[test]
     fn test_builder_with_api_key() {
-        let result = FreshInvokerBuilder::new()
-            .with_api_key("test-key")
-            .build();
+        let result = FreshInvokerBuilder::new().with_api_key("test-key").build();
         assert!(result.is_ok());
     }
 

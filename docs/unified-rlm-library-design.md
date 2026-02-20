@@ -1,6 +1,13 @@
 # Unified RLM Library Design
 
 > A shared library supporting both Claude Code plugins and agentic TUIs
+>
+> Historical design artifact:
+> - Unchecked `[ ]` checklist items are archival planning snapshots, not active backlog.
+> - Authoritative live status is tracked in Beads (`bd status`) and:
+>   - `docs/execution-plan/STATUS.md`
+>   - `docs/execution-plan/TASK-REGISTRY.md`
+>   - `docs/execution-plan/WORKBOARD.md`
 
 ## Executive Summary
 

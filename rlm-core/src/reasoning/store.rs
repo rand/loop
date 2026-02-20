@@ -137,10 +137,10 @@ impl ReasoningTraceStore {
             "session_id": trace.session_id,
         });
 
-        hyperedge.metadata = Some(
-            serde_json::from_value(metadata)
-                .map_err(|e| Error::Internal(format!("Failed to serialize edge metadata: {}", e)))?,
-        );
+        hyperedge.metadata =
+            Some(serde_json::from_value(metadata).map_err(|e| {
+                Error::Internal(format!("Failed to serialize edge metadata: {}", e))
+            })?);
 
         Ok(hyperedge)
     }
@@ -156,18 +156,15 @@ impl ReasoningTraceStore {
             .ok_or_else(|| Error::Internal("Root goal not found in id_map".to_string()))?;
 
         // Create a trace root node that links to the actual root goal
-        let trace_root = Node::new(
-            NodeType::Decision,
-            format!("Trace: {}", trace.id),
-        )
-        .with_subtype("trace_root")
-        .with_tier(Tier::Session)
-        .with_metadata("trace_id", trace.id.to_string())
-        .with_metadata("root_goal_id", root_memory_id.to_string())
-        .with_metadata("session_id", trace.session_id.clone())
-        .with_metadata("created_at", trace.created_at.to_rfc3339())
-        .with_metadata("node_count", trace.nodes.len() as i64)
-        .with_metadata("edge_count", trace.edges.len() as i64);
+        let trace_root = Node::new(NodeType::Decision, format!("Trace: {}", trace.id))
+            .with_subtype("trace_root")
+            .with_tier(Tier::Session)
+            .with_metadata("trace_id", trace.id.to_string())
+            .with_metadata("root_goal_id", root_memory_id.to_string())
+            .with_metadata("session_id", trace.session_id.clone())
+            .with_metadata("created_at", trace.created_at.to_rfc3339())
+            .with_metadata("node_count", trace.nodes.len() as i64)
+            .with_metadata("edge_count", trace.edges.len() as i64);
 
         let trace_root = if let Some(ref commit) = trace.git_commit {
             trace_root.with_metadata("git_commit", commit.clone())
@@ -454,7 +451,9 @@ impl ReasoningTraceStore {
                         let edge = TraceEdge::new(from.clone(), to.clone(), label)
                             .with_weight(hyperedge.weight);
 
-                        if !edges.iter().any(|e: &TraceEdge| e.from == edge.from && e.to == edge.to)
+                        if !edges
+                            .iter()
+                            .any(|e: &TraceEdge| e.from == edge.from && e.to == edge.to)
                         {
                             edges.push(edge);
                         }
@@ -572,7 +571,10 @@ impl ReasoningTraceStore {
         let memory_stats = self.memory.stats()?;
         let trace_ids = self.list_traces()?;
 
-        let decision_nodes = *memory_stats.nodes_by_type.get(&NodeType::Decision).unwrap_or(&0);
+        let decision_nodes = *memory_stats
+            .nodes_by_type
+            .get(&NodeType::Decision)
+            .unwrap_or(&0);
 
         Ok(TraceStoreStats {
             total_traces: trace_ids.len(),

@@ -44,17 +44,17 @@ pub use batch::{
 pub use cache::{
     apply_cache_markers, find_cache_breakpoints, CacheEntry, CacheKey, CacheStats, PromptCache,
 };
+#[cfg(feature = "gemini")]
+pub use client::GoogleClient;
 pub use client::{
     AnthropicClient, ClientConfig, LLMClient, MultiProviderClient, OpenAIClient, TrackedClient,
 };
-#[cfg(feature = "gemini")]
-pub use client::GoogleClient;
 pub use router::{
     DualModelConfig, QueryType, RoutingContext, RoutingDecision, SmartRouter, SwitchStrategy,
     TierDefaults,
 };
 pub use types::{
     CacheControl, ChatMessage, ChatRole, CompletionRequest, CompletionResponse, CostTracker,
-    EmbeddingRequest, EmbeddingResponse, ModelCosts, ModelSpec, ModelTier, Provider, StopReason,
-    ModelCallTier, TierBreakdown, TierCosts, TokenUsage,
+    EmbeddingRequest, EmbeddingResponse, ModelCallTier, ModelCosts, ModelSpec, ModelTier, Provider,
+    StopReason, TierBreakdown, TierCosts, TokenUsage,
 };

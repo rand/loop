@@ -358,7 +358,11 @@ impl ReasoningTrace {
                 reason: n.reason.clone(),
                 created_at: n.created_at.to_rfc3339(),
                 is_root: n.id == self.root_goal,
-                metadata: n.metadata.as_ref().map(|m| serde_json::to_value(m).ok()).flatten(),
+                metadata: n
+                    .metadata
+                    .as_ref()
+                    .map(|m| serde_json::to_value(m).ok())
+                    .flatten(),
             })
             .collect();
 
@@ -371,7 +375,11 @@ impl ReasoningTrace {
                 label: e.label.to_string(),
                 weight: e.weight,
                 created_at: e.created_at.to_rfc3339(),
-                metadata: e.metadata.as_ref().map(|m| serde_json::to_value(m).ok()).flatten(),
+                metadata: e
+                    .metadata
+                    .as_ref()
+                    .map(|m| serde_json::to_value(m).ok())
+                    .flatten(),
             })
             .collect();
 
@@ -1359,11 +1367,27 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
         details_panel_display = details_panel_display,
         export_controls_display = export_controls_display,
         show_labels = if config.show_labels { "true" } else { "false" },
-        show_edge_labels = if config.show_edge_labels { "true" } else { "false" },
+        show_edge_labels = if config.show_edge_labels {
+            "true"
+        } else {
+            "false"
+        },
         animate = if config.animate { "true" } else { "false" },
-        enable_pan_zoom = if config.enable_pan_zoom { "true" } else { "false" },
-        show_cost_badges = if config.show_cost_badges { "true" } else { "false" },
-        show_timing_badges = if config.show_timing_badges { "true" } else { "false" },
+        enable_pan_zoom = if config.enable_pan_zoom {
+            "true"
+        } else {
+            "false"
+        },
+        show_cost_badges = if config.show_cost_badges {
+            "true"
+        } else {
+            "false"
+        },
+        show_timing_badges = if config.show_timing_badges {
+            "true"
+        } else {
+            "false"
+        },
         expand_repl_history = if config.expand_repl_history {
             "true"
         } else {
@@ -1374,8 +1398,16 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
         } else {
             "false"
         },
-        show_details_panel = if config.show_details_panel { "true" } else { "false" },
-        show_export_controls = if config.show_export_controls { "true" } else { "false" },
+        show_details_panel = if config.show_details_panel {
+            "true"
+        } else {
+            "false"
+        },
+        show_export_controls = if config.show_export_controls {
+            "true"
+        } else {
+            "false"
+        },
         custom_css = custom_css,
     )
 }

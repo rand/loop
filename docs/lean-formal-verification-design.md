@@ -1,6 +1,13 @@
 # Lean Formal Verification System Design
 
 > Formal specification and verification capabilities for rlm-core
+>
+> Historical design/planning artifact:
+> - Unchecked `[ ]` checklist items in this file are archival, not active implementation backlog.
+> - For live execution status and priorities, use `bd status` and:
+>   - `docs/execution-plan/STATUS.md`
+>   - `docs/execution-plan/TASK-REGISTRY.md`
+>   - `docs/execution-plan/WORKBOARD.md`
 
 ## Executive Summary
 

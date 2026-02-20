@@ -164,10 +164,7 @@ fn apply_v1_schema(conn: &Connection) -> SqliteResult<()> {
     )?;
 
     // Record migration
-    conn.execute(
-        "INSERT INTO schema_version (version) VALUES (1)",
-        [],
-    )?;
+    conn.execute("INSERT INTO schema_version (version) VALUES (1)", [])?;
 
     Ok(())
 }

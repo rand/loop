@@ -180,7 +180,8 @@ mod tests {
             ..Default::default()
         };
 
-        let result = trace_visualize_from_json(&payload, &options).expect("json export should work");
+        let result =
+            trace_visualize_from_json(&payload, &options).expect("json export should work");
         assert_eq!(result.format, TraceVisualizeFormat::Mermaid);
         assert!(result.artifact.contains("%% ReasoningTrace (enhanced)"));
     }

@@ -388,13 +388,21 @@ impl HookHandler for PromptAnalysisHandler {
             let classifier = crate::complexity::PatternClassifier::new();
             let session_ctx = crate::context::SessionContext::new();
             let decision = classifier.should_activate(prompt, &session_ctx);
+            let signals = decision
+                .signals
+                .active_signals()
+                .iter()
+                .map(|signal| signal.to_string())
+                .collect();
 
             let enhancement = PromptEnhancement::none()
                 .with_activation(decision.should_activate)
-                .with_mode(crate::orchestrator::ExecutionMode::from_signals(&decision.signals));
+                .with_mode(crate::orchestrator::ExecutionMode::from_signals(
+                    &decision.signals,
+                ))
+                .with_signals(signals);
 
-            Ok(HookResult::ok()
-                .with_data(HookResultData::PromptEnhancement(enhancement)))
+            Ok(HookResult::ok().with_data(HookResultData::PromptEnhancement(enhancement)))
         } else {
             Ok(HookResult::ok())
         }
@@ -431,14 +439,12 @@ impl HookHandler for PreCompactHandler {
     }
 
     async fn execute(&self, context: HookContext) -> Result<HookResult> {
-        let compact_data = CompactData::new()
-            .with_summary(format!(
-                "Session {} context compacted",
-                context.session.session_id
-            ));
+        let compact_data = CompactData::new().with_summary(format!(
+            "Session {} context compacted",
+            context.session.session_id
+        ));
 
-        Ok(HookResult::ok()
-            .with_data(HookResultData::CompactData(compact_data)))
+        Ok(HookResult::ok().with_data(HookResultData::CompactData(compact_data)))
     }
 }
 
@@ -449,7 +455,10 @@ mod tests {
     #[test]
     fn test_hook_trigger_display() {
         assert_eq!(HookTrigger::SessionStart.to_string(), "session_start");
-        assert_eq!(HookTrigger::UserPromptSubmit.to_string(), "user_prompt_submit");
+        assert_eq!(
+            HookTrigger::UserPromptSubmit.to_string(),
+            "user_prompt_submit"
+        );
         assert_eq!(HookTrigger::PreCompact.to_string(), "pre_compact");
     }
 
@@ -503,8 +512,7 @@ mod tests {
     #[tokio::test]
     async fn test_session_start_handler() {
         let handler = SessionStartHandler::new();
-        let session = SessionContext::new("test")
-            .with_project_root("/home/user/project");
+        let session = SessionContext::new("test").with_project_root("/home/user/project");
         let context = HookContext::new(HookTrigger::SessionStart, session);
 
         let result = handler.execute(context).await.unwrap();
@@ -516,17 +524,26 @@ mod tests {
     async fn test_prompt_analysis_handler() {
         let handler = PromptAnalysisHandler::new();
         let session = SessionContext::new("test");
-        let context = HookContext::new(HookTrigger::UserPromptSubmit, session)
-            .with_data(HookData::PromptSubmit {
+        let context = HookContext::new(HookTrigger::UserPromptSubmit, session).with_data(
+            HookData::PromptSubmit {
                 prompt: "Analyze the architecture and find all security issues".to_string(),
                 recent_messages: vec![],
-            });
+            },
+        );
 
         let result = handler.execute(context).await.unwrap();
         assert!(result.success);
 
         if let HookResultData::PromptEnhancement(enhancement) = result.data {
             assert!(enhancement.should_activate_rlm);
+            assert_eq!(
+                enhancement.suggested_mode,
+                Some(crate::orchestrator::ExecutionMode::Thorough)
+            );
+            assert!(enhancement
+                .signals
+                .iter()
+                .any(|signal| signal == "architecture_analysis"));
         } else {
             panic!("Expected PromptEnhancement data");
         }

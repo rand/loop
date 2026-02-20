@@ -67,10 +67,7 @@ impl LeanGenerator {
         if let Some(ref doc) = concept.doc {
             lines.push(format!("/-- {} -/", doc));
         } else {
-            lines.push(format!(
-                "/-- {} from Topos specification. -/",
-                concept.name
-            ));
+            lines.push(format!("/-- {} from Topos specification. -/", concept.name));
         }
 
         // Topos reference annotation
@@ -180,10 +177,7 @@ impl LeanGenerator {
                             "-- Precondition: {}",
                             behavior.preconditions.join(", ")
                         ));
-                        lines.push(format!(
-                            "theorem {} {} : Prop :=",
-                            pre_name, params_str
-                        ));
+                        lines.push(format!("theorem {} {} : Prop :=", pre_name, params_str));
                         lines.push(format!("{}sorry -- {}", self.indent, pre_body));
                         lines.push(String::new());
                     }
@@ -212,10 +206,7 @@ impl LeanGenerator {
             }
             FormalizationLevel::FullProofs => {
                 // Full theorem with proof sketch
-                lines.push(format!(
-                    "theorem {} {} :",
-                    theorem_name, params_str
-                ));
+                lines.push(format!("theorem {} {} :", theorem_name, params_str));
 
                 // Build proposition from pre/post conditions
                 let mut props = Vec::new();
@@ -253,10 +244,7 @@ impl LeanGenerator {
             "theorem {} ({} : {}) : Prop :=",
             theorem_name, param, concept.name
         ));
-        lines.push(format!(
-            "{}sorry -- {}",
-            self.indent, inv.expression
-        ));
+        lines.push(format!("{}sorry -- {}", self.indent, inv.expression));
 
         lines.join("\n")
     }
@@ -533,7 +521,7 @@ pub fn lean_to_topos_behavior(theorem: &LeanTheorem) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sync::types::{ToposField, LeanField};
+    use crate::sync::types::{LeanField, ToposField};
     use std::path::PathBuf;
 
     fn sample_concept() -> ToposConcept {
@@ -662,10 +650,7 @@ mod tests {
         assert_eq!(generator.map_topos_type("string"), "String");
         assert_eq!(generator.map_topos_type("nat"), "Nat");
         assert_eq!(generator.map_topos_type("list of `Item`"), "List Item");
-        assert_eq!(
-            generator.map_topos_type("optional `Order`"),
-            "Option Order"
-        );
+        assert_eq!(generator.map_topos_type("optional `Order`"), "Option Order");
         assert_eq!(generator.map_topos_type("CustomType"), "CustomType");
     }
 
@@ -686,14 +671,8 @@ mod tests {
 
         assert_eq!(generator.map_lean_type("String"), "string");
         assert_eq!(generator.map_lean_type("Nat"), "natural");
-        assert_eq!(
-            generator.map_lean_type("List Item"),
-            "list of `Item`"
-        );
-        assert_eq!(
-            generator.map_lean_type("Option Order"),
-            "optional `Order`"
-        );
+        assert_eq!(generator.map_lean_type("List Item"), "list of `Item`");
+        assert_eq!(generator.map_lean_type("Option Order"), "optional `Order`");
     }
 
     #[test]

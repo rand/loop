@@ -22,17 +22,17 @@ use super::types::{
 /// Pattern for identifying data structure definitions.
 /// Matches phrases like "a user has", "each order contains", "the system stores".
 static DATA_STRUCTURE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\b(a|an|each|every|the)\s+(\w+)\s+(has|have|contains?|includes?|stores?|holds?)\b")
-        .expect("Invalid regex")
+    Regex::new(
+        r"(?i)\b(a|an|each|every|the)\s+(\w+)\s+(has|have|contains?|includes?|stores?|holds?)\b",
+    )
+    .expect("Invalid regex")
 });
 
 /// Pattern for identifying behavioral requirements.
 /// Matches phrases like "users can", "the system should", "must be able to".
 static BEHAVIOR_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        r"(?i)\b(can|should|must|shall|will|may)\s+(be able to\s+)?(\w+)",
-    )
-    .expect("Invalid regex")
+    Regex::new(r"(?i)\b(can|should|must|shall|will|may)\s+(be able to\s+)?(\w+)")
+        .expect("Invalid regex")
 });
 
 /// Pattern for identifying constraints.
@@ -303,8 +303,8 @@ impl NLParser {
     fn is_common_word(word: &str) -> bool {
         const COMMON_WORDS: &[&str] = &[
             "The", "This", "That", "These", "Those", "Each", "Every", "All", "Any", "Some", "When",
-            "Where", "What", "Which", "Who", "How", "If", "Then", "Else", "And", "Or", "But", "For",
-            "With", "From", "Into", "After", "Before", "During", "While",
+            "Where", "What", "Which", "Who", "How", "If", "Then", "Else", "And", "Or", "But",
+            "For", "With", "From", "Into", "After", "Before", "During", "While",
         ];
         COMMON_WORDS.contains(&word)
     }
@@ -314,10 +314,7 @@ impl NLParser {
         let text_lower = text.to_lowercase();
         let mut domains = Vec::new();
 
-        if DISTRIBUTED_KEYWORDS
-            .iter()
-            .any(|k| text_lower.contains(k))
-        {
+        if DISTRIBUTED_KEYWORDS.iter().any(|k| text_lower.contains(k)) {
             domains.push(SpecDomain::DistributedSystems);
         }
 
@@ -439,7 +436,11 @@ impl NLParser {
         }
 
         // Questions for data structure requirements lacking details
-        for req in ctx.requirements.iter().filter(|r| r.req_type == RequirementType::DataStructure) {
+        for req in ctx
+            .requirements
+            .iter()
+            .filter(|r| r.req_type == RequirementType::DataStructure)
+        {
             // Check if we have field details
             if !req.text.contains(':') && !req.text.contains("with") {
                 question_id += 1;
@@ -450,7 +451,10 @@ impl NLParser {
                         req.formal_name.as_ref().unwrap_or(&"entity".to_string())
                     ),
                     category: QuestionCategory::DataTypes,
-                    rationale: format!("Need to define the structure of {}", req.formal_name.as_ref().unwrap_or(&"entity".to_string())),
+                    rationale: format!(
+                        "Need to define the structure of {}",
+                        req.formal_name.as_ref().unwrap_or(&"entity".to_string())
+                    ),
                     suggestions: vec![
                         "id: unique identifier".to_string(),
                         "created_at: timestamp".to_string(),
@@ -462,7 +466,11 @@ impl NLParser {
         }
 
         // Questions for constraints lacking specifics
-        for req in ctx.requirements.iter().filter(|r| r.req_type == RequirementType::Constraint) {
+        for req in ctx
+            .requirements
+            .iter()
+            .filter(|r| r.req_type == RequirementType::Constraint)
+        {
             if !QUANTITY_PATTERN.is_match(&req.text) {
                 question_id += 1;
                 questions.push(Question {
@@ -484,8 +492,14 @@ impl NLParser {
         }
 
         // Questions about error handling if behaviors exist but no error cases
-        let has_behaviors = ctx.requirements.iter().any(|r| r.req_type == RequirementType::Behavior);
-        let has_errors = ctx.requirements.iter().any(|r| r.req_type == RequirementType::ErrorCase);
+        let has_behaviors = ctx
+            .requirements
+            .iter()
+            .any(|r| r.req_type == RequirementType::Behavior);
+        let has_errors = ctx
+            .requirements
+            .iter()
+            .any(|r| r.req_type == RequirementType::ErrorCase);
 
         if has_behaviors && !has_errors {
             question_id += 1;
@@ -625,16 +639,21 @@ mod tests {
 
     #[test]
     fn test_find_ambiguities() {
-        let mut ctx = SpecContext::new("The system should return appropriate results in a reasonable time");
+        let mut ctx =
+            SpecContext::new("The system should return appropriate results in a reasonable time");
         NLParser::parse(&mut ctx);
 
         assert!(!ctx.ambiguities.is_empty());
-        assert!(ctx.ambiguities.iter().any(|a| a.severity == AmbiguitySeverity::High));
+        assert!(ctx
+            .ambiguities
+            .iter()
+            .any(|a| a.severity == AmbiguitySeverity::High));
     }
 
     #[test]
     fn test_extract_entities() {
-        let entities = NLParser::extract_entities("Each User has an Order with multiple OrderItems");
+        let entities =
+            NLParser::extract_entities("Each User has an Order with multiple OrderItems");
         assert!(entities.contains(&"User".to_string()));
         assert!(entities.contains(&"Order".to_string()));
         assert!(entities.contains(&"OrderItems".to_string()));

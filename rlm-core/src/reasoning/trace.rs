@@ -180,7 +180,11 @@ impl ReasoningTrace {
         let decision = DecisionNode::decision(context);
         let decision_id = decision.id.clone();
         self.add_node(decision);
-        self.add_edge(parent_id.clone(), decision_id.clone(), TraceEdgeLabel::Spawns);
+        self.add_edge(
+            parent_id.clone(),
+            decision_id.clone(),
+            TraceEdgeLabel::Spawns,
+        );
 
         let mut chosen_id = decision_id.clone();
 
@@ -237,7 +241,11 @@ impl ReasoningTrace {
         let outcome_node = DecisionNode::outcome(outcome);
         let outcome_id = outcome_node.id.clone();
         self.add_node(outcome_node);
-        self.add_edge(action_id.clone(), outcome_id.clone(), TraceEdgeLabel::Produces);
+        self.add_edge(
+            action_id.clone(),
+            outcome_id.clone(),
+            TraceEdgeLabel::Produces,
+        );
 
         (action_id, outcome_id)
     }
@@ -311,7 +319,12 @@ impl ReasoningTrace {
         // Add nodes
         for node in &self.nodes {
             let (open, close) = node.node_type.mermaid_shape();
-            let label = node.content.replace('"', "'").chars().take(50).collect::<String>();
+            let label = node
+                .content
+                .replace('"', "'")
+                .chars()
+                .take(50)
+                .collect::<String>();
             let label = if node.content.len() > 50 {
                 format!("{}...", label)
             } else {
@@ -475,12 +488,7 @@ impl DecisionTree {
     pub fn leaves(&self) -> Vec<&DecisionNode> {
         self.nodes
             .iter()
-            .filter(|(id, _)| {
-                self.children
-                    .get(*id)
-                    .map(|c| c.is_empty())
-                    .unwrap_or(true)
-            })
+            .filter(|(id, _)| self.children.get(*id).map(|c| c.is_empty()).unwrap_or(true))
             .map(|(_, n)| n)
             .collect()
     }
@@ -657,7 +665,13 @@ mod tests {
         let mut trace = ReasoningTrace::new("Design system", "session-3");
         let root_id = trace.root_goal.clone();
 
-        trace.log_decision(&root_id, "Choose architecture", &["Monolith", "Microservices"], 1, "Scalability");
+        trace.log_decision(
+            &root_id,
+            "Choose architecture",
+            &["Monolith", "Microservices"],
+            1,
+            "Scalability",
+        );
 
         let tree = trace.get_tree();
         assert!(tree.root_node().is_some());
@@ -730,7 +744,7 @@ mod tests {
 
         // Should visit all nodes
         assert_eq!(nodes.len(), 4); // goal + decision + 2 options
-        // First should be root
+                                    // First should be root
         assert_eq!(nodes[0].node_type, DecisionNodeType::Goal);
     }
 }

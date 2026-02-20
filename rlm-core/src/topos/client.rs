@@ -301,8 +301,7 @@ impl ToposClient {
             params,
         };
 
-        let request_json =
-            serde_json::to_string(&request).map_err(|e| Error::Serialization(e))?;
+        let request_json = serde_json::to_string(&request).map_err(|e| Error::Serialization(e))?;
 
         let mut process_guard = self.process.lock().await;
         let process = process_guard
@@ -518,17 +517,16 @@ impl ToposClient {
     }
 
     /// Extract spec from Rust files.
-    pub async fn extract_spec(
-        &self,
-        paths: Vec<&Path>,
-        spec_name: Option<&str>,
-    ) -> Result<String> {
+    pub async fn extract_spec(&self, paths: Vec<&Path>, spec_name: Option<&str>) -> Result<String> {
         if !self.is_connected().await {
             self.connect().await?;
         }
 
         let mut args = HashMap::new();
-        let path_strs: Vec<String> = paths.iter().map(|p| p.to_string_lossy().to_string()).collect();
+        let path_strs: Vec<String> = paths
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect();
         args.insert("paths".to_string(), json!(path_strs));
         if let Some(name) = spec_name {
             args.insert("spec_name".to_string(), json!(name));

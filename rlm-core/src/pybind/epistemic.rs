@@ -383,7 +383,10 @@ impl PyBudgetResult {
     fn __repr__(&self) -> String {
         format!(
             "BudgetResult(status={:?}, budget_gap={:.2}, observed={:.2}, required={:.2})",
-            self.inner.status, self.inner.budget_gap, self.inner.observed_bits, self.inner.required_bits
+            self.inner.status,
+            self.inner.budget_gap,
+            self.inner.observed_bits,
+            self.inner.required_bits
         )
     }
 }

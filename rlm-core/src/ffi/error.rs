@@ -36,11 +36,9 @@ pub(crate) fn clear_last_error() {
 /// on the same thread. Do not free the returned pointer.
 #[no_mangle]
 pub extern "C" fn rlm_last_error() -> *const c_char {
-    LAST_ERROR.with(|e| {
-        match e.borrow().as_ref() {
-            Some(s) => s.as_ptr(),
-            None => std::ptr::null(),
-        }
+    LAST_ERROR.with(|e| match e.borrow().as_ref() {
+        Some(s) => s.as_ptr(),
+        None => std::ptr::null(),
     })
 }
 
@@ -96,9 +94,7 @@ pub(crate) unsafe fn cstr_to_str<'a>(s: *const c_char) -> Result<&'a str, &'stat
     if s.is_null() {
         return Err("null pointer");
     }
-    CStr::from_ptr(s)
-        .to_str()
-        .map_err(|_| "invalid UTF-8")
+    CStr::from_ptr(s).to_str().map_err(|_| "invalid UTF-8")
 }
 
 /// Helper to convert Rust string to C string (caller must free).

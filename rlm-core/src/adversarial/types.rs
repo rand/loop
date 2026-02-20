@@ -155,7 +155,11 @@ pub struct ToolOutput {
 }
 
 impl ToolOutput {
-    pub fn new(tool: impl Into<String>, input: impl Into<String>, output: impl Into<String>) -> Self {
+    pub fn new(
+        tool: impl Into<String>,
+        input: impl Into<String>,
+        output: impl Into<String>,
+    ) -> Self {
         Self {
             tool: tool.into(),
             input: input.into(),
@@ -438,12 +442,18 @@ impl ValidationResult {
 
     /// Get issues by severity.
     pub fn issues_by_severity(&self, severity: IssueSeverity) -> Vec<&Issue> {
-        self.issues.iter().filter(|i| i.severity == severity).collect()
+        self.issues
+            .iter()
+            .filter(|i| i.severity == severity)
+            .collect()
     }
 
     /// Get issues by category.
     pub fn issues_by_category(&self, category: IssueCategory) -> Vec<&Issue> {
-        self.issues.iter().filter(|i| i.category == category).collect()
+        self.issues
+            .iter()
+            .filter(|i| i.category == category)
+            .collect()
     }
 
     /// Mark as complete with verdict.
@@ -533,7 +543,10 @@ impl ValidationStats {
                 IssueSeverity::Info => stats.info_issues += 1,
             }
 
-            *stats.by_category.entry(issue.category.to_string()).or_insert(0) += 1;
+            *stats
+                .by_category
+                .entry(issue.category.to_string())
+                .or_insert(0) += 1;
         }
 
         stats
@@ -638,12 +651,15 @@ mod tests {
     #[test]
     fn test_validation_result() {
         let result = ValidationResult::new(ValidationId::new())
-            .with_issue(Issue::new(
-                IssueSeverity::Medium,
-                IssueCategory::Testing,
-                "Missing test",
-                "No test for edge case",
-            ).as_non_blocking())
+            .with_issue(
+                Issue::new(
+                    IssueSeverity::Medium,
+                    IssueCategory::Testing,
+                    "Missing test",
+                    "No test for edge case",
+                )
+                .as_non_blocking(),
+            )
             .with_issue(Issue::new(
                 IssueSeverity::Critical,
                 IssueCategory::Security,

@@ -209,7 +209,11 @@ impl<S: Signature> Predict<S> {
         prompt.push_str("Respond with a JSON object containing these fields:\n\n");
         for field in S::output_fields() {
             let prefix = field.prefix.as_deref().unwrap_or(&field.name);
-            let required = if field.required { "required" } else { "optional" };
+            let required = if field.required {
+                "required"
+            } else {
+                "optional"
+            };
             prompt.push_str(&format!(
                 "- **{}**: {} ({}, {})\n",
                 prefix,
@@ -220,7 +224,9 @@ impl<S: Signature> Predict<S> {
         }
 
         if self.config.chain_of_thought {
-            prompt.push_str("\nFirst explain your reasoning step by step, then provide the JSON output.\n");
+            prompt.push_str(
+                "\nFirst explain your reasoning step by step, then provide the JSON output.\n",
+            );
         } else {
             prompt.push_str("\nRespond with only the JSON object, no additional text.\n");
         }
@@ -230,7 +236,8 @@ impl<S: Signature> Predict<S> {
 
     /// Parse the LLM response into outputs.
     fn parse_response(&self, response: &str) -> Result<S::Outputs> {
-        S::from_response(response).map_err(|e| Error::Internal(format!("Failed to parse response: {}", e)))
+        S::from_response(response)
+            .map_err(|e| Error::Internal(format!("Failed to parse response: {}", e)))
     }
 }
 
@@ -253,14 +260,17 @@ impl<S: Signature + 'static> Module for Predict<S> {
                 .map(|e| e.to_user_message())
                 .collect::<Vec<_>>()
                 .join("; ");
-            return Err(Error::Config(format!("Input validation failed: {}", detail)));
+            return Err(Error::Config(format!(
+                "Input validation failed: {}",
+                detail
+            )));
         }
 
         // Get the LM
         let lm_guard = self.lm.read().await;
-        let lm = lm_guard.as_ref().ok_or_else(|| {
-            Error::Config("No language model set for Predict module".to_string())
-        })?;
+        let lm = lm_guard
+            .as_ref()
+            .ok_or_else(|| Error::Config("No language model set for Predict module".to_string()))?;
 
         // Build the prompt
         let messages = self.build_prompt(&inputs).await?;
@@ -339,10 +349,7 @@ impl<S: Signature + 'static> Predictor for Predict<S> {
     }
 
     fn demonstration_count(&self) -> usize {
-        self.demonstrations
-            .try_read()
-            .map(|g| g.len())
-            .unwrap_or(0)
+        self.demonstrations.try_read().map(|g| g.len()).unwrap_or(0)
     }
 
     fn predictor_name(&self) -> &str {
@@ -389,14 +396,14 @@ impl<S: Signature> Clone for Predict<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use chrono::Utc;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use crate::signature::{FieldSpec, FieldType};
     use crate::llm::{
         CompletionResponse, EmbeddingRequest, EmbeddingResponse, ModelSpec, Provider, TokenUsage,
     };
+    use crate::signature::{FieldSpec, FieldType};
+    use async_trait::async_trait;
+    use chrono::Utc;
     use serde::{Deserialize, Serialize};
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     // Mock signature for testing
     #[derive(Debug, Clone, Serialize, Deserialize)]

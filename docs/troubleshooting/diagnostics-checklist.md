@@ -14,6 +14,7 @@ Use this template for reproducible incident reports.
 - Exit code:
 - First failing step:
 - Raw stderr/stdout artifact path:
+- If command hung: elapsed wall time before termination:
 
 ## 3. Environment Snapshot
 
@@ -26,6 +27,7 @@ go version
 uv --version
 git rev-parse HEAD
 git status --short --branch
+ps -axo pid=,command=,rss= -ww | rg -n "rlm_repl|lake env repl|\\brepl\\b" -S
 ```
 
 ## 4. Scope Classification

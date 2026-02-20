@@ -341,22 +341,31 @@ impl EventBridge {
     }
 
     /// Forward a budget alert.
-    pub fn forward_budget_alert(&self, alert: BudgetAlert, state: &BudgetState, limit: Option<f64>) {
+    pub fn forward_budget_alert(
+        &self,
+        alert: BudgetAlert,
+        state: &BudgetState,
+        limit: Option<f64>,
+    ) {
         let message = match alert {
             BudgetAlert::Warning => format!(
                 "Budget warning: ${:.4} spent ({:.1}% of limit)",
                 state.current_cost_usd,
-                limit.map(|l| (state.current_cost_usd / l) * 100.0).unwrap_or(0.0)
+                limit
+                    .map(|l| (state.current_cost_usd / l) * 100.0)
+                    .unwrap_or(0.0)
             ),
-            BudgetAlert::Exceeded => format!("Budget exceeded: ${:.4} spent", state.current_cost_usd),
+            BudgetAlert::Exceeded => {
+                format!("Budget exceeded: ${:.4} spent", state.current_cost_usd)
+            }
             BudgetAlert::Custom(p) => format!(
                 "Budget alert ({}%): ${:.4} spent",
                 p, state.current_cost_usd
             ),
         };
 
-        let update = BudgetUpdate::from_state(state, limit)
-            .with_alert(message, AlertLevel::from(alert));
+        let update =
+            BudgetUpdate::from_state(state, limit).with_alert(message, AlertLevel::from(alert));
 
         let _ = self.sender.send(TUIEvent::Budget(update));
     }
@@ -399,7 +408,10 @@ impl EventBridge {
     }
 
     /// Emit a batch of events.
-    pub fn emit_batch(&self, events: Vec<TUIEvent>) -> Result<usize, broadcast::error::SendError<TUIEvent>> {
+    pub fn emit_batch(
+        &self,
+        events: Vec<TUIEvent>,
+    ) -> Result<usize, broadcast::error::SendError<TUIEvent>> {
         self.sender.send(TUIEvent::Batch(events))
     }
 }
@@ -517,9 +529,18 @@ mod tests {
     #[test]
     fn test_alert_level_from_budget_alert() {
         assert_eq!(AlertLevel::from(BudgetAlert::Warning), AlertLevel::Warning);
-        assert_eq!(AlertLevel::from(BudgetAlert::Exceeded), AlertLevel::Exceeded);
-        assert_eq!(AlertLevel::from(BudgetAlert::Custom(100)), AlertLevel::Exceeded);
-        assert_eq!(AlertLevel::from(BudgetAlert::Custom(80)), AlertLevel::Warning);
+        assert_eq!(
+            AlertLevel::from(BudgetAlert::Exceeded),
+            AlertLevel::Exceeded
+        );
+        assert_eq!(
+            AlertLevel::from(BudgetAlert::Custom(100)),
+            AlertLevel::Exceeded
+        );
+        assert_eq!(
+            AlertLevel::from(BudgetAlert::Custom(80)),
+            AlertLevel::Warning
+        );
         assert_eq!(AlertLevel::from(BudgetAlert::Custom(50)), AlertLevel::Info);
     }
 
@@ -533,7 +554,13 @@ mod tests {
     #[test]
     fn test_tui_event_type_name() {
         assert_eq!(TUIEvent::error("test").type_name(), "error");
-        assert_eq!(TUIEvent::budget(BudgetUpdate::new(0.0, 0)).type_name(), "budget");
-        assert_eq!(TUIEvent::status(StatusUpdate::new(ExecutionStatus::Idle)).type_name(), "status");
+        assert_eq!(
+            TUIEvent::budget(BudgetUpdate::new(0.0, 0)).type_name(),
+            "budget"
+        );
+        assert_eq!(
+            TUIEvent::status(StatusUpdate::new(ExecutionStatus::Idle)).type_name(),
+            "status"
+        );
     }
 }

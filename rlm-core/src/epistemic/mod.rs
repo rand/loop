@@ -201,7 +201,10 @@ pub fn quick_hallucination_check(response: &str) -> f64 {
     let claims = extractor.extract(response);
 
     let high_specificity_count = claims.iter().filter(|c| c.specificity > 0.7).count();
-    let with_evidence_count = claims.iter().filter(|c| !c.evidence_refs.is_empty()).count();
+    let with_evidence_count = claims
+        .iter()
+        .filter(|c| !c.evidence_refs.is_empty())
+        .count();
 
     if high_specificity_count > 0 && with_evidence_count == 0 {
         risk += 0.3;
@@ -209,7 +212,9 @@ pub fn quick_hallucination_check(response: &str) -> f64 {
 
     // Universal claims without hedging
     let universal_words = ["always", "never", "all", "none", "every", "guaranteed"];
-    let hedge_words = ["might", "could", "possibly", "perhaps", "likely", "probably"];
+    let hedge_words = [
+        "might", "could", "possibly", "perhaps", "likely", "probably",
+    ];
 
     let has_universal = universal_words.iter().any(|w| lower.contains(w));
     let has_hedge = hedge_words.iter().any(|w| lower.contains(w));
@@ -226,10 +231,7 @@ pub fn quick_hallucination_check(response: &str) -> f64 {
     }
 
     // Very long sentences (often contain unsupported claims)
-    let long_sentences = response
-        .split('.')
-        .filter(|s| s.len() > 200)
-        .count();
+    let long_sentences = response.split('.').filter(|s| s.len() > 200).count();
     if long_sentences > 1 {
         risk += 0.1;
     }
@@ -248,7 +250,8 @@ mod tests {
         assert!(quick_hallucination_check(safe) < 0.3);
 
         // Higher risk: universal claim without hedging
-        let risky = "This function always returns exactly 42. It never fails under any circumstances.";
+        let risky =
+            "This function always returns exactly 42. It never fails under any circumstances.";
         assert!(quick_hallucination_check(risky) > 0.1);
     }
 

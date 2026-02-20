@@ -17,6 +17,7 @@ This documentation is organized by audience and workflow, not by who happened to
 
 ### User-Facing
 - [User Guide](./user-guide/README.md): Start-to-finish guidance by skill level.
+- [Claude Code Adapter Guide](./user-guide/claude-code-adapter.md): Capability envelope, limits, and OODA behavior.
 - [Workflow Recipes](./user-guide/workflow-recipes.md): End-to-end task playbooks.
 - [Power User Playbook](./user-guide/power-user-playbook.md): Performance, scale, and control.
 
@@ -70,3 +71,8 @@ The docs in this folder are the operational surface. Deep design history and mig
 - `docs/migration-spec-rlm-claude-code.md`
 
 Those are excellent references; they are not where a newcomer should start unless they really enjoy scrolling.
+
+For live implementation status and active backlog, use:
+- `bd status` / `bd ready`
+- `docs/execution-plan/STATUS.md`
+- `docs/execution-plan/TASK-REGISTRY.md`

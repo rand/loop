@@ -1,0 +1,25 @@
+M5 perf harness run starting
+date: UTC 2026-02-20 12:43:32
+evidence_dir: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration
+loop_min_available_mib: 3072
+run_repeats: 2
+budget_pct: 10
+min_abs_latency_ms: 2.0
+min_abs_throughput_drop_ops: 150.0
+max_error_rate_delta: 0.01
+allow_same_commit: 1
+
+[harness:baseline-run1] running...
+[harness:baseline-run1] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.json
+[harness:baseline-run2] running...
+[harness:baseline-run2] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.run2.json
+baseline input mode: generated in-place
+baseline_inputs: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.json,/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.run2.json
+[harness:candidate-run1] running...
+[harness:candidate-run1] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.json
+[harness:candidate-run2] running...
+[harness:candidate-run2] wrote /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.run2.json
+candidate_inputs: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.json,/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.run2.json
+
+M5 perf harness run completed
+summary: /Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-perf-summary.md

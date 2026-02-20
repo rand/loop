@@ -151,7 +151,10 @@ impl ParseError {
                 )
             }
             Self::StructureMismatch { expected, got } => {
-                format!("Response structure mismatch: expected {}, got {}", expected, got)
+                format!(
+                    "Response structure mismatch: expected {}, got {}",
+                    expected, got
+                )
             }
             Self::ValidationFailed(errors) => {
                 let messages: Vec<_> = errors.iter().map(|e| e.to_user_message()).collect();
@@ -327,8 +330,8 @@ pub trait Signature: Send + Sync + 'static {
         let json_str = extract_json(response);
 
         // Parse JSON
-        let value: Value = serde_json::from_str(json_str)
-            .map_err(|e| ParseError::invalid_json(&e, json_str))?;
+        let value: Value =
+            serde_json::from_str(json_str).map_err(|e| ParseError::invalid_json(&e, json_str))?;
 
         // Validate against output fields
         if let Err(errors) = validate_fields(&value, &Self::output_fields()) {
@@ -337,10 +340,7 @@ pub trait Signature: Send + Sync + 'static {
 
         // Parse into output type
         serde_json::from_value(value.clone()).map_err(|e| {
-            ParseError::structure_mismatch(
-                std::any::type_name::<Self::Outputs>(),
-                e.to_string(),
-            )
+            ParseError::structure_mismatch(std::any::type_name::<Self::Outputs>(), e.to_string())
         })
     }
 
@@ -430,9 +430,7 @@ fn field_placeholder(field_type: &FieldType) -> Value {
         FieldType::Integer => Value::String("<integer>".to_string()),
         FieldType::Float => Value::String("<number>".to_string()),
         FieldType::Boolean => Value::String("<true|false>".to_string()),
-        FieldType::List(inner) => {
-            Value::Array(vec![field_placeholder(inner)])
-        }
+        FieldType::List(inner) => Value::Array(vec![field_placeholder(inner)]),
         FieldType::Object(fields) => {
             let mut obj = serde_json::Map::new();
             for f in fields {
@@ -440,12 +438,8 @@ fn field_placeholder(field_type: &FieldType) -> Value {
             }
             Value::Object(obj)
         }
-        FieldType::Enum(values) => {
-            Value::String(values.join("|"))
-        }
-        FieldType::Custom(name) => {
-            Value::String(format!("<{}>", name))
-        }
+        FieldType::Enum(values) => Value::String(values.join("|")),
+        FieldType::Custom(name) => Value::String(format!("<{}>", name)),
     }
 }
 
@@ -572,7 +566,10 @@ I hope this helps!
         let result = TestSignature::from_response(response);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ParseError::ValidationFailed(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            ParseError::ValidationFailed(_)
+        ));
     }
 
     #[test]
@@ -582,7 +579,10 @@ I hope this helps!
         let result = TestSignature::from_response(response);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ParseError::InvalidJson { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ParseError::InvalidJson { .. }
+        ));
     }
 
     #[test]
@@ -653,8 +653,11 @@ I hope this helps!
 
         fn output_fields() -> Vec<FieldSpec> {
             vec![
-                FieldSpec::new("category", FieldType::enum_of(["bug", "feature", "question"]))
-                    .with_description("The category"),
+                FieldSpec::new(
+                    "category",
+                    FieldType::enum_of(["bug", "feature", "question"]),
+                )
+                .with_description("The category"),
                 FieldSpec::new("confidence", FieldType::Float),
             ]
         }
@@ -847,11 +850,7 @@ I hope this helps!
                 FieldType::Enum(values) => {
                     assert_eq!(
                         values,
-                        &vec![
-                            "low".to_string(),
-                            "medium".to_string(),
-                            "high".to_string(),
-                        ]
+                        &vec!["low".to_string(), "medium".to_string(), "high".to_string(),]
                     );
                 }
                 other => panic!("expected enum field type, got {:?}", other),

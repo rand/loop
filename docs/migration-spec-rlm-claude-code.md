@@ -1,6 +1,13 @@
 # Migration Specification: rlm-claude-code to rlm-core
 
 > Detailed plan for migrating rlm-claude-code from pure Python to rlm-core Python bindings
+>
+> Historical planning artifact:
+> - Unchecked `[ ]` checklist items in this file are archival snapshots, not active backlog.
+> - Authoritative live status is tracked in Beads (`bd status`) and execution-plan trackers:
+>   - `docs/execution-plan/STATUS.md`
+>   - `docs/execution-plan/TASK-REGISTRY.md`
+>   - `docs/execution-plan/WORKBOARD.md`
 
 ## Executive Summary
 

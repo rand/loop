@@ -98,13 +98,13 @@ impl SizeWarning {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ContextVarType {
-    /// Conversation history (List[Message]).
+    /// Conversation history (`List[Message]`).
     Conversation,
-    /// Cached file contents (Dict[str, str]).
+    /// Cached file contents (`Dict[str, str]`).
     Files,
-    /// Tool execution outputs (List[ToolOutput]).
+    /// Tool execution outputs (`List[ToolOutput]`).
     ToolOutputs,
-    /// Working memory (Dict[str, Any]).
+    /// Working memory (`Dict[str, Any]`).
     WorkingMemory,
     /// Custom variable type.
     Custom(String),
@@ -152,7 +152,13 @@ impl ContextVariable {
         size_bytes: usize,
         item_count: usize,
     ) -> Self {
-        Self::new_with_config(name, var_type, size_bytes, item_count, &SizeConfig::default())
+        Self::new_with_config(
+            name,
+            var_type,
+            size_bytes,
+            item_count,
+            &SizeConfig::default(),
+        )
     }
 
     /// Create a new context variable with explicit size-policy config.
@@ -349,9 +355,8 @@ impl ExternalizedContext {
         // Context variables section
         if !self.variables.is_empty() {
             prompt.push_str("## Available Context Variables\n\n");
-            prompt.push_str(
-                "The following context is available as Python variables in the REPL.\n",
-            );
+            prompt
+                .push_str("The following context is available as Python variables in the REPL.\n");
             prompt.push_str("Use the helper functions to access them efficiently.\n\n");
 
             for (name, var) in &self.variables {
@@ -397,7 +402,9 @@ impl ExternalizedContext {
             prompt.push_str(
                 "to access exactly what you need. This keeps the conversation efficient.\n",
             );
-            prompt.push_str("When you have the final structured result, call SUBMIT({...}) exactly once.\n");
+            prompt.push_str(
+                "When you have the final structured result, call SUBMIT({...}) exactly once.\n",
+            );
             prompt.push_str(
                 "Do not stop at print/debug output; SUBMIT is required to complete the task.\n",
             );
@@ -443,7 +450,10 @@ impl ExternalizedContext {
                 let content = content.replace('\\', "\\\\").replace('"', "\\\"");
                 // Truncate very long files in setup
                 let content = if content.len() > 5000 {
-                    format!("{}...[truncated, use search() for full access]", &content[..5000])
+                    format!(
+                        "{}...[truncated, use search() for full access]",
+                        &content[..5000]
+                    )
                 } else {
                     content
                 };
@@ -475,7 +485,10 @@ impl ExternalizedContext {
         // Set up working memory
         if self.variables.contains_key("working_memory") {
             code.push_str("working_memory = ");
-            code.push_str(&serde_json::to_string_pretty(&ctx.working_memory).unwrap_or_else(|_| "{}".to_string()));
+            code.push_str(
+                &serde_json::to_string_pretty(&ctx.working_memory)
+                    .unwrap_or_else(|_| "{}".to_string()),
+            );
             code.push_str("\n\n");
         }
 
@@ -651,7 +664,8 @@ def peek(data, start=0, end=None):
             },
             Self {
                 name: "search",
-                signature: "search(data, pattern, regex=False, case_sensitive=True, context_lines=0)",
+                signature:
+                    "search(data, pattern, regex=False, case_sensitive=True, context_lines=0)",
                 description: "Search strings/lists/dicts with literal or regex pattern",
                 implementation: r#"
 def search(data, pattern, regex=False, case_sensitive=True, context_lines=0):
@@ -798,10 +812,7 @@ impl ContextSizeTracker {
     /// Update size for a variable.
     pub fn update(&mut self, name: &str, size: usize) {
         // Update history
-        self.history
-            .entry(name.to_string())
-            .or_default()
-            .push(size);
+        self.history.entry(name.to_string()).or_default().push(size);
 
         // Update current
         if let Some(old_size) = self.current.insert(name.to_string(), size) {
@@ -826,10 +837,7 @@ impl ContextSizeTracker {
         if history.len() < 2 {
             return None;
         }
-        let growth: f64 = history
-            .windows(2)
-            .map(|w| w[1] as f64 - w[0] as f64)
-            .sum();
+        let growth: f64 = history.windows(2).map(|w| w[1] as f64 - w[0] as f64).sum();
         Some(growth / (history.len() - 1) as f64)
     }
 
@@ -940,10 +948,9 @@ mod tests {
             warning,
             SizeWarning::LargeVariable { name, .. } if name == "conversation"
         )));
-        assert!(warnings.iter().any(|warning| matches!(
-            warning,
-            SizeWarning::TotalSizeExceeded { .. }
-        )));
+        assert!(warnings
+            .iter()
+            .any(|warning| matches!(warning, SizeWarning::TotalSizeExceeded { .. })));
     }
 
     #[test]
@@ -966,9 +973,10 @@ mod tests {
         assert_eq!(files.chunk_count, Some(4));
         assert!(!files.requires_chunking);
         assert!(files.summary.contains("auto_chunked into 4 chunks"));
-        assert!(!externalized.warnings.iter().any(|warning| {
-            warning.contains("requires chunking")
-        }));
+        assert!(!externalized
+            .warnings
+            .iter()
+            .any(|warning| { warning.contains("requires chunking") }));
     }
 
     #[test]
@@ -1034,8 +1042,7 @@ mod tests {
             externalize_working_memory: true,
         };
 
-        let externalized =
-            ExternalizedContext::from_session_with_config(&ctx, "Query", &config);
+        let externalized = ExternalizedContext::from_session_with_config(&ctx, "Query", &config);
 
         assert!(!externalized.variables.contains_key("conversation"));
         assert!(externalized.variables.contains_key("files"));
@@ -1093,25 +1100,19 @@ mod tests {
         let helpers = VariableAccessHelper::standard_helpers();
 
         assert_eq!(helpers.len(), 4);
-        assert!(
-            helpers
-                .iter()
-                .any(|helper| helper.signature == "peek(data, start=0, end=None)")
-        );
+        assert!(helpers
+            .iter()
+            .any(|helper| helper.signature == "peek(data, start=0, end=None)"));
         assert!(helpers.iter().any(|helper| {
             helper.signature
                 == "search(data, pattern, regex=False, case_sensitive=True, context_lines=0)"
         }));
-        assert!(
-            helpers
-                .iter()
-                .any(|helper| helper.signature == "summarize(data, max_tokens=500, focus=None)")
-        );
-        assert!(
-            helpers
-                .iter()
-                .any(|helper| helper.signature == "find_relevant(data, query, top_k=5)")
-        );
+        assert!(helpers
+            .iter()
+            .any(|helper| helper.signature == "summarize(data, max_tokens=500, focus=None)"));
+        assert!(helpers
+            .iter()
+            .any(|helper| helper.signature == "find_relevant(data, query, top_k=5)"));
     }
 
     #[test]

@@ -353,7 +353,8 @@ mod tests {
         let ctx = rlm_session_context_new();
         let query = std::ffi::CString::new("simple question").unwrap();
 
-        let decision = unsafe { rlm_pattern_classifier_should_activate(classifier, query.as_ptr(), ctx) };
+        let decision =
+            unsafe { rlm_pattern_classifier_should_activate(classifier, query.as_ptr(), ctx) };
         assert!(!decision.is_null());
 
         let _should_activate = unsafe { rlm_activation_decision_should_activate(decision) };
@@ -371,9 +372,8 @@ mod tests {
 
         // Record some usage
         let model = std::ffi::CString::new("claude-sonnet").unwrap();
-        let result = unsafe {
-            rlm_cost_tracker_record(tracker, model.as_ptr(), 1000, 500, 0, 0, 0.01)
-        };
+        let result =
+            unsafe { rlm_cost_tracker_record(tracker, model.as_ptr(), 1000, 500, 0, 0, 0.01) };
         assert_eq!(result, 0);
 
         let input = unsafe { rlm_cost_tracker_total_input_tokens(tracker) };
@@ -517,7 +517,9 @@ mod tests {
         // Depending on compile flags, it may or may not contain certain features
         assert!(
             features_str.is_empty()
-                || features_str.split(',').all(|f| ["gemini", "adversarial", "python"].contains(&f))
+                || features_str
+                    .split(',')
+                    .all(|f| ["gemini", "adversarial", "python"].contains(&f))
         );
 
         unsafe { rlm_string_free(features) };

@@ -18,8 +18,8 @@ use crate::trajectory::{
 
 use super::events::{EventBridge, ExecutionStatus, TUIEvent};
 use super::panels::{
-    BudgetPanelData, MemoryNodeView, MemoryPanelData, ReplEntry, ReplPanelData,
-    TierCounts, TracePanelData, TraceEventView,
+    BudgetPanelData, MemoryNodeView, MemoryPanelData, ReplEntry, ReplPanelData, TierCounts,
+    TraceEventView, TracePanelData,
 };
 
 // =============================================================================
@@ -245,10 +245,22 @@ impl TUIAdapter {
                 panel.node_count = stats.total_nodes as usize;
                 panel.edge_count = stats.total_edges as usize;
                 panel.tier_counts = TierCounts {
-                    task: *stats.nodes_by_tier.get(&crate::memory::Tier::Task).unwrap_or(&0) as usize,
-                    session: *stats.nodes_by_tier.get(&crate::memory::Tier::Session).unwrap_or(&0) as usize,
-                    long_term: *stats.nodes_by_tier.get(&crate::memory::Tier::LongTerm).unwrap_or(&0) as usize,
-                    archive: *stats.nodes_by_tier.get(&crate::memory::Tier::Archive).unwrap_or(&0) as usize,
+                    task: *stats
+                        .nodes_by_tier
+                        .get(&crate::memory::Tier::Task)
+                        .unwrap_or(&0) as usize,
+                    session: *stats
+                        .nodes_by_tier
+                        .get(&crate::memory::Tier::Session)
+                        .unwrap_or(&0) as usize,
+                    long_term: *stats
+                        .nodes_by_tier
+                        .get(&crate::memory::Tier::LongTerm)
+                        .unwrap_or(&0) as usize,
+                    archive: *stats
+                        .nodes_by_tier
+                        .get(&crate::memory::Tier::Archive)
+                        .unwrap_or(&0) as usize,
                 };
             }
         }
@@ -327,10 +339,8 @@ impl TUIAdapter {
 
     /// Record a memory node addition.
     pub async fn record_memory_node(&self, node: &crate::memory::Node) {
-        let view = MemoryNodeView::from_node_with_preview_length(
-            node,
-            self.config.memory_preview_length,
-        );
+        let view =
+            MemoryNodeView::from_node_with_preview_length(node, self.config.memory_preview_length);
 
         let mut state = self.state.write().await;
         state.memory.add_node(view.clone());
@@ -365,10 +375,8 @@ impl TUIAdapter {
         }
 
         // Forward state update
-        self.event_bridge.forward_budget_state(
-            &budget_state,
-            self.config.budget_config.max_cost_usd,
-        );
+        self.event_bridge
+            .forward_budget_state(&budget_state, self.config.budget_config.max_cost_usd);
     }
 
     // =========================================================================
@@ -391,7 +399,10 @@ impl TUIAdapter {
 
     /// Mark execution as complete.
     pub async fn complete_execution(&self) {
-        let elapsed = self.execution_start.read().await
+        let elapsed = self
+            .execution_start
+            .read()
+            .await
             .map(|s| s.elapsed().as_millis() as u64)
             .unwrap_or(0);
 
@@ -417,10 +428,8 @@ impl TUIAdapter {
         state.status = ExecutionStatus::Error;
         state.trace.status = ExecutionStatus::Error;
 
-        self.event_bridge.forward_status(
-            ExecutionStatus::Error,
-            Some(error_msg.clone()),
-        );
+        self.event_bridge
+            .forward_status(ExecutionStatus::Error, Some(error_msg.clone()));
         self.event_bridge.forward_error(error_msg);
     }
 
@@ -452,10 +461,8 @@ impl TUIAdapter {
         );
         state.status = ExecutionStatus::Idle;
 
-        self.event_bridge.forward_status(
-            ExecutionStatus::Idle,
-            Some("Adapter reset".to_string()),
-        );
+        self.event_bridge
+            .forward_status(ExecutionStatus::Idle, Some("Adapter reset".to_string()));
     }
 
     // =========================================================================
@@ -594,8 +601,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_budget_recording() {
-        let config = TUIConfig::new()
-            .budget_config(BudgetConfig::with_cost_limit(1.0));
+        let config = TUIConfig::new().budget_config(BudgetConfig::with_cost_limit(1.0));
         let adapter = TUIAdapter::new(config);
 
         adapter.record_cost(0.5, 30_000, 20_000).await;

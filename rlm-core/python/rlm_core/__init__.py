@@ -68,7 +68,23 @@ try:
         ClaimExtractor,
         KL,
         quick_hallucination_check,
+        # Compatibility helpers
+        version,
+        version_tuple,
+        has_feature,
+        available_features,
     )
+
+    # Optional adversarial feature exports.
+    try:
+        from rlm_core.rlm_core import (
+            AdversarialConfig,
+            ValidationContext,
+            ValidationResult,
+            IssueSeverity,
+        )
+    except ImportError:
+        pass
 except ImportError:
     # Provide stubs for IDE support when extension not built
     pass
@@ -120,4 +136,19 @@ __all__ = [
     "ClaimExtractor",
     "KL",
     "quick_hallucination_check",
+    # Compatibility helpers
+    "version",
+    "version_tuple",
+    "has_feature",
+    "available_features",
 ]
+
+if "AdversarialConfig" in globals():
+    __all__.extend(
+        [
+            "AdversarialConfig",
+            "ValidationContext",
+            "ValidationResult",
+            "IssueSeverity",
+        ]
+    )

@@ -5,7 +5,9 @@ use std::path::PathBuf;
 
 use super::error::{cstr_to_str, ffi_try, set_last_error, str_to_cstring};
 use super::types::{RlmHyperEdge, RlmMemoryStore, RlmNode, RlmNodeType, RlmTier};
-use crate::memory::{EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, SqliteMemoryStore, Tier};
+use crate::memory::{
+    EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, SqliteMemoryStore, Tier,
+};
 
 // ============================================================================
 // MemoryStore
@@ -118,7 +120,11 @@ pub unsafe extern "C" fn rlm_memory_store_delete_node(
     let id_str = ffi_try!(cstr_to_str(node_id), -1);
     let id = ffi_try!(NodeId::parse(id_str), -1);
     let deleted = ffi_try!((*store).0.delete_node(&id), -1);
-    if deleted { 1 } else { 0 }
+    if deleted {
+        1
+    } else {
+        0
+    }
 }
 
 /// Query nodes by type. Returns a JSON array of node IDs.
@@ -367,10 +373,7 @@ pub unsafe extern "C" fn rlm_node_subtype(node: *const RlmNode) -> *mut c_char {
 
 /// Set the node subtype.
 #[no_mangle]
-pub unsafe extern "C" fn rlm_node_set_subtype(
-    node: *mut RlmNode,
-    subtype: *const c_char,
-) -> i32 {
+pub unsafe extern "C" fn rlm_node_set_subtype(node: *mut RlmNode, subtype: *const c_char) -> i32 {
     if node.is_null() {
         set_last_error("null node pointer");
         return -1;
@@ -432,7 +435,11 @@ pub unsafe extern "C" fn rlm_node_is_decayed(node: *const RlmNode, min_confidenc
     if node.is_null() {
         return 0;
     }
-    if (*node).0.is_decayed(min_confidence) { 1 } else { 0 }
+    if (*node).0.is_decayed(min_confidence) {
+        1
+    } else {
+        0
+    }
 }
 
 /// Get the node age in hours.
@@ -599,7 +606,12 @@ pub unsafe extern "C" fn rlm_hyperedge_node_ids(edge: *const RlmHyperEdge) -> *m
         set_last_error("null edge pointer");
         return std::ptr::null_mut();
     }
-    let ids: Vec<String> = (*edge).0.node_ids().iter().map(|id| id.to_string()).collect();
+    let ids: Vec<String> = (*edge)
+        .0
+        .node_ids()
+        .iter()
+        .map(|id| id.to_string())
+        .collect();
     let json = ffi_try!(serde_json::to_string(&ids));
     str_to_cstring(&json)
 }
@@ -621,7 +633,11 @@ pub unsafe extern "C" fn rlm_hyperedge_contains(
         Ok(id) => id,
         Err(_) => return 0,
     };
-    if (*edge).0.contains(&id) { 1 } else { 0 }
+    if (*edge).0.contains(&id) {
+        1
+    } else {
+        0
+    }
 }
 
 /// Add the edge to a memory store.

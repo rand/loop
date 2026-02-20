@@ -36,11 +36,7 @@ pub trait EpistemicVerifier: Send + Sync {
     ) -> Result<BudgetResult>;
 
     /// Verify all claims in a response.
-    async fn verify_response(
-        &self,
-        response: &str,
-        context: &str,
-    ) -> Result<VerificationResult>;
+    async fn verify_response(&self, response: &str, context: &str) -> Result<VerificationResult>;
 
     /// Get the verifier's configuration.
     fn config(&self) -> &VerificationConfig;
@@ -180,7 +176,10 @@ impl EpistemicVerifier for SelfVerifier {
         self.emit_event(TrajectoryEvent::new(
             TrajectoryEventType::VerifyStart,
             0,
-            format!("Verifying claim: {}", &claim.text[..claim.text.len().min(50)]),
+            format!(
+                "Verifying claim: {}",
+                &claim.text[..claim.text.len().min(50)]
+            ),
         ))
         .await;
 
@@ -222,11 +221,7 @@ impl EpistemicVerifier for SelfVerifier {
         Ok(result)
     }
 
-    async fn verify_response(
-        &self,
-        response: &str,
-        context: &str,
-    ) -> Result<VerificationResult> {
+    async fn verify_response(&self, response: &str, context: &str) -> Result<VerificationResult> {
         let start = Instant::now();
         let session_id = uuid::Uuid::new_v4().to_string();
 
@@ -245,7 +240,11 @@ impl EpistemicVerifier for SelfVerifier {
             self.emit_event(TrajectoryEvent::new(
                 TrajectoryEventType::ClaimExtracted,
                 0,
-                format!("[{}] {}", claim.category, &claim.text[..claim.text.len().min(60)]),
+                format!(
+                    "[{}] {}",
+                    claim.category,
+                    &claim.text[..claim.text.len().min(60)]
+                ),
             ))
             .await;
         }
@@ -395,11 +394,7 @@ impl EpistemicVerifier for HaikuVerifier {
         self.inner.verify_claim(claim, context, evidence).await
     }
 
-    async fn verify_response(
-        &self,
-        response: &str,
-        context: &str,
-    ) -> Result<VerificationResult> {
+    async fn verify_response(&self, response: &str, context: &str) -> Result<VerificationResult> {
         self.inner.verify_response(response, context).await
     }
 
@@ -496,16 +491,13 @@ impl EpistemicVerifier for BatchVerifier {
         _evidence: &[String],
     ) -> Result<BudgetResult> {
         let results = self.verify_claims_batch(&[claim.clone()], context).await;
-        results.into_iter().next().unwrap_or_else(|| {
-            Err(Error::Internal("No verification result".to_string()))
-        })
+        results
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| Err(Error::Internal("No verification result".to_string())))
     }
 
-    async fn verify_response(
-        &self,
-        response: &str,
-        context: &str,
-    ) -> Result<VerificationResult> {
+    async fn verify_response(&self, response: &str, context: &str) -> Result<VerificationResult> {
         let start = Instant::now();
         let session_id = uuid::Uuid::new_v4().to_string();
 
@@ -683,7 +675,10 @@ mod tests {
         assert_eq!(parse_probability_from_text("0.85"), Some(0.85));
         assert_eq!(parse_probability_from_text("70%"), Some(0.7));
         assert_eq!(parse_probability_from_text("\"0.6\""), Some(0.6));
-        assert_eq!(parse_probability_from_text("0.9\n\nExplanation..."), Some(0.9));
+        assert_eq!(
+            parse_probability_from_text("0.9\n\nExplanation..."),
+            Some(0.9)
+        );
     }
 
     #[test]

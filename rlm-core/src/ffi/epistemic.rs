@@ -355,7 +355,10 @@ pub unsafe extern "C" fn rlm_threshold_gate_evaluate(
     };
 
     let content = json.get("content").and_then(|v| v.as_str()).unwrap_or("");
-    let confidence = json.get("confidence").and_then(|v| v.as_f64()).unwrap_or(0.5);
+    let confidence = json
+        .get("confidence")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.5);
 
     let tier = match json.get("tier").and_then(|v| v.as_str()) {
         Some("task") => Tier::Task,

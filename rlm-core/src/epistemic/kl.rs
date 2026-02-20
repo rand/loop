@@ -365,13 +365,7 @@ mod tests {
     #[test]
     fn test_kl_interval_contains_estimate() {
         // Test multiple cases to ensure bounds always contain the estimate
-        let test_cases = [
-            (2, 3),
-            (5, 5),
-            (8, 2),
-            (1, 9),
-            (9, 1),
-        ];
+        let test_cases = [(2, 3), (5, 5), (8, 2), (1, 9), (9, 1)];
 
         for (p_agree, q_agree) in test_cases {
             let p = Probability::from_samples(p_agree, 10);

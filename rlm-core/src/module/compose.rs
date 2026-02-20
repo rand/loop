@@ -160,7 +160,10 @@ where
 ///
 /// This is a convenience for the common case where the output of one module
 /// can be directly deserialized as the input of the next.
-pub fn chain_direct<M1, M2, S1, S2>(first: M1, second: M2) -> Chain<M1, M2, S1, S2, impl Fn(S1::Outputs) -> Result<S2::Inputs> + Send + Sync>
+pub fn chain_direct<M1, M2, S1, S2>(
+    first: M1,
+    second: M2,
+) -> Chain<M1, M2, S1, S2, impl Fn(S1::Outputs) -> Result<S2::Inputs> + Send + Sync>
 where
     M1: Module<Sig = S1>,
     M2: Module<Sig = S2>,
@@ -184,7 +187,9 @@ where
                 .map(|err| err.to_string())
                 .collect::<Vec<_>>()
                 .join("; ");
-            Error::Config(format!("chain_direct incompatible output/input mapping: {summary}"))
+            Error::Config(format!(
+                "chain_direct incompatible output/input mapping: {summary}"
+            ))
         })?;
 
         serde_json::from_value(value)
@@ -192,7 +197,10 @@ where
     })
 }
 
-fn validate_direct_field_mapping(output_fields: &[FieldSpec], input_fields: &[FieldSpec]) -> Result<()> {
+fn validate_direct_field_mapping(
+    output_fields: &[FieldSpec],
+    input_fields: &[FieldSpec],
+) -> Result<()> {
     for input in input_fields {
         let Some(output) = output_fields.iter().find(|field| field.name == input.name) else {
             if input.required {
@@ -437,7 +445,9 @@ mod tests {
         type Sig = SourceSig;
 
         async fn forward(&self, inputs: SourceInputs) -> Result<SourceOutputs> {
-            Ok(SourceOutputs { value: inputs.value })
+            Ok(SourceOutputs {
+                value: inputs.value,
+            })
         }
 
         fn predictors(&self) -> Vec<&dyn Predictor> {
@@ -547,10 +557,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_chain_direct_returns_config_error_on_type_mismatch() {
-        let chain = chain_direct::<SourceModule, IncompatibleSinkModule, SourceSig, IncompatibleSinkSig>(
-            SourceModule::default(),
-            IncompatibleSinkModule::default(),
-        );
+        let chain =
+            chain_direct::<SourceModule, IncompatibleSinkModule, SourceSig, IncompatibleSinkSig>(
+                SourceModule::default(),
+                IncompatibleSinkModule::default(),
+            );
 
         let err = chain
             .forward(SourceInputs {

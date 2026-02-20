@@ -1,0 +1,66 @@
+{
+  "gate": "VG-PERF-001",
+  "budget_pct": 10.0,
+  "min_abs_latency_ms": 2.0,
+  "aggregation": "median_across_runs",
+  "baseline_files": [
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.json",
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.run2.json"
+  ],
+  "candidate_files": [
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.json",
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.run2.json"
+  ],
+  "baseline_commits": [
+    "75f806f85985302c498e9d8e4915af6f144ed6ad"
+  ],
+  "candidate_commits": [
+    "75f806f85985302c498e9d8e4915af6f144ed6ad"
+  ],
+  "allow_same_commit": true,
+  "checks": {
+    "startup_p50": {
+      "baseline_ms": 91.213625491946,
+      "candidate_ms": 92.84672950161621,
+      "regression_pct": 1.7904167287094683,
+      "abs_delta_ms": 1.6331040096702054,
+      "pass": true
+    },
+    "startup_p95": {
+      "baseline_ms": 92.54195029934635,
+      "candidate_ms": 94.44594159722328,
+      "regression_pct": 2.0574358890406663,
+      "abs_delta_ms": 1.903991297876928,
+      "pass": true
+    },
+    "execute_no_submit_p50": {
+      "baseline_ms": 0.061989499954506755,
+      "candidate_ms": 0.05566675099544227,
+      "regression_pct": -10.19970956969271,
+      "abs_delta_ms": -0.006322748959064484,
+      "pass": true
+    },
+    "execute_no_submit_p95": {
+      "baseline_ms": 0.13024095096625396,
+      "candidate_ms": 0.15329925008700235,
+      "regression_pct": 17.704338727320028,
+      "abs_delta_ms": 0.023058299120748388,
+      "pass": true
+    },
+    "execute_with_submit_p50": {
+      "baseline_ms": 0.06840625064796768,
+      "candidate_ms": 0.08032299956539646,
+      "regression_pct": 17.420555584539727,
+      "abs_delta_ms": 0.011916748917428777,
+      "pass": true
+    },
+    "execute_with_submit_p95": {
+      "baseline_ms": 0.15355400682892656,
+      "candidate_ms": 0.15846489877731076,
+      "regression_pct": 3.198152916879203,
+      "abs_delta_ms": 0.004910891948384205,
+      "pass": true
+    }
+  },
+  "pass": true
+}

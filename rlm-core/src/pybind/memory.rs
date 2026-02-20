@@ -6,7 +6,10 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::memory::{EdgeId, EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, Provenance, ProvenanceSource, SqliteMemoryStore, Tier};
+use crate::memory::{
+    EdgeId, EdgeType, HyperEdge, Node, NodeId, NodeQuery, NodeType, Provenance, ProvenanceSource,
+    SqliteMemoryStore, Tier,
+};
 
 /// Python enum for NodeType.
 #[pyclass(name = "NodeType", eq, eq_int)]
@@ -232,12 +235,18 @@ impl PyNode {
 
     #[getter]
     fn provenance_source(&self) -> Option<String> {
-        self.inner.provenance.as_ref().map(|p| format!("{:?}", p.source_type).to_lowercase())
+        self.inner
+            .provenance
+            .as_ref()
+            .map(|p| format!("{:?}", p.source_type).to_lowercase())
     }
 
     #[getter]
     fn provenance_ref(&self) -> Option<String> {
-        self.inner.provenance.as_ref().and_then(|p| p.source_ref.clone())
+        self.inner
+            .provenance
+            .as_ref()
+            .and_then(|p| p.source_ref.clone())
     }
 
     #[getter]
@@ -354,7 +363,11 @@ impl PyHyperEdge {
 
     /// Get all node IDs in this edge.
     fn node_ids(&self) -> Vec<String> {
-        self.inner.node_ids().iter().map(|id| id.to_string()).collect()
+        self.inner
+            .node_ids()
+            .iter()
+            .map(|id| id.to_string())
+            .collect()
     }
 
     /// Check if a node is a member.
@@ -454,9 +467,7 @@ impl PyMemoryStore {
 
     /// Query nodes by tier.
     fn query_by_tier(&self, tier: PyTier, limit: usize) -> PyResult<Vec<PyNode>> {
-        let query = NodeQuery::new()
-            .tiers(vec![tier.into()])
-            .limit(limit);
+        let query = NodeQuery::new().tiers(vec![tier.into()]).limit(limit);
         let nodes = self
             .inner
             .query_nodes(&query)
@@ -494,7 +505,8 @@ impl PyMemoryStore {
         let ids: Result<Vec<NodeId>, _> = node_ids.iter().map(|s| NodeId::parse(s)).collect();
         let ids =
             ids.map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-        let promoted = self.inner
+        let promoted = self
+            .inner
             .promote(&ids, reason)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
         Ok(promoted.into_iter().map(|id| id.to_string()).collect())
@@ -535,7 +547,10 @@ impl PyMemoryStore {
             .inner
             .get_edges_for_node(&id)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        Ok(edges.into_iter().map(|e| PyHyperEdge { inner: e }).collect())
+        Ok(edges
+            .into_iter()
+            .map(|e| PyHyperEdge { inner: e })
+            .collect())
     }
 
     /// Delete an edge by ID.
@@ -620,7 +635,10 @@ fn pyobj_to_json_value(_py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Valu
     } else if let Ok(s) = obj.extract::<String>() {
         Ok(Value::String(s))
     } else if let Ok(list) = obj.downcast::<pyo3::types::PyList>() {
-        let items: PyResult<Vec<Value>> = list.iter().map(|item| pyobj_to_json_value(_py, &item)).collect();
+        let items: PyResult<Vec<Value>> = list
+            .iter()
+            .map(|item| pyobj_to_json_value(_py, &item))
+            .collect();
         Ok(Value::Array(items?))
     } else if let Ok(dict) = obj.downcast::<PyDict>() {
         let mut map = serde_json::Map::new();
@@ -650,7 +668,8 @@ fn json_value_to_pyobj(py: Python<'_>, val: &Value) -> PyResult<PyObject> {
         }
         Value::String(s) => Ok(s.into_pyobject(py)?.into_any().unbind()),
         Value::Array(arr) => {
-            let items: PyResult<Vec<PyObject>> = arr.iter().map(|v| json_value_to_pyobj(py, v)).collect();
+            let items: PyResult<Vec<PyObject>> =
+                arr.iter().map(|v| json_value_to_pyobj(py, v)).collect();
             Ok(pyo3::types::PyList::new(py, items?)?.into_any().unbind())
         }
         Value::Object(map) => {

@@ -1,7 +1,7 @@
 //! Lean-specific types for the REPL integration.
 //!
 //! These types model the JSON protocol used by leanprover-community/repl.
-//! See: https://github.com/leanprover-community/repl
+//! See: <https://github.com/leanprover-community/repl>
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -177,7 +177,10 @@ impl LeanResponse {
 
         for msg in self.errors() {
             let location = if let (Some(start), Some(end)) = (&msg.pos, &msg.end_pos) {
-                format!("{}:{}-{}:{}: ", start.line, start.column, end.line, end.column)
+                format!(
+                    "{}:{}-{}:{}: ",
+                    start.line, start.column, end.line, end.column
+                )
             } else if let Some(start) = &msg.pos {
                 format!("{}:{}: ", start.line, start.column)
             } else {

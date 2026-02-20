@@ -610,11 +610,13 @@ impl CostTracker {
             root_percentage: root_pct,
             recursive_cost: self.recursive_costs.cost,
             recursive_requests: self.recursive_costs.request_count,
-            recursive_tokens: self.recursive_costs.input_tokens + self.recursive_costs.output_tokens,
+            recursive_tokens: self.recursive_costs.input_tokens
+                + self.recursive_costs.output_tokens,
             recursive_percentage: recursive_pct,
             extraction_cost: self.extraction_costs.cost,
             extraction_requests: self.extraction_costs.request_count,
-            extraction_tokens: self.extraction_costs.input_tokens + self.extraction_costs.output_tokens,
+            extraction_tokens: self.extraction_costs.input_tokens
+                + self.extraction_costs.output_tokens,
             extraction_percentage: extraction_pct,
             total_cost: self.total_cost,
             estimated_single_model_cost: self.estimate_single_model_cost(),
@@ -628,7 +630,9 @@ impl CostTracker {
     fn estimate_single_model_cost(&self) -> f64 {
         // Rough estimate: assume recursive calls would cost 3x more with premium model
         // This is based on typical Opus vs Haiku pricing ratios
-        self.root_costs.cost + (self.recursive_costs.cost * 3.0) + (self.extraction_costs.cost * 3.0)
+        self.root_costs.cost
+            + (self.recursive_costs.cost * 3.0)
+            + (self.extraction_costs.cost * 3.0)
     }
 
     /// Calculate the percentage savings from dual-model optimization.
@@ -780,7 +784,12 @@ mod tests {
             cache_read_tokens: None,
             cache_creation_tokens: None,
         };
-        tracker.record_tiered("claude-3-5-haiku", &recursive, Some(0.004), ModelCallTier::Recursive);
+        tracker.record_tiered(
+            "claude-3-5-haiku",
+            &recursive,
+            Some(0.004),
+            ModelCallTier::Recursive,
+        );
 
         let extraction = TokenUsage {
             input_tokens: 400,
@@ -788,7 +797,12 @@ mod tests {
             cache_read_tokens: None,
             cache_creation_tokens: None,
         };
-        tracker.record_tiered("claude-3-5-haiku", &extraction, Some(0.002), ModelCallTier::Extraction);
+        tracker.record_tiered(
+            "claude-3-5-haiku",
+            &extraction,
+            Some(0.002),
+            ModelCallTier::Extraction,
+        );
 
         let breakdown = tracker.tier_breakdown();
         assert!((breakdown.root_cost - 0.03).abs() < 1e-6);

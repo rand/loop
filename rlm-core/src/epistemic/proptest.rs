@@ -26,10 +26,10 @@ mod tests {
     // Strategy for generating probabilities including edge cases
     fn probability_with_edges() -> impl Strategy<Value = f64> {
         prop_oneof![
-            Just(0.001),       // Near zero
-            Just(0.5),         // Middle
-            Just(0.999),       // Near one
-            0.01f64..0.99f64,  // General range
+            Just(0.001),      // Near zero
+            Just(0.5),        // Middle
+            Just(0.999),      // Near one
+            0.01f64..0.99f64, // General range
         ]
     }
 

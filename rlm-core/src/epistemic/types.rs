@@ -600,9 +600,12 @@ mod tests {
 
     #[test]
     fn test_claim_creation() {
-        let claim = Claim::new("The function returns an integer", ClaimCategory::CodeBehavior)
-            .with_specificity(0.7)
-            .with_span(10, 50);
+        let claim = Claim::new(
+            "The function returns an integer",
+            ClaimCategory::CodeBehavior,
+        )
+        .with_specificity(0.7)
+        .with_span(10, 50);
 
         assert_eq!(claim.category, ClaimCategory::CodeBehavior);
         assert_eq!(claim.specificity, 0.7);

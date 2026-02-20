@@ -75,3 +75,21 @@ Before handoff:
 6. Ensure branch is up to date with remote.
 
 Because nothing says "teamwork" like not leaving broken local-only miracles.
+
+## Recipe 6: "I need confidence in Claude adapter behavior"
+
+```bash
+make claude-adapter-gate
+```
+
+Success criteria:
+- `VG-CLAUDE-ADAPTER-E2E-001` passes
+- At least two scenario tests execute (guardrail against zero-test filter drift)
+
+Use when:
+- You changed `adapters/claude_code/*`
+- You changed complexity signals, context externalization, or adapter mode logic
+- You want evidence for observe/orient/decide/act behavior, not just unit plumbing
+
+Read:
+- `/Users/rand/src/loop/docs/user-guide/claude-code-adapter.md`

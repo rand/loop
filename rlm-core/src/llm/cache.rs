@@ -184,12 +184,7 @@ impl PromptCache {
     }
 
     /// Record a cache creation (prompt was sent with cache control).
-    pub async fn record_creation(
-        &self,
-        key: CacheKey,
-        model: impl Into<String>,
-        token_count: u64,
-    ) {
+    pub async fn record_creation(&self, key: CacheKey, model: impl Into<String>, token_count: u64) {
         let mut entries = self.entries.write().await;
         entries.insert(key.clone(), CacheEntry::new(key, model, token_count));
 
@@ -198,12 +193,7 @@ impl PromptCache {
     }
 
     /// Record a cache hit.
-    pub async fn record_hit(
-        &self,
-        key: &CacheKey,
-        tokens_saved: u64,
-        cost_per_token: f64,
-    ) {
+    pub async fn record_hit(&self, key: &CacheKey, tokens_saved: u64, cost_per_token: f64) {
         let mut entries = self.entries.write().await;
         if let Some(entry) = entries.get_mut(key) {
             entry.record_hit();

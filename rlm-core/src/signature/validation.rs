@@ -72,11 +72,7 @@ impl ValidationError {
     }
 
     /// Create a type mismatch error.
-    pub fn type_mismatch(
-        field: impl Into<String>,
-        expected: FieldType,
-        value: &Value,
-    ) -> Self {
+    pub fn type_mismatch(field: impl Into<String>, expected: FieldType, value: &Value) -> Self {
         let got = value_type_name(value);
         let value_preview = truncate_preview(&value.to_string(), 100);
         Self::TypeMismatch {
@@ -126,7 +122,10 @@ impl ValidationError {
     /// Get a human-readable error message.
     pub fn to_user_message(&self) -> String {
         match self {
-            Self::MissingField { field, expected_type } => {
+            Self::MissingField {
+                field,
+                expected_type,
+            } => {
                 format!(
                     "Missing required field '{}' (expected {})",
                     field,
@@ -410,6 +409,7 @@ fn truncate_preview(s: &str, max_len: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde_json::json;
 
     #[test]
@@ -566,15 +566,101 @@ mod tests {
 
     #[test]
     fn test_serialization() {
-        let error = ValidationError::type_mismatch(
-            "age",
-            FieldType::Integer,
-            &json!("not a number"),
-        );
+        let error =
+            ValidationError::type_mismatch("age", FieldType::Integer, &json!("not a number"));
 
         let json = serde_json::to_string(&error).unwrap();
         let deserialized: ValidationError = serde_json::from_str(&json).unwrap();
 
         assert_eq!(error, deserialized);
+    }
+
+    fn valid_scalar_case() -> impl Strategy<Value = (FieldType, Value)> {
+        prop_oneof![
+            "[A-Za-z0-9_ ]{0,32}".prop_map(|s| (FieldType::String, json!(s))),
+            any::<i64>().prop_map(|n| (FieldType::Integer, json!(n))),
+            (-1_000_000.0f64..1_000_000.0f64).prop_map(|n| (FieldType::Float, json!(n))),
+            any::<bool>().prop_map(|b| (FieldType::Boolean, json!(b))),
+            proptest::collection::vec("[a-z]{1,8}", 1..5).prop_flat_map(|allowed| {
+                proptest::sample::select(allowed.clone()).prop_map(move |selected| {
+                    (FieldType::enum_of(allowed.clone()), json!(selected))
+                })
+            }),
+        ]
+    }
+
+    fn mismatched_scalar_case() -> impl Strategy<Value = (FieldType, Value)> {
+        prop_oneof![
+            "[A-Za-z]{1,24}".prop_map(|s| (FieldType::Integer, json!(s))),
+            any::<i64>().prop_map(|n| (FieldType::String, json!(n))),
+            any::<bool>().prop_map(|b| (FieldType::Float, json!(b))),
+            "[A-Za-z]{1,24}".prop_map(|s| (FieldType::Boolean, json!(s))),
+            proptest::collection::vec("[a-z]{1,8}", 1..5)
+                .prop_map(|allowed| (FieldType::Enum(allowed), json!("__invalid_enum_value__"))),
+        ]
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(96))]
+
+        #[test]
+        fn prop_validate_value_accepts_compatible_scalars(
+            (field_type, value) in valid_scalar_case()
+        ) {
+            prop_assert!(validate_value(&value, &field_type, "field").is_ok());
+        }
+
+        #[test]
+        fn prop_validate_value_rejects_incompatible_scalars(
+            (field_type, value) in mismatched_scalar_case()
+        ) {
+            let errors = validate_value(&value, &field_type, "field")
+                .expect_err("mismatched inputs must produce validation errors");
+            prop_assert!(!errors.is_empty());
+        }
+
+        #[test]
+        fn prop_apply_defaults_is_idempotent(
+            name in "[a-z]{1,16}",
+            provided_count in prop::option::of(any::<i64>())
+        ) {
+            let fields = vec![
+                FieldSpec::new("name", FieldType::String),
+                FieldSpec::new("count", FieldType::Integer).with_default(json!(10)),
+                FieldSpec::new("enabled", FieldType::Boolean).with_default(json!(true)),
+            ];
+
+            let mut obj = serde_json::Map::new();
+            obj.insert("name".to_string(), json!(name));
+            if let Some(count) = provided_count {
+                obj.insert("count".to_string(), json!(count));
+            }
+
+            let input = Value::Object(obj);
+            let once = apply_defaults(&input, &fields);
+            let twice = apply_defaults(&once, &fields);
+
+            prop_assert_eq!(&once, &twice);
+            prop_assert_eq!(&once["enabled"], &json!(true));
+
+            if provided_count.is_none() {
+                prop_assert_eq!(&once["count"], &json!(10));
+            }
+        }
+
+        #[test]
+        fn prop_truncate_preview_never_exceeds_bound_plus_ellipsis(
+            text in "[ -~]{0,128}",
+            max_len in 0usize..48
+        ) {
+            let truncated = truncate_preview(&text, max_len);
+
+            if text.len() <= max_len {
+                prop_assert_eq!(truncated, text);
+            } else {
+                prop_assert!(truncated.ends_with("..."));
+                prop_assert!(truncated.len() <= max_len + 3);
+            }
+        }
     }
 }

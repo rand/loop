@@ -39,7 +39,11 @@ impl<S: Signature> Example<S> {
     }
 
     /// Create an example with metadata.
-    pub fn with_metadata(inputs: S::Inputs, outputs: S::Outputs, metadata: ExampleMetadata) -> Self {
+    pub fn with_metadata(
+        inputs: S::Inputs,
+        outputs: S::Outputs,
+        metadata: ExampleMetadata,
+    ) -> Self {
         Self {
             inputs,
             outputs,
@@ -331,12 +335,10 @@ mod tests {
 
     #[test]
     fn test_erased_demonstration() {
-        let erased = ErasedDemonstration::new(
-            json!({"text": "input"}),
-            json!({"result": "output"}),
-        )
-        .with_reasoning("reasoning trace")
-        .with_metric_score(0.9);
+        let erased =
+            ErasedDemonstration::new(json!({"text": "input"}), json!({"result": "output"}))
+                .with_reasoning("reasoning trace")
+                .with_metric_score(0.9);
 
         assert_eq!(erased.inputs["text"], "input");
         assert_eq!(erased.outputs["result"], "output");

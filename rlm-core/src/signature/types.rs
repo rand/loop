@@ -91,7 +91,10 @@ impl FieldSpec {
         if self.description.is_empty() {
             format!("{label} ({type_hint}){required_marker}")
         } else {
-            format!("{label} ({type_hint}){required_marker}: {}", self.description)
+            format!(
+                "{label} ({type_hint}){required_marker}: {}",
+                self.description
+            )
         }
     }
 }
@@ -144,7 +147,7 @@ impl FieldType {
         Self::Custom(name.into())
     }
 
-    /// Get a hint string for prompts (e.g., "string", "list[string]").
+    /// Get a hint string for prompts (e.g., `"string"`, `"list[string]"`).
     pub fn to_prompt_hint(&self) -> String {
         match self {
             Self::String => "string".to_string(),
@@ -171,9 +174,7 @@ impl FieldType {
             (Self::Integer, Value::Number(n)) => n.is_i64() || n.is_u64(),
             (Self::Float, Value::Number(_)) => true,
             (Self::Boolean, Value::Bool(_)) => true,
-            (Self::List(inner), Value::Array(arr)) => {
-                arr.iter().all(|v| inner.is_compatible(v))
-            }
+            (Self::List(inner), Value::Array(arr)) => arr.iter().all(|v| inner.is_compatible(v)),
             (Self::Object(fields), Value::Object(obj)) => {
                 // All required fields must be present and compatible
                 fields.iter().all(|f| {
@@ -266,8 +267,7 @@ mod tests {
 
     #[test]
     fn test_field_spec_with_default() {
-        let field = FieldSpec::new("count", FieldType::Integer)
-            .with_default(serde_json::json!(10));
+        let field = FieldSpec::new("count", FieldType::Integer).with_default(serde_json::json!(10));
 
         assert!(!field.required);
         assert_eq!(field.default, Some(serde_json::json!(10)));
@@ -275,8 +275,7 @@ mod tests {
 
     #[test]
     fn test_display_label() {
-        let with_prefix = FieldSpec::new("user_query", FieldType::String)
-            .with_prefix("Query");
+        let with_prefix = FieldSpec::new("user_query", FieldType::String).with_prefix("Query");
         let without_prefix = FieldSpec::new("query", FieldType::String);
 
         assert_eq!(with_prefix.display_label(), "Query");
@@ -295,7 +294,10 @@ mod tests {
             .with_description("Max results")
             .optional();
 
-        assert_eq!(optional.to_prompt_line(), "limit (integer) (optional): Max results");
+        assert_eq!(
+            optional.to_prompt_line(),
+            "limit (integer) (optional): Max results"
+        );
     }
 
     #[test]

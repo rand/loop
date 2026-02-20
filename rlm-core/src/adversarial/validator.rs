@@ -8,8 +8,8 @@ use tracing::{debug, info, instrument, warn};
 
 use super::strategies::{CriticStrategy, EdgeCaseStrategy, SecurityStrategy, ValidationStrategy};
 use super::types::{
-    AdversarialConfig, Issue, ValidationContext, ValidationIteration,
-    ValidationResult, ValidationStats, ValidationVerdict,
+    AdversarialConfig, Issue, ValidationContext, ValidationIteration, ValidationResult,
+    ValidationStats, ValidationVerdict,
 };
 use crate::error::Result;
 use crate::llm::{ChatMessage, ClientConfig, CompletionRequest, GoogleClient, LLMClient};
@@ -211,14 +211,18 @@ impl GeminiValidator {
                     while i < lines.len() && !lines[i].starts_with("ISSUE:") {
                         let line = lines[i];
                         if line.starts_with("DESCRIPTION:") {
-                            description = line.trim_start_matches("DESCRIPTION:").trim().to_string();
+                            description =
+                                line.trim_start_matches("DESCRIPTION:").trim().to_string();
                         } else if line.starts_with("LOCATION:") {
                             let loc = line.trim_start_matches("LOCATION:").trim();
                             location = Self::parse_location(loc);
                         } else if line.starts_with("SUGGESTION:") {
-                            suggestion = Some(line.trim_start_matches("SUGGESTION:").trim().to_string());
+                            suggestion =
+                                Some(line.trim_start_matches("SUGGESTION:").trim().to_string());
                         } else if line.starts_with("CONFIDENCE:") {
-                            if let Ok(c) = line.trim_start_matches("CONFIDENCE:").trim().parse::<f64>() {
+                            if let Ok(c) =
+                                line.trim_start_matches("CONFIDENCE:").trim().parse::<f64>()
+                            {
                                 confidence = c.clamp(0.0, 1.0);
                             }
                         }
@@ -250,8 +254,16 @@ impl GeminiValidator {
     }
 
     /// Parse issue header: "[severity] [category] - Title"
-    fn parse_issue_header(header: &str) -> Option<(super::types::IssueSeverity, super::types::IssueCategory, String)> {
-        let _parts: Vec<&str> = header.splitn(3, |c| c == '[' || c == ']' || c == '-').collect();
+    fn parse_issue_header(
+        header: &str,
+    ) -> Option<(
+        super::types::IssueSeverity,
+        super::types::IssueCategory,
+        String,
+    )> {
+        let _parts: Vec<&str> = header
+            .splitn(3, |c| c == '[' || c == ']' || c == '-')
+            .collect();
 
         // Try to find severity and category in brackets
         let header_lower = header.to_lowercase();
@@ -502,8 +514,9 @@ mod tests {
     #[test]
     fn test_parse_issue_header() {
         let (sev, cat, title) = GeminiValidator::parse_issue_header(
-            "[critical] [security] - SQL Injection vulnerability"
-        ).unwrap();
+            "[critical] [security] - SQL Injection vulnerability",
+        )
+        .unwrap();
 
         assert_eq!(sev, super::super::types::IssueSeverity::Critical);
         assert_eq!(cat, super::super::types::IssueCategory::Security);
@@ -522,14 +535,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_mock_validator() {
-        let validator = MockValidator::new().with_issues(vec![
-            Issue::new(
-                super::super::types::IssueSeverity::High,
-                super::super::types::IssueCategory::Security,
-                "Test issue",
-                "Test description",
-            )
-        ]);
+        let validator = MockValidator::new().with_issues(vec![Issue::new(
+            super::super::types::IssueSeverity::High,
+            super::super::types::IssueCategory::Security,
+            "Test issue",
+            "Test description",
+        )]);
 
         let ctx = ValidationContext::new("request", "response");
         let result = validator.validate(&ctx).await.unwrap();

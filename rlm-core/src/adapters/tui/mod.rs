@@ -40,5 +40,5 @@ pub use adapter::{TUIAdapter, TUIConfig};
 pub use events::{BudgetUpdate, EventBridge, ExecutionStatus, StatusUpdate, TUIEvent};
 pub use panels::{
     BudgetPanelData, EventStyle, MemoryNodeView, MemoryPanelData, ReplEntry, ReplPanelData,
-    ReplStatus, TierCounts, TracePanelData, TraceEventView,
+    ReplStatus, TierCounts, TraceEventView, TracePanelData,
 };

@@ -4,6 +4,11 @@
 
 > Reconciled on 2026-02-20 against Beads and `docs/execution-plan/STATUS.md`.
 > This file is historical wave-planning context, not the live execution tracker.
+> Any unresolved checklist items in this file are archival context, not live backlog.
+> Authoritative live status is `bd status` plus:
+> - `docs/execution-plan/STATUS.md`
+> - `docs/execution-plan/TASK-REGISTRY.md`
+> - `docs/execution-plan/WORKBOARD.md`
 
 ## Executive Summary
 

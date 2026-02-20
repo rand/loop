@@ -9,8 +9,8 @@
 //! Each adapter translates the core rlm-core functionality into the
 //! interface expected by its deployment target.
 
-pub mod cli;
 pub mod claude_code;
+pub mod cli;
 pub mod tui;
 
 // Re-export primary types for convenience
@@ -27,6 +27,6 @@ pub use claude_code::{
 
 pub use tui::{
     BudgetPanelData, BudgetUpdate, EventBridge, EventStyle, ExecutionStatus, MemoryNodeView,
-    MemoryPanelData, ReplEntry, ReplPanelData, ReplStatus, TierCounts, TUIAdapter, TUIConfig,
-    TUIEvent, TracePanelData, TraceEventView, StatusUpdate,
+    MemoryPanelData, ReplEntry, ReplPanelData, ReplStatus, StatusUpdate, TUIAdapter, TUIConfig,
+    TUIEvent, TierCounts, TraceEventView, TracePanelData,
 };

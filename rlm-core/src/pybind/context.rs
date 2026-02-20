@@ -343,7 +343,8 @@ fn python_to_json(value: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     } else if let Ok(s) = value.extract::<String>() {
         Ok(serde_json::Value::String(s))
     } else if let Ok(list) = value.downcast::<pyo3::types::PyList>() {
-        let arr: PyResult<Vec<serde_json::Value>> = list.iter().map(|v| python_to_json(&v)).collect();
+        let arr: PyResult<Vec<serde_json::Value>> =
+            list.iter().map(|v| python_to_json(&v)).collect();
         Ok(serde_json::Value::Array(arr?))
     } else if let Ok(dict) = value.downcast::<PyDict>() {
         let mut map = serde_json::Map::new();

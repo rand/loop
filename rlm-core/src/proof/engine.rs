@@ -17,8 +17,7 @@ use crate::proof::tactics::{
     tactics_for_tier,
 };
 use crate::proof::types::{
-    AutomationTier, ProofAttempt, ProofContext, ProofStats, ProofStrategy, SpecDomain,
-    TacticResult,
+    AutomationTier, ProofAttempt, ProofContext, ProofStats, ProofStrategy, SpecDomain, TacticResult,
 };
 use std::collections::HashMap;
 use std::time::Instant;
@@ -338,26 +337,21 @@ impl ProofAutomation {
     fn try_single_tactic(
         &self,
         repl: &mut LeanRepl,
-        _goal: &Goal,
+        goal: &Goal,
         tactic: &str,
     ) -> Result<TacticResult> {
         let start = Instant::now();
 
-        // We need a proof state to apply the tactic
-        // If we don't have one, we need to create a theorem with the goal
-        let proof_state_id = match repl.current_env() {
-            Some(_) => {
-                // Try to get or create a proof state for this goal
-                // This is a simplified version - in practice, we'd track proof states
-                0u64 // Placeholder - actual implementation would track this
-            }
-            None => {
-                // No environment, need to initialize
-                0u64
+        let proof_state_id = match Self::resolve_proof_state_id(repl.active_proof_state_id(), goal)
+        {
+            Ok(id) => id,
+            Err(error) => {
+                let elapsed_ms = start.elapsed().as_millis() as u64;
+                return Ok(TacticResult::failure(tactic, error, elapsed_ms));
             }
         };
 
-        // Apply the tactic
+        // Apply the tactic against the tracked proof state.
         let response = repl.apply_tactic(tactic, proof_state_id);
         let elapsed_ms = start.elapsed().as_millis() as u64;
 
@@ -378,6 +372,18 @@ impl ProofAutomation {
             }
             Err(e) => Ok(TacticResult::failure(tactic, e.to_string(), elapsed_ms)),
         }
+    }
+
+    fn resolve_proof_state_id(
+        active_proof_state: Option<u64>,
+        goal: &Goal,
+    ) -> std::result::Result<u64, String> {
+        active_proof_state.ok_or_else(|| {
+            format!(
+                "Missing proof state for goal `{}`; initialize proof state before applying tactics",
+                goal.target
+            )
+        })
     }
 
     /// Record a successful proof for learning.
@@ -648,7 +654,9 @@ mod tests {
 
         automation.record_success(&goal, "simp", SpecDomain::Arithmetic);
 
-        let strategies = automation.strategies_for_domain(SpecDomain::Arithmetic).unwrap();
+        let strategies = automation
+            .strategies_for_domain(SpecDomain::Arithmetic)
+            .unwrap();
         assert!(!strategies.is_empty());
         assert!(strategies[0].success_count > 0);
     }
@@ -684,6 +692,23 @@ mod tests {
     }
 
     #[test]
+    fn test_resolve_proof_state_id_available() {
+        let goal = Goal::from_string("x = x");
+        let resolved = ProofAutomation::resolve_proof_state_id(Some(42), &goal)
+            .expect("proof state should resolve");
+        assert_eq!(resolved, 42);
+    }
+
+    #[test]
+    fn test_resolve_proof_state_id_missing_is_deterministic() {
+        let goal = Goal::from_string("x = x");
+        let err = ProofAutomation::resolve_proof_state_id(None, &goal)
+            .expect_err("missing state should produce deterministic error");
+        assert!(err.contains("Missing proof state for goal"));
+        assert!(err.contains("x = x"));
+    }
+
+    #[test]
     fn test_record_success_persists_pattern_when_memory_enabled() {
         let memory = SqliteMemoryStore::in_memory().expect("memory store should be created");
         let mut automation = ProofAutomation::with_memory(ProofAutomationConfig::default(), memory);
@@ -691,7 +716,10 @@ mod tests {
 
         automation.record_success(&goal, "simp", SpecDomain::Arithmetic);
 
-        let store = automation.memory.as_ref().expect("memory should be enabled");
+        let store = automation
+            .memory
+            .as_ref()
+            .expect("memory should be enabled");
         let nodes = store
             .search_content("proof_pattern", 10)
             .expect("search should succeed");

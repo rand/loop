@@ -128,7 +128,9 @@ pub struct RlmOrchestratorConfig(OrchestratorConfig);
 /// The returned config must be freed with `rlm_orchestrator_config_free()`.
 #[no_mangle]
 pub extern "C" fn rlm_orchestrator_config_default() -> *mut RlmOrchestratorConfig {
-    Box::into_raw(Box::new(RlmOrchestratorConfig(OrchestratorConfig::default())))
+    Box::into_raw(Box::new(RlmOrchestratorConfig(
+        OrchestratorConfig::default(),
+    )))
 }
 
 /// Free an orchestrator config.
@@ -162,7 +164,11 @@ pub unsafe extern "C" fn rlm_orchestrator_config_default_spawn_repl(
     if config.is_null() {
         return 1; // default true
     }
-    if (*config).0.default_spawn_repl { 1 } else { 0 }
+    if (*config).0.default_spawn_repl {
+        1
+    } else {
+        0
+    }
 }
 
 /// Get the REPL timeout in milliseconds.
@@ -371,7 +377,9 @@ pub unsafe extern "C" fn rlm_orchestrator_builder_cost_budget_usd(
         return std::ptr::null_mut();
     }
     let b = Box::from_raw(builder);
-    Box::into_raw(Box::new(RlmOrchestratorBuilder(b.0.cost_budget_usd(budget))))
+    Box::into_raw(Box::new(RlmOrchestratorBuilder(
+        b.0.cost_budget_usd(budget),
+    )))
 }
 
 /// Set the execution mode.
@@ -508,5 +516,9 @@ pub unsafe extern "C" fn rlm_complexity_signals_has_strong_signal(json: *const c
         Err(_) => return 0,
     };
 
-    if signals.has_strong_signal() { 1 } else { 0 }
+    if signals.has_strong_signal() {
+        1
+    } else {
+        0
+    }
 }

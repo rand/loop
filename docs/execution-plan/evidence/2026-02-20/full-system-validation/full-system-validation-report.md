@@ -1,7 +1,8 @@
 # Full-System Validation Report
 Date: 2026-02-20
-Issue: `loop-8hi`
-Repository SHA: `1a389a519516f55b96eaa436197f83f444517bd5`
+Issue: `loop-8hi` (historical baseline run)
+Status: Historical baseline. Current tuple refresh is tracked in `/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.6-full-system-validation-refresh.md`.
+Repository SHA (historical baseline): `1a389a519516f55b96eaa436197f83f444517bd5`
 
 ## Objective
 Empirically validate end-to-end system behavior across intended loop use cases (not just static review), map execution to OODA flows, and identify/track remaining implementation or operational gaps.
@@ -47,7 +48,7 @@ Empirically validate end-to-end system behavior across intended loop use cases (
 
 ### Additional validation depth
 - Property-based tests: pass (`VG-PROPTEST-001`).
-- Python integration compatibility tests: pass (`VG-PY-INTEGRATION-001`).
+- Python integration compatibility tests: pass (`VG-PY-INTEGRATION-001`, `19 passed`, no skipped-only outcome).
 - Go scope: pass after compatibility fixes (`VG-GO-ALL-001-final`).
 
 ### Governance toolchain

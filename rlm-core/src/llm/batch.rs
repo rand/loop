@@ -311,10 +311,7 @@ impl BatchedQueryResults {
 
         let success_count = results.iter().filter(|r| r.success).count();
         let failure_count = results.len() - success_count;
-        let total_tokens = results
-            .iter()
-            .filter_map(|r| r.tokens_used)
-            .sum();
+        let total_tokens = results.iter().filter_map(|r| r.tokens_used).sum();
 
         Self {
             results,
@@ -326,10 +323,7 @@ impl BatchedQueryResults {
 
     /// Get successful responses in order.
     pub fn responses(&self) -> Vec<Option<&str>> {
-        self.results
-            .iter()
-            .map(|r| r.response.as_deref())
-            .collect()
+        self.results.iter().map(|r| r.response.as_deref()).collect()
     }
 
     /// Check if all queries succeeded.
@@ -412,8 +406,13 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
     }
 
     /// Override the configured rate limit for one provider.
-    pub fn with_provider_rate_limit(mut self, provider: Provider, requests_per_minute: u32) -> Self {
-        self.provider_rate_limits.insert(provider, requests_per_minute);
+    pub fn with_provider_rate_limit(
+        mut self,
+        provider: Provider,
+        requests_per_minute: u32,
+    ) -> Self {
+        self.provider_rate_limits
+            .insert(provider, requests_per_minute);
         self
     }
 
@@ -505,11 +504,7 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
             .map(|(index, prompt)| {
                 let client = Arc::clone(&self.client);
                 let semaphore = Arc::clone(&semaphore);
-                let context = batch
-                    .contexts
-                    .get(index)
-                    .cloned()
-                    .flatten();
+                let context = batch.contexts.get(index).cloned().flatten();
                 let model = batch.model.clone();
                 let temperature = batch.temperature;
                 let max_tokens = batch.max_tokens;
@@ -563,9 +558,7 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
                             let tokens = Some(response.usage.total() as u32);
                             BatchQueryResult::success(index, text, tokens)
                         }
-                        Err(e) => {
-                            BatchQueryResult::failure(index, e.to_string())
-                        }
+                        Err(e) => BatchQueryResult::failure(index, e.to_string()),
                     }
                 }
             })
@@ -646,10 +639,7 @@ mod tests {
 
     #[test]
     fn test_batched_query_from_prompts() {
-        let prompts = vec![
-            "Query 1".to_string(),
-            "Query 2".to_string(),
-        ];
+        let prompts = vec!["Query 1".to_string(), "Query 2".to_string()];
         let batch = BatchedLLMQuery::from_prompts(prompts)
             .with_max_parallel(3)
             .with_model("claude-3-5-sonnet-20241022");
@@ -740,8 +730,7 @@ mod tests {
 
     #[test]
     fn test_max_parallel_bounds() {
-        let batch = BatchedLLMQuery::new()
-            .with_max_parallel(0); // Should be clamped to 1
+        let batch = BatchedLLMQuery::new().with_max_parallel(0); // Should be clamped to 1
 
         assert_eq!(batch.max_parallel, 1);
     }
@@ -793,7 +782,9 @@ mod tests {
         }
 
         async fn embed(&self, _request: EmbeddingRequest) -> Result<EmbeddingResponse> {
-            Err(Error::LLM("embedding not implemented in test mock".to_string()))
+            Err(Error::LLM(
+                "embedding not implemented in test mock".to_string(),
+            ))
         }
 
         fn provider(&self) -> Provider {

@@ -260,11 +260,7 @@ impl SessionContext {
         let dirs: std::collections::HashSet<_> = self
             .files
             .keys()
-            .filter_map(|path| {
-                std::path::Path::new(path)
-                    .parent()
-                    .and_then(|p| p.to_str())
-            })
+            .filter_map(|path| std::path::Path::new(path).parent().and_then(|p| p.to_str()))
             .collect();
         dirs.len() > 1
     }

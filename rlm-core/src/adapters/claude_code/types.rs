@@ -228,6 +228,21 @@ impl RequestContext {
         self.working_memory.insert(key.into(), value.into());
         self
     }
+
+    /// Add tool output context.
+    pub fn with_tool_output(
+        mut self,
+        tool_name: impl Into<String>,
+        content: impl Into<String>,
+        exit_code: Option<i32>,
+    ) -> Self {
+        self.tool_outputs.push(ToolOutputContext {
+            tool_name: tool_name.into(),
+            content: content.into(),
+            exit_code,
+        });
+        self
+    }
 }
 
 /// A message in the request context.
@@ -448,6 +463,12 @@ impl PromptEnhancement {
         self
     }
 
+    /// Set detected complexity signals.
+    pub fn with_signals(mut self, signals: Vec<String>) -> Self {
+        self.signals = signals;
+        self
+    }
+
     /// Add a relevant memory.
     pub fn with_memory(mut self, memory: RelevantMemory) -> Self {
         self.relevant_memories.push(memory);
@@ -584,8 +605,11 @@ mod tests {
 
     #[test]
     fn test_rlm_response_success() {
-        let response =
-            RlmResponse::success("Here's the analysis", ExecutionMode::Balanced, CostSummary::new());
+        let response = RlmResponse::success(
+            "Here's the analysis",
+            ExecutionMode::Balanced,
+            CostSummary::new(),
+        );
         assert!(response.activated);
         assert!(response.success);
         assert_eq!(response.answer, Some("Here's the analysis".to_string()));
@@ -598,8 +622,28 @@ mod tests {
             .with_git_branch("main");
 
         assert_eq!(ctx.session_id, "test-session");
-        assert_eq!(ctx.working_directory, Some("/home/user/project".to_string()));
+        assert_eq!(
+            ctx.working_directory,
+            Some("/home/user/project".to_string())
+        );
         assert_eq!(ctx.git_branch, Some("main".to_string()));
+    }
+
+    #[test]
+    fn test_request_context_with_tool_output() {
+        let ctx = RequestContext::new()
+            .with_message("user", "check auth")
+            .with_tool_output("pytest", "2 failed", Some(1))
+            .with_memory("incident", "auth");
+
+        assert_eq!(ctx.messages.len(), 1);
+        assert_eq!(ctx.tool_outputs.len(), 1);
+        assert_eq!(ctx.tool_outputs[0].tool_name, "pytest");
+        assert_eq!(ctx.tool_outputs[0].exit_code, Some(1));
+        assert_eq!(
+            ctx.working_memory.get("incident").and_then(Value::as_str),
+            Some("auth")
+        );
     }
 
     #[test]

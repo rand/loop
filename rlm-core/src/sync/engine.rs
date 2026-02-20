@@ -138,9 +138,7 @@ impl DualTrackSync {
         if let Ok(entries) = glob::glob(pattern_str) {
             for entry in entries.flatten() {
                 if let Ok(content) = fs::read_to_string(&entry) {
-                    let rel_path = entry
-                        .strip_prefix(&self.topos_root)
-                        .unwrap_or(&entry);
+                    let rel_path = entry.strip_prefix(&self.topos_root).unwrap_or(&entry);
 
                     let concepts = parse_topos_concepts(&content, rel_path);
                     let behaviors = parse_topos_behaviors(&content, rel_path);
@@ -158,9 +156,7 @@ impl DualTrackSync {
         if let Ok(entries) = glob::glob(pattern_str) {
             for entry in entries.flatten() {
                 if let Ok(content) = fs::read_to_string(&entry) {
-                    let rel_path = entry
-                        .strip_prefix(&self.topos_root)
-                        .unwrap_or(&entry);
+                    let rel_path = entry.strip_prefix(&self.topos_root).unwrap_or(&entry);
 
                     let concepts = parse_topos_concepts(&content, rel_path);
                     let behaviors = parse_topos_behaviors(&content, rel_path);
@@ -185,9 +181,7 @@ impl DualTrackSync {
         if let Ok(entries) = glob::glob(pattern_str) {
             for entry in entries.flatten() {
                 if let Ok(content) = fs::read_to_string(&entry) {
-                    let rel_path = entry
-                        .strip_prefix(&self.lean_root)
-                        .unwrap_or(&entry);
+                    let rel_path = entry.strip_prefix(&self.lean_root).unwrap_or(&entry);
 
                     let structures = parse_lean_structures(&content, rel_path);
                     let theorems = parse_lean_theorems(&content, rel_path);
@@ -212,9 +206,7 @@ impl DualTrackSync {
         if let Ok(entries) = glob::glob(pattern_str) {
             for entry in entries.flatten() {
                 if let Ok(content) = fs::read_to_string(&entry) {
-                    let rel_path = entry
-                        .strip_prefix(&self.topos_root)
-                        .unwrap_or(&entry);
+                    let rel_path = entry.strip_prefix(&self.topos_root).unwrap_or(&entry);
                     let _ = self.link_index.index_topos_file(rel_path, &content);
                 }
             }
@@ -227,9 +219,7 @@ impl DualTrackSync {
         if let Ok(entries) = glob::glob(pattern_str) {
             for entry in entries.flatten() {
                 if let Ok(content) = fs::read_to_string(&entry) {
-                    let rel_path = entry
-                        .strip_prefix(&self.lean_root)
-                        .unwrap_or(&entry);
+                    let rel_path = entry.strip_prefix(&self.lean_root).unwrap_or(&entry);
                     let _ = self.link_index.index_lean_file(rel_path, &content);
                 }
             }
@@ -265,7 +255,9 @@ impl DualTrackSync {
 
             // Skip if severity exceeds auto-resolve threshold
             let drift = &drift_report.drifts[suggestion.drift_index];
-            if drift.severity > self.config.auto_resolve_max_severity && self.config.require_confirmation {
+            if drift.severity > self.config.auto_resolve_max_severity
+                && self.config.require_confirmation
+            {
                 result = result.with_remaining_drift(drift.clone());
                 continue;
             }
@@ -281,22 +273,39 @@ impl DualTrackSync {
                         // Check if file already exists
                         if lean_file.exists() {
                             // Append to existing file
-                            let existing = fs::read_to_string(&lean_file)
-                                .map_err(|e| Error::Internal(format!("Failed to read {}: {}", lean_file.display(), e)))?;
+                            let existing = fs::read_to_string(&lean_file).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to read {}: {}",
+                                    lean_file.display(),
+                                    e
+                                ))
+                            })?;
                             let new_content = format!("{}\n\n{}", existing, lean_code);
-                            fs::write(&lean_file, new_content)
-                                .map_err(|e| Error::Internal(format!("Failed to write {}: {}", lean_file.display(), e)))?;
+                            fs::write(&lean_file, new_content).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to write {}: {}",
+                                    lean_file.display(),
+                                    e
+                                ))
+                            })?;
                             result = result.with_modified(lean_file.clone());
                         } else {
                             // Create new file
-                            fs::write(&lean_file, &lean_code)
-                                .map_err(|e| Error::Internal(format!("Failed to write {}: {}", lean_file.display(), e)))?;
+                            fs::write(&lean_file, &lean_code).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to write {}: {}",
+                                    lean_file.display(),
+                                    e
+                                ))
+                            })?;
                             result = result.with_created(lean_file.clone());
                         }
 
                         // Add link to index
                         let lean_ref = LeanRef::new(
-                            lean_file.strip_prefix(&self.lean_root).unwrap_or(&lean_file),
+                            lean_file
+                                .strip_prefix(&self.lean_root)
+                                .unwrap_or(&lean_file),
                             &concept.name,
                         );
                         let link = Link::new(
@@ -311,26 +320,41 @@ impl DualTrackSync {
                     }
                 } else if let Some(behavior) = self.find_behavior(&topos_ref.element) {
                     let lean_code = self.lean_generator.generate_theorem(behavior);
-                    let lean_file = self
-                        .lean_root
-                        .join(format!("{}_spec.lean", behavior.name));
+                    let lean_file = self.lean_root.join(format!("{}_spec.lean", behavior.name));
 
                     if self.config.auto_generate_lean {
                         if lean_file.exists() {
-                            let existing = fs::read_to_string(&lean_file)
-                                .map_err(|e| Error::Internal(format!("Failed to read {}: {}", lean_file.display(), e)))?;
+                            let existing = fs::read_to_string(&lean_file).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to read {}: {}",
+                                    lean_file.display(),
+                                    e
+                                ))
+                            })?;
                             let new_content = format!("{}\n\n{}", existing, lean_code);
-                            fs::write(&lean_file, new_content)
-                                .map_err(|e| Error::Internal(format!("Failed to write {}: {}", lean_file.display(), e)))?;
+                            fs::write(&lean_file, new_content).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to write {}: {}",
+                                    lean_file.display(),
+                                    e
+                                ))
+                            })?;
                             result = result.with_modified(lean_file.clone());
                         } else {
-                            fs::write(&lean_file, &lean_code)
-                                .map_err(|e| Error::Internal(format!("Failed to write {}: {}", lean_file.display(), e)))?;
+                            fs::write(&lean_file, &lean_code).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to write {}: {}",
+                                    lean_file.display(),
+                                    e
+                                ))
+                            })?;
                             result = result.with_created(lean_file.clone());
                         }
 
                         let lean_ref = LeanRef::new(
-                            lean_file.strip_prefix(&self.lean_root).unwrap_or(&lean_file),
+                            lean_file
+                                .strip_prefix(&self.lean_root)
+                                .unwrap_or(&lean_file),
                             format!("{}_spec", behavior.name),
                         );
                         let link = Link::new(
@@ -384,7 +408,9 @@ impl DualTrackSync {
             }
 
             let drift = &drift_report.drifts[suggestion.drift_index];
-            if drift.severity > self.config.auto_resolve_max_severity && self.config.require_confirmation {
+            if drift.severity > self.config.auto_resolve_max_severity
+                && self.config.require_confirmation
+            {
                 result = result.with_remaining_drift(drift.clone());
                 continue;
             }
@@ -396,18 +422,35 @@ impl DualTrackSync {
 
                     if self.config.auto_update_topos {
                         // Determine target file
-                        let topos_file = self.topos_root.join(format!("{}.tps", structure.name.to_lowercase()));
+                        let topos_file = self
+                            .topos_root
+                            .join(format!("{}.tps", structure.name.to_lowercase()));
 
                         if topos_file.exists() {
-                            let existing = fs::read_to_string(&topos_file)
-                                .map_err(|e| Error::Internal(format!("Failed to read {}: {}", topos_file.display(), e)))?;
+                            let existing = fs::read_to_string(&topos_file).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to read {}: {}",
+                                    topos_file.display(),
+                                    e
+                                ))
+                            })?;
                             let new_content = format!("{}\n\n{}", existing, topos_code);
-                            fs::write(&topos_file, new_content)
-                                .map_err(|e| Error::Internal(format!("Failed to write {}: {}", topos_file.display(), e)))?;
+                            fs::write(&topos_file, new_content).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to write {}: {}",
+                                    topos_file.display(),
+                                    e
+                                ))
+                            })?;
                             result = result.with_modified(topos_file.clone());
                         } else {
-                            fs::write(&topos_file, &topos_code)
-                                .map_err(|e| Error::Internal(format!("Failed to write {}: {}", topos_file.display(), e)))?;
+                            fs::write(&topos_file, &topos_code).map_err(|e| {
+                                Error::Internal(format!(
+                                    "Failed to write {}: {}",
+                                    topos_file.display(),
+                                    e
+                                ))
+                            })?;
                             result = result.with_created(topos_file.clone());
                         }
 
@@ -440,7 +483,9 @@ impl DualTrackSync {
                 merged.files_modified.extend(lean_result.files_modified);
                 merged.links_added = topos_result.links_added + lean_result.links_added;
                 merged.drifts_resolved = topos_result.drifts_resolved + lean_result.drifts_resolved;
-                merged.remaining_drifts.extend(topos_result.remaining_drifts);
+                merged
+                    .remaining_drifts
+                    .extend(topos_result.remaining_drifts);
                 merged.remaining_drifts.extend(lean_result.remaining_drifts);
                 merged.errors.extend(topos_result.errors);
                 merged.errors.extend(lean_result.errors);
@@ -514,50 +559,20 @@ impl DualTrackSync {
 
         // Summary
         lines.push("## Summary".to_string());
-        lines.push(format!(
-            "- Total drifts: {}",
-            drift_report.summary.total
-        ));
-        lines.push(format!(
-            "- Structural: {}",
-            drift_report.summary.structural
-        ));
-        lines.push(format!(
-            "- Semantic: {}",
-            drift_report.summary.semantic
-        ));
-        lines.push(format!(
-            "- Missing: {}",
-            drift_report.summary.missing
-        ));
-        lines.push(format!(
-            "- Extra: {}",
-            drift_report.summary.extra
-        ));
+        lines.push(format!("- Total drifts: {}", drift_report.summary.total));
+        lines.push(format!("- Structural: {}", drift_report.summary.structural));
+        lines.push(format!("- Semantic: {}", drift_report.summary.semantic));
+        lines.push(format!("- Missing: {}", drift_report.summary.missing));
+        lines.push(format!("- Extra: {}", drift_report.summary.extra));
         lines.push(String::new());
 
         // Statistics
         lines.push("## Project Statistics".to_string());
-        lines.push(format!(
-            "- Topos concepts: {}",
-            self.topos_concepts.len()
-        ));
-        lines.push(format!(
-            "- Topos behaviors: {}",
-            self.topos_behaviors.len()
-        ));
-        lines.push(format!(
-            "- Lean structures: {}",
-            self.lean_structures.len()
-        ));
-        lines.push(format!(
-            "- Lean theorems: {}",
-            self.lean_theorems.len()
-        ));
-        lines.push(format!(
-            "- Links in index: {}",
-            self.link_index.len()
-        ));
+        lines.push(format!("- Topos concepts: {}", self.topos_concepts.len()));
+        lines.push(format!("- Topos behaviors: {}", self.topos_behaviors.len()));
+        lines.push(format!("- Lean structures: {}", self.lean_structures.len()));
+        lines.push(format!("- Lean theorems: {}", self.lean_theorems.len()));
+        lines.push(format!("- Links in index: {}", self.link_index.len()));
         lines.push(String::new());
 
         // Drifts
@@ -606,7 +621,7 @@ impl DualTrackSync {
 mod tests {
     use super::*;
     use crate::sync::types::Drift;
-    use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    use crate::topos::{LeanRef, Link, LinkSource, LinkType, ToposRef};
     use tempfile::TempDir;
 
     fn setup_test_dirs() -> (TempDir, PathBuf, PathBuf) {
@@ -751,8 +766,7 @@ Concept Order:
             ..Default::default()
         };
 
-        let mut sync = DualTrackSync::new(topos_dir, lean_dir.clone())
-            .with_config(config);
+        let mut sync = DualTrackSync::new(topos_dir, lean_dir.clone()).with_config(config);
         sync.scan().await.unwrap();
 
         let result = sync.sync_topos_to_lean().await.unwrap();

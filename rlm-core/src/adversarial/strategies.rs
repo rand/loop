@@ -84,7 +84,9 @@ impl ValidationStrategy for CriticStrategy {
         for area in &self.focus_areas {
             prompt.push_str(&format!("- {}\n", area));
         }
-        prompt.push_str("\nQuestion every assumption. If the code assumes something, verify it's true.\n");
+        prompt.push_str(
+            "\nQuestion every assumption. If the code assumes something, verify it's true.\n",
+        );
         prompt
     }
 }
@@ -205,7 +207,8 @@ impl ValidationStrategy for SecurityStrategy {
         for class in &self.vulnerability_classes {
             prompt.push_str(&format!("- {}\n", class));
         }
-        prompt.push_str("\nAny user-controlled input must be validated and sanitized before use.\n");
+        prompt
+            .push_str("\nAny user-controlled input must be validated and sanitized before use.\n");
         prompt.push_str("Any sensitive operation must have proper authorization checks.\n");
         prompt
     }
@@ -364,11 +367,16 @@ impl ValidationStrategy for TraceabilityStrategy {
         let mut prompt = String::from("### Traceability Check\n");
 
         if context.relevant_specs.is_empty() {
-            prompt.push_str("Check if new code should have @trace markers linking to specifications.\n");
+            prompt.push_str(
+                "Check if new code should have @trace markers linking to specifications.\n",
+            );
         } else {
             prompt.push_str("Verify these specifications are traced in the code:\n");
             for spec in &context.relevant_specs {
-                prompt.push_str(&format!("- {} should have corresponding @trace marker\n", spec));
+                prompt.push_str(&format!(
+                    "- {} should have corresponding @trace marker\n",
+                    spec
+                ));
             }
         }
 
@@ -445,10 +453,11 @@ mod tests {
     #[test]
     fn test_security_strategy_post_process() {
         let strategy = SecurityStrategy::new();
-        let mut issues = vec![
-            Issue::new(IssueSeverity::Low, IssueCategory::Security, "Test", "Desc")
-                .as_non_blocking(),
-        ];
+        let mut issues =
+            vec![
+                Issue::new(IssueSeverity::Low, IssueCategory::Security, "Test", "Desc")
+                    .as_non_blocking(),
+            ];
 
         strategy.post_process(&mut issues);
 
@@ -459,10 +468,8 @@ mod tests {
 
     #[test]
     fn test_strategy_factory() {
-        let strategies = StrategyFactory::from_names(&[
-            "critic".to_string(),
-            "security".to_string(),
-        ]);
+        let strategies =
+            StrategyFactory::from_names(&["critic".to_string(), "security".to_string()]);
 
         assert_eq!(strategies.len(), 2);
         assert_eq!(strategies[0].name(), "critic");

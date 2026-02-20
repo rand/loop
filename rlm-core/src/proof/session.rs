@@ -783,9 +783,12 @@ impl ProtocolEnforcer {
         tactic: &str,
         target_location: &SorryLocation,
     ) -> Result<TacticAttempt, ProtocolError> {
-        self.execute_tactic_with_feedback(session, tactic, target_location, |candidate, state_id| {
-            repl.apply_tactic(candidate, state_id)
-        })
+        self.execute_tactic_with_feedback(
+            session,
+            tactic,
+            target_location,
+            |candidate, state_id| repl.apply_tactic(candidate, state_id),
+        )
     }
 }
 
@@ -864,7 +867,10 @@ fn deterministic_error_message(response: &LeanResponse) -> String {
 
 fn render_message(message: &LeanMessage) -> String {
     let location = if let (Some(start), Some(end)) = (&message.pos, &message.end_pos) {
-        format!("{}:{}-{}:{}: ", start.line, start.column, end.line, end.column)
+        format!(
+            "{}:{}-{}:{}: ",
+            start.line, start.column, end.line, end.column
+        )
     } else if let Some(start) = &message.pos {
         format!("{}:{}: ", start.line, start.column)
     } else {

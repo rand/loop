@@ -285,11 +285,8 @@ impl<'a> TraceAnalyzer<'a> {
         leaves
             .iter()
             .map(|leaf| {
-                let nodes: Vec<DecisionNode> = tree
-                    .path_to(&leaf.id)
-                    .into_iter()
-                    .cloned()
-                    .collect();
+                let nodes: Vec<DecisionNode> =
+                    tree.path_to(&leaf.id).into_iter().cloned().collect();
                 DecisionPath::from_nodes(nodes, &tree)
             })
             .collect()
@@ -546,7 +543,8 @@ mod tests {
             "Fastest to implement",
         );
 
-        let (_, outcome_id) = trace.log_action(&chosen, "Write simple implementation", "Code works");
+        let (_, outcome_id) =
+            trace.log_action(&chosen, "Write simple implementation", "Code works");
 
         trace.log_observation(&outcome_id, "Performance is acceptable");
 
@@ -686,17 +684,37 @@ mod tests {
     fn test_compare_traces() {
         let mut trace_a = ReasoningTrace::new("Build API", "session-a");
         let root_a = trace_a.root_goal.clone();
-        trace_a.log_decision(&root_a, "Choose framework", &["Axum", "Actix"], 0, "Performance");
+        trace_a.log_decision(
+            &root_a,
+            "Choose framework",
+            &["Axum", "Actix"],
+            0,
+            "Performance",
+        );
 
         let mut trace_b = ReasoningTrace::new("Build API", "session-b");
         let root_b = trace_b.root_goal.clone();
-        trace_b.log_decision(&root_b, "Choose framework", &["Axum", "Rocket"], 0, "Ergonomics");
-        trace_b.log_decision(&root_b, "Choose database", &["Postgres", "SQLite"], 1, "Simplicity");
+        trace_b.log_decision(
+            &root_b,
+            "Choose framework",
+            &["Axum", "Rocket"],
+            0,
+            "Ergonomics",
+        );
+        trace_b.log_decision(
+            &root_b,
+            "Choose database",
+            &["Postgres", "SQLite"],
+            1,
+            "Simplicity",
+        );
 
         let comparison = compare_traces(&trace_a, &trace_b);
 
         assert_eq!(comparison.common_decisions.len(), 1);
-        assert!(comparison.common_decisions.contains(&"Choose framework".to_string()));
+        assert!(comparison
+            .common_decisions
+            .contains(&"Choose framework".to_string()));
         assert_eq!(comparison.unique_to_b.len(), 1); // "Choose database"
         assert!(comparison.summary.contains("common"));
     }
@@ -717,6 +735,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(results.len(), 1);
-        assert!(results[0].root().unwrap().content.contains("authentication"));
+        assert!(results[0]
+            .root()
+            .unwrap()
+            .content
+            .contains("authentication"));
     }
 }

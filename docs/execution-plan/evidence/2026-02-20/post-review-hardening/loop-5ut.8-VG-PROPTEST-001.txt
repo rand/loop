@@ -1,0 +1,486 @@
+[VG-PROPTEST-001] scope=epistemic::proptest::tests::
+safe_run: heavy command admitted (available=5095MiB, threshold=3072MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:563:9
+    |
+563 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:624:24
+    |
+624 |     use crate::topos::{LeanRef, Link, LinkSource, LinkType, ToposRef};
+    |                        ^^^^^^^  ^^^^  ^^^^^^^^^^  ^^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:743:14
+    |
+743 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:658:13
+    |
+658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:687:13
+    |
+685 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+686 |             #[input(desc = "Source code to analyze")]
+687 |             code: String,
+    |             ^^^^
+...
+690 |             language: String,
+    |             ^^^^^^^^
+...
+693 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+696 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+699 |             severity: String,
+    |             ^^^^^^^^
+...
+702 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: multiple fields are never read
+   --> src/signature/mod.rs:796:13
+    |
+794 |         struct AllTypes {
+    |                -------- fields in this struct
+795 |             #[input(desc = "A string")]
+796 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+799 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+802 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+805 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+808 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+811 |             optional_list_field: Option<Vec<i32>>,
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+814 |             array_field: [i32; 2],
+    |             ^^^^^^^^^^^
+...
+817 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:838:13
+    |
+835 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+838 |             severity: String,
+    |             ^^^^^^^^
+...
+842 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 8 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 25 tests
+test epistemic::proptest::tests::entropy_at_half_is_one_bit ... ok
+test epistemic::proptest::tests::entropy_is_symmetric ... ok
+test epistemic::proptest::tests::entropy_maximized_at_half ... ok
+test epistemic::proptest::tests::entropy_bits_conversion_is_correct ... ok
+test epistemic::proptest::tests::entropy_is_non_negative ... ok
+test epistemic::proptest::tests::confidence_is_bounded ... ok
+test epistemic::proptest::tests::grounding_status_consistent_with_gap ... ok
+test epistemic::proptest::tests::is_grounded_matches_gap ... ok
+test epistemic::proptest::tests::budget_gap_is_difference ... ok
+test epistemic::proptest::tests::cross_entropy_geq_entropy ... ok
+test epistemic::proptest::tests::js_is_zero_for_identical ... ok
+test epistemic::proptest::tests::kl_divergence_is_non_negative ... ok
+test epistemic::proptest::tests::kl_divergence_is_zero_for_identical ... ok
+test epistemic::proptest::tests::kl_bits_conversion_is_correct ... ok
+test epistemic::proptest::tests::js_is_bounded ... ok
+test epistemic::proptest::tests::js_is_symmetric ... ok
+test epistemic::proptest::tests::kl_equals_cross_minus_entropy ... ok
+test epistemic::proptest::tests::kl_interval_bounds_are_valid ... ok
+test epistemic::proptest::tests::kl_interval_estimate_matches_direct ... ok
+test epistemic::proptest::tests::kl_is_asymmetric ... ok
+test epistemic::proptest::tests::more_samples_reduce_uncertainty ... ok
+test epistemic::proptest::tests::kl_positive_when_different ... ok
+test epistemic::proptest::tests::observed_bits_uses_kl ... ok
+test epistemic::proptest::tests::probability_from_samples_has_valid_bounds ... ok
+test epistemic::proptest::tests::probability_point_has_no_uncertainty ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 628 filtered out; finished in 0.01s
+
+[VG-PROPTEST-001] scope=signature::validation::tests::prop_
+safe_run: heavy command admitted (available=5079MiB, threshold=3072MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:563:9
+    |
+563 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:624:24
+    |
+624 |     use crate::topos::{LeanRef, Link, LinkSource, LinkType, ToposRef};
+    |                        ^^^^^^^  ^^^^  ^^^^^^^^^^  ^^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:743:14
+    |
+743 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:658:13
+    |
+658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:687:13
+    |
+685 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+686 |             #[input(desc = "Source code to analyze")]
+687 |             code: String,
+    |             ^^^^
+...
+690 |             language: String,
+    |             ^^^^^^^^
+...
+693 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+696 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+699 |             severity: String,
+    |             ^^^^^^^^
+...
+702 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: multiple fields are never read
+   --> src/signature/mod.rs:796:13
+    |
+794 |         struct AllTypes {
+    |                -------- fields in this struct
+795 |             #[input(desc = "A string")]
+796 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+799 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+802 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+805 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+808 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+811 |             optional_list_field: Option<Vec<i32>>,
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+814 |             array_field: [i32; 2],
+    |             ^^^^^^^^^^^
+...
+817 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:838:13
+    |
+835 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+838 |             severity: String,
+    |             ^^^^^^^^
+...
+842 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 8 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 4 tests
+test signature::validation::tests::prop_apply_defaults_is_idempotent ... ok
+test signature::validation::tests::prop_validate_value_accepts_compatible_scalars ... ok
+test signature::validation::tests::prop_validate_value_rejects_incompatible_scalars ... ok
+test signature::validation::tests::prop_truncate_preview_never_exceeds_bound_plus_ellipsis ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 649 filtered out; finished in 0.02s
+
+[VG-PROPTEST-001] scope=signature::fallback::tests::prop_
+safe_run: heavy command admitted (available=5083MiB, threshold=3072MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:563:9
+    |
+563 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:624:24
+    |
+624 |     use crate::topos::{LeanRef, Link, LinkSource, LinkType, ToposRef};
+    |                        ^^^^^^^  ^^^^  ^^^^^^^^^^  ^^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:743:14
+    |
+743 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:658:13
+    |
+658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:687:13
+    |
+685 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+686 |             #[input(desc = "Source code to analyze")]
+687 |             code: String,
+    |             ^^^^
+...
+690 |             language: String,
+    |             ^^^^^^^^
+...
+693 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+696 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+699 |             severity: String,
+    |             ^^^^^^^^
+...
+702 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: multiple fields are never read
+   --> src/signature/mod.rs:796:13
+    |
+794 |         struct AllTypes {
+    |                -------- fields in this struct
+795 |             #[input(desc = "A string")]
+796 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+799 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+802 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+805 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+808 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+811 |             optional_list_field: Option<Vec<i32>>,
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+814 |             array_field: [i32; 2],
+    |             ^^^^^^^^^^^
+...
+817 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:838:13
+    |
+835 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+838 |             severity: String,
+    |             ^^^^^^^^
+...
+842 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 8 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 3 tests
+test signature::fallback::tests::prop_should_trigger_prioritizes_limits ... ok
+test signature::fallback::tests::prop_execution_result_extracted_clamps_confidence ... ok
+test signature::fallback::tests::prop_execution_result_map_preserves_metadata_for_extracted ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.01s
+
+[VG-PROPTEST-001] scope=llm::router::tests::prop_
+safe_run: heavy command admitted (available=5088MiB, threshold=3072MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:563:9
+    |
+563 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:624:24
+    |
+624 |     use crate::topos::{LeanRef, Link, LinkSource, LinkType, ToposRef};
+    |                        ^^^^^^^  ^^^^  ^^^^^^^^^^  ^^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:743:14
+    |
+743 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:658:13
+    |
+658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:687:13
+    |
+685 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+686 |             #[input(desc = "Source code to analyze")]
+687 |             code: String,
+    |             ^^^^
+...
+690 |             language: String,
+    |             ^^^^^^^^
+...
+693 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+696 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+699 |             severity: String,
+    |             ^^^^^^^^
+...
+702 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: multiple fields are never read
+   --> src/signature/mod.rs:796:13
+    |
+794 |         struct AllTypes {
+    |                -------- fields in this struct
+795 |             #[input(desc = "A string")]
+796 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+799 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+802 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+805 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+808 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+811 |             optional_list_field: Option<Vec<i32>>,
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+814 |             array_field: [i32; 2],
+    |             ^^^^^^^^^^^
+...
+817 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:838:13
+    |
+835 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+838 |             severity: String,
+    |             ^^^^^^^^
+...
+842 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 8 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 5 tests
+test llm::router::tests::prop_depth_switch_strategy_is_monotonic ... ok
+test llm::router::tests::prop_token_budget_switch_strategy_is_monotonic ... ok
+test llm::router::tests::prop_tiered_cost_accounting_request_counts_are_exact ... ok
+test llm::router::tests::prop_custom_force_root_override_wins ... ok
+test llm::router::tests::prop_dual_model_selection_matches_switch_strategy ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 648 filtered out; finished in 0.01s
+
+VG-PROPTEST-001: PASS (cases=96 seed=424242 rng=cc)

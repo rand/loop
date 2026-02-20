@@ -72,15 +72,14 @@ pub mod types;
 pub use ai_assistant::{AIAssistantConfig, AIProofAssistant};
 pub use engine::{ProofAutomation, ProofAutomationBuilder, ProofAutomationConfig};
 pub use session::{
-    select_target, HelperLemma, HelperProofStatus, LimitReason, ProofSession, ProtocolConfig,
-    ProtocolEnforcer, ProtocolError, ProofSessionStatus, SorryLocation, TacticAttempt,
-    TacticOutcome,
+    select_target, HelperLemma, HelperProofStatus, LimitReason, ProofSession, ProofSessionStatus,
+    ProtocolConfig, ProtocolEnforcer, ProtocolError, SorryLocation, TacticAttempt, TacticOutcome,
 };
 pub use tactics::{
     domain_specific_tactics, tactics_for_goal, tactics_for_tier, AUTOMATION_TACTICS,
     DECIDABLE_TACTICS,
 };
 pub use types::{
-    AutomationTier, DomainStats, ProofAttempt, ProofContext, ProofStats, ProofStrategy,
-    SpecDomain, TacticResult, TierStats,
+    AutomationTier, DomainStats, ProofAttempt, ProofContext, ProofStats, ProofStrategy, SpecDomain,
+    TacticResult, TierStats,
 };

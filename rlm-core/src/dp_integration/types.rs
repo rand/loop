@@ -101,7 +101,10 @@ impl ProofStatus {
 
     /// Check if this status needs work.
     pub fn needs_work(&self) -> bool {
-        matches!(self, Self::NotFormalized | Self::Stated | Self::HasSorry | Self::Failed)
+        matches!(
+            self,
+            Self::NotFormalized | Self::Stated | Self::HasSorry | Self::Failed
+        )
     }
 
     /// Get a human-readable description.
@@ -604,16 +607,12 @@ mod tests {
 
         // Add a complete spec
         let mut spec1 = SpecCoverage::new(SpecId::new(1, 1), "Req 1");
-        spec1.add_theorem(
-            TheoremInfo::new("t1", "t.lean", 1).with_status(ProofStatus::Complete),
-        );
+        spec1.add_theorem(TheoremInfo::new("t1", "t.lean", 1).with_status(ProofStatus::Complete));
         report.add_spec(spec1);
 
         // Add an incomplete spec
         let mut spec2 = SpecCoverage::new(SpecId::new(1, 2), "Req 2");
-        spec2.add_theorem(
-            TheoremInfo::new("t2", "t.lean", 2).with_status(ProofStatus::HasSorry),
-        );
+        spec2.add_theorem(TheoremInfo::new("t2", "t.lean", 2).with_status(ProofStatus::HasSorry));
         report.add_spec(spec2);
 
         // Add an unformalized spec

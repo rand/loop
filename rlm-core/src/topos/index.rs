@@ -166,8 +166,7 @@ impl LinkIndex {
         for annotation in annotations {
             if let AnnotationTarget::Lean(ref lean_ref) = annotation.target {
                 // Find the element this annotation belongs to
-                let element_name =
-                    Self::find_element_context(&lines, annotation.line as usize);
+                let element_name = Self::find_element_context(&lines, annotation.line as usize);
 
                 if let Some(name) = element_name {
                     let topos_ref = ToposRef::new(path, name);
@@ -206,8 +205,9 @@ impl LinkIndex {
                         let link_type = AnnotationParser::infer_link_type(&annotation);
                         let metadata = AnnotationParser::to_metadata(&annotation);
 
-                        let link = Link::new(topos_ref.clone(), lean_ref, link_type, LinkSource::Lean)
-                            .with_metadata(metadata);
+                        let link =
+                            Link::new(topos_ref.clone(), lean_ref, link_type, LinkSource::Lean)
+                                .with_metadata(metadata);
 
                         self.add_link(link);
                         count += 1;
@@ -235,19 +235,13 @@ impl LinkIndex {
 
             // Concept definition
             if line.starts_with("Concept ") && line.ends_with(':') {
-                let name = line
-                    .strip_prefix("Concept ")?
-                    .strip_suffix(':')?
-                    .trim();
+                let name = line.strip_prefix("Concept ")?.strip_suffix(':')?.trim();
                 return Some(name.to_string());
             }
 
             // Behavior definition
             if line.starts_with("Behavior ") && line.ends_with(':') {
-                let name = line
-                    .strip_prefix("Behavior ")?
-                    .strip_suffix(':')?
-                    .trim();
+                let name = line.strip_prefix("Behavior ")?.strip_suffix(':')?.trim();
                 return Some(name.to_string());
             }
 
@@ -261,10 +255,7 @@ impl LinkIndex {
 
             // Invariant definition
             if line.starts_with("Invariant ") && line.ends_with(':') {
-                let name = line
-                    .strip_prefix("Invariant ")?
-                    .strip_suffix(':')?
-                    .trim();
+                let name = line.strip_prefix("Invariant ")?.strip_suffix(':')?.trim();
                 return Some(name.to_string());
             }
         }
@@ -400,9 +391,7 @@ impl IndexBuilder {
                 for entry in entries.flatten() {
                     if let Ok(content) = fs::read_to_string(&entry) {
                         // Use relative path
-                        let rel_path = entry
-                            .strip_prefix(&self.project_root)
-                            .unwrap_or(&entry);
+                        let rel_path = entry.strip_prefix(&self.project_root).unwrap_or(&entry);
                         let _ = index.index_topos_file(rel_path, &content);
                     }
                 }
@@ -416,9 +405,7 @@ impl IndexBuilder {
                 for entry in entries.flatten() {
                     if let Ok(content) = fs::read_to_string(&entry) {
                         // Use relative path
-                        let rel_path = entry
-                            .strip_prefix(&self.project_root)
-                            .unwrap_or(&entry);
+                        let rel_path = entry.strip_prefix(&self.project_root).unwrap_or(&entry);
                         let _ = index.index_lean_file(rel_path, &content);
                     }
                 }

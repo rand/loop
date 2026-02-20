@@ -238,11 +238,7 @@ impl TrajectoryEvent {
     }
 
     /// Create a critic invoked event.
-    pub fn critic_invoked(
-        depth: u32,
-        strategy: impl Into<String>,
-        iteration: usize,
-    ) -> Self {
+    pub fn critic_invoked(depth: u32, strategy: impl Into<String>, iteration: usize) -> Self {
         let strategy = strategy.into();
         Self::new(
             TrajectoryEventType::CriticInvoked,
@@ -478,7 +474,7 @@ impl ModelPricing {
             input_per_million: input,
             output_per_million: output,
             cache_creation_per_million: input * 1.25, // 25% premium for cache creation
-            cache_read_per_million: input * 0.1,     // 90% discount for cache reads
+            cache_read_per_million: input * 0.1,      // 90% discount for cache reads
         }
     }
 
@@ -578,7 +574,7 @@ pub struct BudgetConfig {
 impl Default for BudgetConfig {
     fn default() -> Self {
         Self {
-            max_cost_usd: Some(1.0),  // $1 default
+            max_cost_usd: Some(1.0),   // $1 default
             max_tokens: Some(100_000), // 100k tokens
             max_depth: Some(5),        // 5 recursion levels
             alert_thresholds: vec![80, 100],
@@ -664,7 +660,9 @@ impl BudgetState {
         }
 
         let minutes_remaining = remaining / rate;
-        Some(Duration::milliseconds((minutes_remaining * 60_000.0) as i64))
+        Some(Duration::milliseconds(
+            (minutes_remaining * 60_000.0) as i64,
+        ))
     }
 
     /// Check budget utilization percentage.
@@ -891,12 +889,13 @@ impl TrajectoryEmitter for BroadcastEmitter {
             BudgetAlert::Warning => format!(
                 "Budget warning: ${:.4} spent ({:.1}% of limit)",
                 state.current_cost_usd,
-                state.utilization_percent(&BudgetConfig::default()).unwrap_or(0.0)
+                state
+                    .utilization_percent(&BudgetConfig::default())
+                    .unwrap_or(0.0)
             ),
-            BudgetAlert::Exceeded => format!(
-                "Budget exceeded: ${:.4} spent",
-                state.current_cost_usd
-            ),
+            BudgetAlert::Exceeded => {
+                format!("Budget exceeded: ${:.4} spent", state.current_cost_usd)
+            }
             BudgetAlert::Custom(p) => format!(
                 "Budget alert ({}%): ${:.4} spent",
                 p, state.current_cost_usd
@@ -996,10 +995,7 @@ mod tests {
     #[test]
     fn test_event_with_metadata() {
         let event = TrajectoryEvent::repl_result(1, "42", true);
-        assert_eq!(
-            event.get_metadata("success"),
-            Some(&Value::Bool(true))
-        );
+        assert_eq!(event.get_metadata("success"), Some(&Value::Bool(true)));
     }
 
     #[test]
@@ -1186,7 +1182,11 @@ mod tests {
         // Error should pass (minimal)
         emitter.emit(TrajectoryEvent::error(0, "Error"));
         // Memory should be filtered (debug)
-        emitter.emit(TrajectoryEvent::new(TrajectoryEventType::Memory, 0, "Store"));
+        emitter.emit(TrajectoryEvent::new(
+            TrajectoryEventType::Memory,
+            0,
+            "Store",
+        ));
 
         let events = emitter.events();
         assert_eq!(events.len(), 1);

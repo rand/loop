@@ -1,0 +1,32 @@
+{
+  "stage": "review",
+  "policy": "/Users/rand/src/loop/dp-policy.json",
+  "cwd": "/Users/rand/src/loop",
+  "ok": true,
+  "steps": [
+    {
+      "name": "typecheck",
+      "command": [
+        "make",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "duration_ms": 4783,
+      "stdout": "cd rlm-core && cargo check --quiet\n",
+      "stderr": "",
+      "ok": true
+    },
+    {
+      "name": "rustdoc-contract",
+      "command": [
+        "make",
+        "rustdoc-check"
+      ],
+      "exit_code": 0,
+      "duration_ms": 168,
+      "stdout": "cd rlm-core && RUSTDOCFLAGS=\"-D warnings\" cargo doc --no-deps\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s\n   Generated /Users/rand/src/loop/rlm-core/target/doc/rlm_core/index.html\n",
+      "ok": true
+    }
+  ]
+}

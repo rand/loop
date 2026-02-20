@@ -1,6 +1,7 @@
 # VG-CONTRACT-001
 Date: 2026-02-20
 Scope: Consumer contract consistency check against active implementations and tuple evidence
+Status: Historical baseline. Refreshed tuple evidence is in `/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.6-VG-CONTRACT-001.md`.
 
 ## Contract Sources Reviewed
 - `docs/execution-plan/contracts/CONSUMER-INTEGRATION.md`
@@ -15,7 +16,7 @@ Scope: Consumer contract consistency check against active implementations and tu
 - `VG-RFLX-001`: pass (`weekly-cadence-m4/M4-T04-VG-RFLX-001.txt`)
 - `VG-RFLX-002`: pass (`VG-RFLX-002.txt`)
 
-## Tuple Snapshot
+## Tuple Snapshot (historical baseline)
 - loop: `1a389a519516f55b96eaa436197f83f444517bd5`
 - rlm-claude-code: `528f90018e0d464aa7e7459998191d8cfde27787`
 - rlm-claude-code vendor/loop: `6779cdbc970c70f3ce82a998d6dcda59cd171560`

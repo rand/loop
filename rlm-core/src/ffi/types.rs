@@ -177,28 +177,60 @@ impl From<crate::trajectory::TrajectoryEventType> for RlmTrajectoryEventType {
             crate::trajectory::TrajectoryEventType::RlmStart => RlmTrajectoryEventType::RlmStart,
             crate::trajectory::TrajectoryEventType::Analyze => RlmTrajectoryEventType::Analyze,
             crate::trajectory::TrajectoryEventType::ReplExec => RlmTrajectoryEventType::ReplExec,
-            crate::trajectory::TrajectoryEventType::ReplResult => RlmTrajectoryEventType::ReplResult,
+            crate::trajectory::TrajectoryEventType::ReplResult => {
+                RlmTrajectoryEventType::ReplResult
+            }
             crate::trajectory::TrajectoryEventType::Reason => RlmTrajectoryEventType::Reason,
-            crate::trajectory::TrajectoryEventType::RecurseStart => RlmTrajectoryEventType::RecurseStart,
-            crate::trajectory::TrajectoryEventType::RecurseEnd => RlmTrajectoryEventType::RecurseEnd,
+            crate::trajectory::TrajectoryEventType::RecurseStart => {
+                RlmTrajectoryEventType::RecurseStart
+            }
+            crate::trajectory::TrajectoryEventType::RecurseEnd => {
+                RlmTrajectoryEventType::RecurseEnd
+            }
             crate::trajectory::TrajectoryEventType::Final => RlmTrajectoryEventType::Final,
             crate::trajectory::TrajectoryEventType::Error => RlmTrajectoryEventType::Error,
             crate::trajectory::TrajectoryEventType::ToolUse => RlmTrajectoryEventType::ToolUse,
-            crate::trajectory::TrajectoryEventType::CostReport => RlmTrajectoryEventType::CostReport,
-            crate::trajectory::TrajectoryEventType::VerifyStart => RlmTrajectoryEventType::VerifyStart,
-            crate::trajectory::TrajectoryEventType::ClaimExtracted => RlmTrajectoryEventType::ClaimExtracted,
-            crate::trajectory::TrajectoryEventType::EvidenceChecked => RlmTrajectoryEventType::EvidenceChecked,
-            crate::trajectory::TrajectoryEventType::BudgetComputed => RlmTrajectoryEventType::BudgetComputed,
-            crate::trajectory::TrajectoryEventType::HallucinationFlag => RlmTrajectoryEventType::HallucinationFlag,
-            crate::trajectory::TrajectoryEventType::VerifyComplete => RlmTrajectoryEventType::VerifyComplete,
+            crate::trajectory::TrajectoryEventType::CostReport => {
+                RlmTrajectoryEventType::CostReport
+            }
+            crate::trajectory::TrajectoryEventType::VerifyStart => {
+                RlmTrajectoryEventType::VerifyStart
+            }
+            crate::trajectory::TrajectoryEventType::ClaimExtracted => {
+                RlmTrajectoryEventType::ClaimExtracted
+            }
+            crate::trajectory::TrajectoryEventType::EvidenceChecked => {
+                RlmTrajectoryEventType::EvidenceChecked
+            }
+            crate::trajectory::TrajectoryEventType::BudgetComputed => {
+                RlmTrajectoryEventType::BudgetComputed
+            }
+            crate::trajectory::TrajectoryEventType::HallucinationFlag => {
+                RlmTrajectoryEventType::HallucinationFlag
+            }
+            crate::trajectory::TrajectoryEventType::VerifyComplete => {
+                RlmTrajectoryEventType::VerifyComplete
+            }
             crate::trajectory::TrajectoryEventType::Memory => RlmTrajectoryEventType::Memory,
-            crate::trajectory::TrajectoryEventType::Externalize => RlmTrajectoryEventType::Externalize,
+            crate::trajectory::TrajectoryEventType::Externalize => {
+                RlmTrajectoryEventType::Externalize
+            }
             crate::trajectory::TrajectoryEventType::Decompose => RlmTrajectoryEventType::Decompose,
-            crate::trajectory::TrajectoryEventType::Synthesize => RlmTrajectoryEventType::Synthesize,
-            crate::trajectory::TrajectoryEventType::AdversarialStart => RlmTrajectoryEventType::AdversarialStart,
-            crate::trajectory::TrajectoryEventType::CriticInvoked => RlmTrajectoryEventType::CriticInvoked,
-            crate::trajectory::TrajectoryEventType::IssueFound => RlmTrajectoryEventType::IssueFound,
-            crate::trajectory::TrajectoryEventType::AdversarialComplete => RlmTrajectoryEventType::AdversarialComplete,
+            crate::trajectory::TrajectoryEventType::Synthesize => {
+                RlmTrajectoryEventType::Synthesize
+            }
+            crate::trajectory::TrajectoryEventType::AdversarialStart => {
+                RlmTrajectoryEventType::AdversarialStart
+            }
+            crate::trajectory::TrajectoryEventType::CriticInvoked => {
+                RlmTrajectoryEventType::CriticInvoked
+            }
+            crate::trajectory::TrajectoryEventType::IssueFound => {
+                RlmTrajectoryEventType::IssueFound
+            }
+            crate::trajectory::TrajectoryEventType::AdversarialComplete => {
+                RlmTrajectoryEventType::AdversarialComplete
+            }
         }
     }
 }
@@ -209,28 +241,60 @@ impl From<RlmTrajectoryEventType> for crate::trajectory::TrajectoryEventType {
             RlmTrajectoryEventType::RlmStart => crate::trajectory::TrajectoryEventType::RlmStart,
             RlmTrajectoryEventType::Analyze => crate::trajectory::TrajectoryEventType::Analyze,
             RlmTrajectoryEventType::ReplExec => crate::trajectory::TrajectoryEventType::ReplExec,
-            RlmTrajectoryEventType::ReplResult => crate::trajectory::TrajectoryEventType::ReplResult,
+            RlmTrajectoryEventType::ReplResult => {
+                crate::trajectory::TrajectoryEventType::ReplResult
+            }
             RlmTrajectoryEventType::Reason => crate::trajectory::TrajectoryEventType::Reason,
-            RlmTrajectoryEventType::RecurseStart => crate::trajectory::TrajectoryEventType::RecurseStart,
-            RlmTrajectoryEventType::RecurseEnd => crate::trajectory::TrajectoryEventType::RecurseEnd,
+            RlmTrajectoryEventType::RecurseStart => {
+                crate::trajectory::TrajectoryEventType::RecurseStart
+            }
+            RlmTrajectoryEventType::RecurseEnd => {
+                crate::trajectory::TrajectoryEventType::RecurseEnd
+            }
             RlmTrajectoryEventType::Final => crate::trajectory::TrajectoryEventType::Final,
             RlmTrajectoryEventType::Error => crate::trajectory::TrajectoryEventType::Error,
             RlmTrajectoryEventType::ToolUse => crate::trajectory::TrajectoryEventType::ToolUse,
-            RlmTrajectoryEventType::CostReport => crate::trajectory::TrajectoryEventType::CostReport,
-            RlmTrajectoryEventType::VerifyStart => crate::trajectory::TrajectoryEventType::VerifyStart,
-            RlmTrajectoryEventType::ClaimExtracted => crate::trajectory::TrajectoryEventType::ClaimExtracted,
-            RlmTrajectoryEventType::EvidenceChecked => crate::trajectory::TrajectoryEventType::EvidenceChecked,
-            RlmTrajectoryEventType::BudgetComputed => crate::trajectory::TrajectoryEventType::BudgetComputed,
-            RlmTrajectoryEventType::HallucinationFlag => crate::trajectory::TrajectoryEventType::HallucinationFlag,
-            RlmTrajectoryEventType::VerifyComplete => crate::trajectory::TrajectoryEventType::VerifyComplete,
+            RlmTrajectoryEventType::CostReport => {
+                crate::trajectory::TrajectoryEventType::CostReport
+            }
+            RlmTrajectoryEventType::VerifyStart => {
+                crate::trajectory::TrajectoryEventType::VerifyStart
+            }
+            RlmTrajectoryEventType::ClaimExtracted => {
+                crate::trajectory::TrajectoryEventType::ClaimExtracted
+            }
+            RlmTrajectoryEventType::EvidenceChecked => {
+                crate::trajectory::TrajectoryEventType::EvidenceChecked
+            }
+            RlmTrajectoryEventType::BudgetComputed => {
+                crate::trajectory::TrajectoryEventType::BudgetComputed
+            }
+            RlmTrajectoryEventType::HallucinationFlag => {
+                crate::trajectory::TrajectoryEventType::HallucinationFlag
+            }
+            RlmTrajectoryEventType::VerifyComplete => {
+                crate::trajectory::TrajectoryEventType::VerifyComplete
+            }
             RlmTrajectoryEventType::Memory => crate::trajectory::TrajectoryEventType::Memory,
-            RlmTrajectoryEventType::Externalize => crate::trajectory::TrajectoryEventType::Externalize,
+            RlmTrajectoryEventType::Externalize => {
+                crate::trajectory::TrajectoryEventType::Externalize
+            }
             RlmTrajectoryEventType::Decompose => crate::trajectory::TrajectoryEventType::Decompose,
-            RlmTrajectoryEventType::Synthesize => crate::trajectory::TrajectoryEventType::Synthesize,
-            RlmTrajectoryEventType::AdversarialStart => crate::trajectory::TrajectoryEventType::AdversarialStart,
-            RlmTrajectoryEventType::CriticInvoked => crate::trajectory::TrajectoryEventType::CriticInvoked,
-            RlmTrajectoryEventType::IssueFound => crate::trajectory::TrajectoryEventType::IssueFound,
-            RlmTrajectoryEventType::AdversarialComplete => crate::trajectory::TrajectoryEventType::AdversarialComplete,
+            RlmTrajectoryEventType::Synthesize => {
+                crate::trajectory::TrajectoryEventType::Synthesize
+            }
+            RlmTrajectoryEventType::AdversarialStart => {
+                crate::trajectory::TrajectoryEventType::AdversarialStart
+            }
+            RlmTrajectoryEventType::CriticInvoked => {
+                crate::trajectory::TrajectoryEventType::CriticInvoked
+            }
+            RlmTrajectoryEventType::IssueFound => {
+                crate::trajectory::TrajectoryEventType::IssueFound
+            }
+            RlmTrajectoryEventType::AdversarialComplete => {
+                crate::trajectory::TrajectoryEventType::AdversarialComplete
+            }
         }
     }
 }
@@ -245,15 +309,10 @@ impl From<RlmTrajectoryEventType> for crate::trajectory::TrajectoryEventType {
 /// with `rlm_trajectory_event_free()` when done.
 ///
 /// The `user_data` pointer is passed through unchanged.
-pub type RlmTrajectoryCallback = extern "C" fn(
-    event: *mut RlmTrajectoryEvent,
-    user_data: *mut std::ffi::c_void,
-);
+pub type RlmTrajectoryCallback =
+    extern "C" fn(event: *mut RlmTrajectoryEvent, user_data: *mut std::ffi::c_void);
 
 /// Callback for receiving error messages.
 ///
 /// The error string is valid only for the duration of the callback.
-pub type RlmErrorCallback = extern "C" fn(
-    error: *const c_char,
-    user_data: *mut std::ffi::c_void,
-);
+pub type RlmErrorCallback = extern "C" fn(error: *const c_char, user_data: *mut std::ffi::c_void);

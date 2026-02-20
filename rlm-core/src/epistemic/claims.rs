@@ -131,12 +131,11 @@ impl ClaimExtractor {
             // Check for hedging
             let is_hedged = self.is_hedged(trimmed);
 
-            let mut claim = Claim::new(trimmed, category)
-                .with_specificity(if is_hedged {
-                    specificity * 0.5
-                } else {
-                    specificity
-                });
+            let mut claim = Claim::new(trimmed, category).with_specificity(if is_hedged {
+                specificity * 0.5
+            } else {
+                specificity
+            });
 
             if let Some((start, end)) = span {
                 claim = claim.with_span(start, end);
@@ -394,7 +393,8 @@ impl ClaimExtractor {
     fn link_evidence(&self, claims: &mut [Claim], response: &str) {
         // Look for common evidence patterns
         let citation_re = Regex::new(r"\[(\d+)\]|\(source:\s*([^)]+)\)").unwrap();
-        let file_re = Regex::new(r"(?:in|from|see)\s+[`']?([a-zA-Z0-9_/.-]+\.[a-z]+)[`']?").unwrap();
+        let file_re =
+            Regex::new(r"(?:in|from|see)\s+[`']?([a-zA-Z0-9_/.-]+\.[a-z]+)[`']?").unwrap();
         let code_re = Regex::new(r"`([^`]+)`").unwrap();
 
         // Extract all citations from the response
@@ -420,7 +420,8 @@ impl ClaimExtractor {
             if let Some((claim_start, claim_end)) = claim.source_span {
                 // Find citations near this claim
                 for (cite_pos, cite_text) in &citations {
-                    if *cite_pos >= claim_start.saturating_sub(100) && *cite_pos <= claim_end + 100 {
+                    if *cite_pos >= claim_start.saturating_sub(100) && *cite_pos <= claim_end + 100
+                    {
                         claim.evidence_refs.push(EvidenceRef::new(
                             cite_text.clone(),
                             EvidenceType::Citation,
@@ -511,7 +512,11 @@ mod tests {
         assert!(claims.iter().any(|c| c.text.contains("sky is blue")));
         // Verify no claims end with question marks
         for claim in &claims {
-            assert!(!claim.text.trim().ends_with('?'), "Found question in claims: {}", claim.text);
+            assert!(
+                !claim.text.trim().ends_with('?'),
+                "Found question in claims: {}",
+                claim.text
+            );
         }
     }
 
@@ -554,7 +559,11 @@ mod tests {
         let hedged = "The function might return null";
         let claims = extractor.extract(hedged);
         assert!(!claims.is_empty());
-        assert!(claims[0].metadata.as_ref().map(|m| m.contains_key("hedged")).unwrap_or(false));
+        assert!(claims[0]
+            .metadata
+            .as_ref()
+            .map(|m| m.contains_key("hedged"))
+            .unwrap_or(false));
     }
 
     #[test]

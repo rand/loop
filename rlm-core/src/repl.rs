@@ -13,7 +13,7 @@
 
 use crate::error::{Error, Result};
 use crate::llm::{BatchExecutor, BatchedLLMQuery, BatchedQueryResults, LLMClient};
-use crate::signature::{FieldSpec, SubmitResult, SignatureRegistration};
+use crate::signature::{FieldSpec, SignatureRegistration, SubmitResult};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -21,6 +21,34 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+
+const SHUTDOWN_GRACE_MS: u64 = 2_000;
+const SHUTDOWN_POLL_MS: u64 = 10;
+
+fn wait_for_exit_with_timeout(child: &mut Child, timeout: Duration, context: &str) -> Result<()> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => return Ok(()),
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(Error::SubprocessComm(format!(
+                        "{context} did not exit within {}ms; process was terminated",
+                        timeout.as_millis()
+                    )));
+                }
+                std::thread::sleep(Duration::from_millis(SHUTDOWN_POLL_MS));
+            }
+            Err(e) => {
+                return Err(Error::SubprocessComm(format!(
+                    "Failed while waiting for {context} to exit: {e}"
+                )));
+            }
+        }
+    }
+}
 
 /// JSON-RPC request structure.
 #[derive(Debug, Clone, Serialize)]
@@ -191,26 +219,26 @@ impl ReplHandle {
             ))
         })?;
 
-        let stdin = child.stdin.take().ok_or_else(|| {
-            Error::SubprocessComm("Failed to get stdin handle".to_string())
-        })?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| Error::SubprocessComm("Failed to get stdin handle".to_string()))?;
 
-        let stdout = child.stdout.take().ok_or_else(|| {
-            Error::SubprocessComm("Failed to get stdout handle".to_string())
-        })?;
-        let mut stderr = child.stderr.take().ok_or_else(|| {
-            Error::SubprocessComm("Failed to get stderr handle".to_string())
-        })?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| Error::SubprocessComm("Failed to get stdout handle".to_string()))?;
+        let mut stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| Error::SubprocessComm("Failed to get stderr handle".to_string()))?;
 
         let mut stdout = BufReader::new(stdout);
 
         // Wait for ready message
-        if let Err(err) = Self::wait_for_ready(
-            &mut child,
-            &mut stdout,
-            &mut stderr,
-            &startup_context,
-        ) {
+        if let Err(err) =
+            Self::wait_for_ready(&mut child, &mut stdout, &mut stderr, &startup_context)
+        {
             // Ensure we do not leak a subprocess when startup fails.
             let _ = child.kill();
             let _ = child.wait();
@@ -288,12 +316,11 @@ impl ReplHandle {
         let request_json = serde_json::to_string(&request)?;
 
         // Send request
-        writeln!(self.stdin, "{}", request_json).map_err(|e| {
-            Error::SubprocessComm(format!("Failed to send request: {}", e))
-        })?;
-        self.stdin.flush().map_err(|e| {
-            Error::SubprocessComm(format!("Failed to flush stdin: {}", e))
-        })?;
+        writeln!(self.stdin, "{}", request_json)
+            .map_err(|e| Error::SubprocessComm(format!("Failed to send request: {}", e)))?;
+        self.stdin
+            .flush()
+            .map_err(|e| Error::SubprocessComm(format!("Failed to flush stdin: {}", e)))?;
 
         // Read response with timeout
         let start = Instant::now();
@@ -485,9 +512,18 @@ impl ReplHandle {
 
     /// Shutdown the REPL subprocess.
     pub fn shutdown(&mut self) -> Result<()> {
-        let _ = self.send_request("shutdown", Value::Null);
-        let _ = self.child.wait();
-        Ok(())
+        let request = JsonRpcRequest::new("shutdown", Value::Null, self.next_id);
+        self.next_id += 1;
+        if let Ok(request_json) = serde_json::to_string(&request) {
+            let _ = writeln!(self.stdin, "{}", request_json);
+            let _ = self.stdin.flush();
+        }
+
+        wait_for_exit_with_timeout(
+            &mut self.child,
+            Duration::from_millis(SHUTDOWN_GRACE_MS),
+            "REPL subprocess",
+        )
     }
 
     /// Check if the subprocess is still running.
@@ -503,13 +539,14 @@ impl Drop for ReplHandle {
 }
 
 fn llm_batch_query_from_operation(operation: &PendingOperation) -> Result<BatchedLLMQuery> {
-    let prompts_value = operation.params.get("prompts").ok_or_else(|| {
-        Error::repl_execution("llm_batch operation missing 'prompts' parameter")
-    })?;
+    let prompts_value = operation
+        .params
+        .get("prompts")
+        .ok_or_else(|| Error::repl_execution("llm_batch operation missing 'prompts' parameter"))?;
 
-    let prompts_array = prompts_value.as_array().ok_or_else(|| {
-        Error::repl_execution("llm_batch operation 'prompts' must be an array")
-    })?;
+    let prompts_array = prompts_value
+        .as_array()
+        .ok_or_else(|| Error::repl_execution("llm_batch operation 'prompts' must be an array"))?;
 
     let prompts = prompts_array
         .iter()
@@ -517,9 +554,7 @@ fn llm_batch_query_from_operation(operation: &PendingOperation) -> Result<Batche
             value
                 .as_str()
                 .map(|s| s.to_string())
-                .ok_or_else(|| {
-                    Error::repl_execution("llm_batch prompt values must be strings")
-                })
+                .ok_or_else(|| Error::repl_execution("llm_batch prompt values must be strings"))
         })
         .collect::<Result<Vec<_>>>()?;
 
@@ -536,12 +571,9 @@ fn llm_batch_query_from_operation(operation: &PendingOperation) -> Result<Batche
         Some(Value::Array(values)) => values
             .iter()
             .map(|value| {
-                value
-                    .as_str()
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| {
-                        Error::repl_execution("llm_batch context values must be strings")
-                    })
+                value.as_str().map(|s| s.to_string()).ok_or_else(|| {
+                    Error::repl_execution("llm_batch context values must be strings")
+                })
             })
             .collect::<Result<Vec<_>>>()?,
         Some(_) => {
@@ -618,9 +650,10 @@ impl ReplPool {
 
     /// Acquire a REPL handle from the pool.
     pub fn acquire(&self) -> Result<ReplHandle> {
-        let mut handles = self.handles.lock().map_err(|e| {
-            Error::Internal(format!("Failed to lock pool: {}", e))
-        })?;
+        let mut handles = self
+            .handles
+            .lock()
+            .map_err(|e| Error::Internal(format!("Failed to lock pool: {}", e)))?;
 
         // Try to get an existing handle
         while let Some(mut handle) = handles.pop() {
@@ -680,12 +713,12 @@ pub trait ReplEnvironment: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::llm::{
+        BatchExecutor, CompletionRequest, CompletionResponse, EmbeddingRequest, EmbeddingResponse,
+        LLMClient, ModelSpec, Provider, TokenUsage,
+    };
     use async_trait::async_trait;
     use chrono::Utc;
-    use crate::llm::{
-        BatchExecutor, CompletionRequest, CompletionResponse, EmbeddingRequest,
-        EmbeddingResponse, LLMClient, ModelSpec, Provider, TokenUsage,
-    };
 
     fn local_repl_config() -> ReplConfig {
         let mut config = ReplConfig::default();
@@ -729,9 +762,7 @@ mod tests {
 
             Ok(CompletionResponse {
                 id: "mock-1".to_string(),
-                model: request
-                    .model
-                    .unwrap_or_else(|| "mock-model".to_string()),
+                model: request.model.unwrap_or_else(|| "mock-model".to_string()),
                 content: format!("answer-for-{prompt}"),
                 stop_reason: None,
                 usage: TokenUsage {
@@ -746,7 +777,9 @@ mod tests {
         }
 
         async fn embed(&self, _request: EmbeddingRequest) -> Result<EmbeddingResponse> {
-            Err(Error::LLM("embedding not implemented in test mock".to_string()))
+            Err(Error::LLM(
+                "embedding not implemented in test mock".to_string(),
+            ))
         }
 
         fn provider(&self) -> Provider {
@@ -808,11 +841,14 @@ mod tests {
     fn test_submit_result_roundtrip_success() {
         use crate::signature::{FieldType, SubmitResult};
 
-        let mut handle = ReplHandle::spawn(local_repl_config())
-            .expect("expected REPL subprocess to start");
+        let mut handle =
+            ReplHandle::spawn(local_repl_config()).expect("expected REPL subprocess to start");
 
         handle
-            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .register_signature(
+                vec![FieldSpec::new("answer", FieldType::String)],
+                Some("AnswerSig"),
+            )
             .expect("signature registration should succeed");
 
         let exec = handle
@@ -836,11 +872,14 @@ mod tests {
     fn test_submit_result_roundtrip_validation_error() {
         use crate::signature::{FieldType, SubmitError, SubmitResult};
 
-        let mut handle = ReplHandle::spawn(local_repl_config())
-            .expect("expected REPL subprocess to start");
+        let mut handle =
+            ReplHandle::spawn(local_repl_config()).expect("expected REPL subprocess to start");
 
         handle
-            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .register_signature(
+                vec![FieldSpec::new("answer", FieldType::String)],
+                Some("AnswerSig"),
+            )
             .expect("signature registration should succeed");
 
         let exec = handle
@@ -852,10 +891,7 @@ mod tests {
         match submit {
             SubmitResult::ValidationError { errors, .. } => {
                 assert!(!errors.is_empty());
-                assert!(matches!(
-                    errors[0],
-                    SubmitError::MissingField { .. }
-                ));
+                assert!(matches!(errors[0], SubmitError::MissingField { .. }));
             }
             other => panic!("expected validation error submit result, got {:?}", other),
         }
@@ -868,8 +904,8 @@ mod tests {
     fn test_submit_result_roundtrip_no_signature() {
         use crate::signature::{SubmitError, SubmitResult};
 
-        let mut handle = ReplHandle::spawn(local_repl_config())
-            .expect("expected REPL subprocess to start");
+        let mut handle =
+            ReplHandle::spawn(local_repl_config()).expect("expected REPL subprocess to start");
 
         let exec = handle
             .execute("SUBMIT({'answer': 'x'})")
@@ -893,11 +929,14 @@ mod tests {
     fn test_submit_result_roundtrip_type_mismatch() {
         use crate::signature::{FieldType, SubmitError, SubmitResult};
 
-        let mut handle = ReplHandle::spawn(local_repl_config())
-            .expect("expected REPL subprocess to start");
+        let mut handle =
+            ReplHandle::spawn(local_repl_config()).expect("expected REPL subprocess to start");
 
         handle
-            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .register_signature(
+                vec![FieldSpec::new("answer", FieldType::String)],
+                Some("AnswerSig"),
+            )
             .expect("signature registration should succeed");
 
         let exec = handle
@@ -909,10 +948,7 @@ mod tests {
         match submit {
             SubmitResult::ValidationError { errors, .. } => {
                 assert!(!errors.is_empty());
-                assert!(matches!(
-                    errors[0],
-                    SubmitError::TypeMismatch { .. }
-                ));
+                assert!(matches!(errors[0], SubmitError::TypeMismatch { .. }));
             }
             other => panic!("expected validation error submit result, got {:?}", other),
         }
@@ -925,11 +961,14 @@ mod tests {
     fn test_submit_result_roundtrip_multiple_submits() {
         use crate::signature::{FieldType, SubmitError, SubmitResult};
 
-        let mut handle = ReplHandle::spawn(local_repl_config())
-            .expect("expected REPL subprocess to start");
+        let mut handle =
+            ReplHandle::spawn(local_repl_config()).expect("expected REPL subprocess to start");
 
         handle
-            .register_signature(vec![FieldSpec::new("answer", FieldType::String)], Some("AnswerSig"))
+            .register_signature(
+                vec![FieldSpec::new("answer", FieldType::String)],
+                Some("AnswerSig"),
+            )
             .expect("signature registration should succeed");
 
         let code = r#"
@@ -1034,7 +1073,10 @@ SUBMIT({'answer': 'second'})
         assert_eq!(step.stdout, "out");
         assert_eq!(step.stderr, "err");
         assert_eq!(step.variables, vars);
-        assert!(matches!(step.submit_result, Some(SubmitResult::Success { .. })));
+        assert!(matches!(
+            step.submit_result,
+            Some(SubmitResult::Success { .. })
+        ));
     }
 
     #[test]
@@ -1043,26 +1085,11 @@ SUBMIT({'answer': 'second'})
             id: "op-1".to_string(),
             operation_type: "llm_batch".to_string(),
             params: HashMap::from([
-                (
-                    "prompts".to_string(),
-                    serde_json::json!(["q1", "q2"]),
-                ),
-                (
-                    "contexts".to_string(),
-                    serde_json::json!(["c1", "c2"]),
-                ),
-                (
-                    "max_parallel".to_string(),
-                    serde_json::json!(3),
-                ),
-                (
-                    "model".to_string(),
-                    serde_json::json!("test-model"),
-                ),
-                (
-                    "max_tokens".to_string(),
-                    serde_json::json!(512),
-                ),
+                ("prompts".to_string(), serde_json::json!(["q1", "q2"])),
+                ("contexts".to_string(), serde_json::json!(["c1", "c2"])),
+                ("max_parallel".to_string(), serde_json::json!(3)),
+                ("model".to_string(), serde_json::json!("test-model")),
+                ("max_tokens".to_string(), serde_json::json!(512)),
             ]),
         };
 
@@ -1082,10 +1109,7 @@ SUBMIT({'answer': 'second'})
         let operation = PendingOperation {
             id: "op-1".to_string(),
             operation_type: "llm_batch".to_string(),
-            params: HashMap::from([(
-                "prompts".to_string(),
-                serde_json::json!(["q1", 2]),
-            )]),
+            params: HashMap::from([("prompts".to_string(), serde_json::json!(["q1", 2]))]),
         };
 
         let err = llm_batch_query_from_operation(&operation).unwrap_err();
@@ -1111,8 +1135,8 @@ SUBMIT({'answer': 'second'})
     #[tokio::test]
     #[ignore = "requires Python environment with rlm-repl installed"]
     async fn test_llm_batch_host_resolution_roundtrip() {
-        let mut handle = ReplHandle::spawn(local_repl_config())
-            .expect("expected REPL subprocess to start");
+        let mut handle =
+            ReplHandle::spawn(local_repl_config()).expect("expected REPL subprocess to start");
 
         let exec = handle
             .execute("op = llm_batch(['q1', 'q2'], max_parallel=2)")
@@ -1146,12 +1170,10 @@ SUBMIT({'answer': 'second'})
         assert_eq!(arr[0]["status"], serde_json::json!("success"));
         assert_eq!(arr[0]["value"], serde_json::json!("answer-for-q1"));
         assert_eq!(arr[1]["status"], serde_json::json!("error"));
-        assert!(
-            arr[1]["value"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("timeout")
-        );
+        assert!(arr[1]["value"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("timeout"));
 
         handle.shutdown().unwrap();
     }
@@ -1176,5 +1198,32 @@ SUBMIT({'answer': 'second'})
 
         let output_fields = params.get("output_fields").unwrap().as_array().unwrap();
         assert_eq!(output_fields.len(), 2);
+    }
+
+    #[test]
+    fn test_wait_for_exit_with_timeout_allows_fast_exit() {
+        let mut child = Command::new("sh")
+            .arg("-c")
+            .arg("exit 0")
+            .spawn()
+            .expect("expected short-lived process to spawn");
+
+        let result =
+            wait_for_exit_with_timeout(&mut child, Duration::from_millis(100), "test process");
+        assert!(result.is_ok(), "expected fast process exit to pass");
+    }
+
+    #[test]
+    fn test_wait_for_exit_with_timeout_kills_stuck_process() {
+        let mut child = Command::new("sh")
+            .arg("-c")
+            .arg("sleep 10")
+            .spawn()
+            .expect("expected long-lived process to spawn");
+
+        let err = wait_for_exit_with_timeout(&mut child, Duration::from_millis(50), "test process")
+            .expect_err("expected timeout for long-lived process");
+        assert!(err.to_string().contains("did not exit within"));
+        assert!(matches!(child.try_wait(), Ok(Some(_))));
     }
 }

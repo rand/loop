@@ -297,7 +297,10 @@ impl CoverageScanner {
         let trace_re = Regex::new(r"(?:@trace|//\s*trace:?)\s*(SPEC-\d+\.\d+)").unwrap();
 
         // Pattern for test function names (Rust, Go, Python)
-        let test_fn_re = Regex::new(r"(?m)^\s*(?:#\[test\]|func\s+Test|def\s+test_)\s*(?:\n\s*)?(?:fn\s+|)(\w+)").unwrap();
+        let test_fn_re = Regex::new(
+            r"(?m)^\s*(?:#\[test\]|func\s+Test|def\s+test_)\s*(?:\n\s*)?(?:fn\s+|)(\w+)",
+        )
+        .unwrap();
 
         let lines: Vec<&str> = content.lines().collect();
         let mut current_test: Option<(String, u32)> = None;

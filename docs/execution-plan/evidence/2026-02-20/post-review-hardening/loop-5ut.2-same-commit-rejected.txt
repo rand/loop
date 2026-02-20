@@ -1,0 +1,3 @@
+refusing same-commit perf comparison; provide a distinct baseline tuple or pass --allow-same-commit for calibration runs
+overlapping commits: 75f806f85985302c498e9d8e4915af6f144ed6ad
+exit_code=2

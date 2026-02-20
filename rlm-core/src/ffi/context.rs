@@ -168,7 +168,9 @@ pub unsafe extern "C" fn rlm_session_context_file_count(ctx: *const RlmSessionCo
 
 /// Get the number of tool outputs in the context.
 #[no_mangle]
-pub unsafe extern "C" fn rlm_session_context_tool_output_count(ctx: *const RlmSessionContext) -> i64 {
+pub unsafe extern "C" fn rlm_session_context_tool_output_count(
+    ctx: *const RlmSessionContext,
+) -> i64 {
     if ctx.is_null() {
         return 0;
     }
@@ -183,7 +185,11 @@ pub unsafe extern "C" fn rlm_session_context_spans_multiple_directories(
     if ctx.is_null() {
         return 0;
     }
-    if (*ctx).0.spans_multiple_directories() { 1 } else { 0 }
+    if (*ctx).0.spans_multiple_directories() {
+        1
+    } else {
+        0
+    }
 }
 
 /// Get total approximate tokens in messages.
@@ -222,7 +228,9 @@ pub unsafe extern "C" fn rlm_session_context_to_json(ctx: *const RlmSessionConte
 /// - `json` must be a valid null-terminated string.
 /// - The returned pointer must be freed with `rlm_session_context_free()`.
 #[no_mangle]
-pub unsafe extern "C" fn rlm_session_context_from_json(json: *const c_char) -> *mut RlmSessionContext {
+pub unsafe extern "C" fn rlm_session_context_from_json(
+    json: *const c_char,
+) -> *mut RlmSessionContext {
     let json = ffi_try!(cstr_to_str(json));
     let ctx: SessionContext = ffi_try!(serde_json::from_str(json));
     Box::into_raw(Box::new(RlmSessionContext(ctx)))
@@ -399,7 +407,11 @@ pub unsafe extern "C" fn rlm_tool_output_has_exit_code(output: *const RlmToolOut
     if output.is_null() {
         return 0;
     }
-    if (*output).0.exit_code.is_some() { 1 } else { 0 }
+    if (*output).0.exit_code.is_some() {
+        1
+    } else {
+        0
+    }
 }
 
 /// Check if the tool output indicates success.
@@ -408,7 +420,11 @@ pub unsafe extern "C" fn rlm_tool_output_is_success(output: *const RlmToolOutput
     if output.is_null() {
         return 0;
     }
-    if (*output).0.is_success() { 1 } else { 0 }
+    if (*output).0.is_success() {
+        1
+    } else {
+        0
+    }
 }
 
 // ============================================================================
@@ -490,7 +506,11 @@ pub unsafe extern "C" fn rlm_activation_decision_should_activate(
     if decision.is_null() {
         return 0;
     }
-    if (*decision).0.should_activate { 1 } else { 0 }
+    if (*decision).0.should_activate {
+        1
+    } else {
+        0
+    }
 }
 
 /// Get the decision reason.

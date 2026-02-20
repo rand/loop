@@ -337,7 +337,11 @@ impl Optimizer for BootstrapFewShot {
         }
 
         // Sort by score descending
-        all_candidates.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        all_candidates.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Deduplicate if enabled
         let candidates = if self.deduplicate {
@@ -779,7 +783,11 @@ pub mod metrics {
 
         for i in 1..=m {
             for j in 1..=n {
-                let cost = if a_chars[i - 1] == b_chars[j - 1] { 0 } else { 1 };
+                let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                    0
+                } else {
+                    1
+                };
                 dp[i][j] = (dp[i - 1][j] + 1)
                     .min(dp[i][j - 1] + 1)
                     .min(dp[i - 1][j - 1] + cost);
@@ -1000,7 +1008,10 @@ mod tests {
     fn test_metrics_combine_weighted() {
         let metrics_list: Vec<(fn(&i32, &i32) -> f64, f64)> = vec![
             (|a: &i32, b: &i32| if a == b { 1.0 } else { 0.0 }, 0.5),
-            (|a: &i32, b: &i32| if (a - b).abs() <= 1 { 1.0 } else { 0.0 }, 0.5),
+            (
+                |a: &i32, b: &i32| if (a - b).abs() <= 1 { 1.0 } else { 0.0 },
+                0.5,
+            ),
         ];
 
         // Exact match: both metrics return 1.0

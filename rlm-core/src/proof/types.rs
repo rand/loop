@@ -43,8 +43,10 @@ impl SpecDomain {
             || lower.contains("int.")
             || lower.contains("nat ")
             || lower.contains(": nat")
-            || (lower.contains('+') && (lower.contains("nat") || lower.contains(" 0 ") || lower.contains(" 1 ")))
-            || (lower.contains('*') && (lower.contains("nat") || lower.contains(" 0 ") || lower.contains(" 1 ")))
+            || (lower.contains('+')
+                && (lower.contains("nat") || lower.contains(" 0 ") || lower.contains(" 1 ")))
+            || (lower.contains('*')
+                && (lower.contains("nat") || lower.contains(" 0 ") || lower.contains(" 1 ")))
             || lower.contains("omega")
             || lower.contains(".add")
             || lower.contains(".mul")
@@ -56,8 +58,12 @@ impl SpecDomain {
         }
 
         // Order patterns
-        if lower.contains("<=") || lower.contains(">=") || lower.contains(" < ") || lower.contains(" > ")
-            || lower.contains("le ") || lower.contains("lt ")
+        if lower.contains("<=")
+            || lower.contains(">=")
+            || lower.contains(" < ")
+            || lower.contains(" > ")
+            || lower.contains("le ")
+            || lower.contains("lt ")
         {
             return Self::Order;
         }
@@ -101,10 +107,7 @@ impl SpecDomain {
         }
 
         // Type theory patterns - check late as `=` is very common
-        if lower.contains("eq ")
-            || lower.contains("heq")
-            || lower.contains("cast")
-        {
+        if lower.contains("eq ") || lower.contains("heq") || lower.contains("cast") {
             return Self::TypeTheory;
         }
 
@@ -180,10 +183,10 @@ impl AutomationTier {
     /// Get the maximum time budget (in ms) for this tier.
     pub fn time_budget_ms(&self) -> u64 {
         match self {
-            Self::Decidable => 5_000,     // 5 seconds
-            Self::Automation => 30_000,   // 30 seconds
-            Self::AIAssisted => 60_000,   // 60 seconds
-            Self::HumanLoop => 0,         // No timeout
+            Self::Decidable => 5_000,   // 5 seconds
+            Self::Automation => 30_000, // 30 seconds
+            Self::AIAssisted => 60_000, // 60 seconds
+            Self::HumanLoop => 0,       // No timeout
         }
     }
 }
@@ -543,28 +546,49 @@ mod tests {
     #[test]
     fn test_spec_domain_inference() {
         // Arithmetic detection
-        assert_eq!(SpecDomain::infer_from_goal("Nat.add_comm"), SpecDomain::Arithmetic);
-        assert_eq!(SpecDomain::infer_from_goal("x : Nat |- x + 0 = x"), SpecDomain::Arithmetic);
-        assert_eq!(SpecDomain::infer_from_goal("n : Nat, m : Nat |- n + m = m + n"), SpecDomain::Arithmetic);
+        assert_eq!(
+            SpecDomain::infer_from_goal("Nat.add_comm"),
+            SpecDomain::Arithmetic
+        );
+        assert_eq!(
+            SpecDomain::infer_from_goal("x : Nat |- x + 0 = x"),
+            SpecDomain::Arithmetic
+        );
+        assert_eq!(
+            SpecDomain::infer_from_goal("n : Nat, m : Nat |- n + m = m + n"),
+            SpecDomain::Arithmetic
+        );
 
         // Order detection
         assert_eq!(SpecDomain::infer_from_goal("x < y"), SpecDomain::Order);
         assert_eq!(SpecDomain::infer_from_goal("a <= b"), SpecDomain::Order);
 
         // Set theory detection
-        assert_eq!(SpecDomain::infer_from_goal("a : Set Nat"), SpecDomain::SetTheory);
+        assert_eq!(
+            SpecDomain::infer_from_goal("a : Set Nat"),
+            SpecDomain::SetTheory
+        );
 
         // Logic detection
-        assert_eq!(SpecDomain::infer_from_goal("true and false"), SpecDomain::Logic);
+        assert_eq!(
+            SpecDomain::infer_from_goal("true and false"),
+            SpecDomain::Logic
+        );
 
         // Type theory detection (equality without Nat context)
         assert_eq!(SpecDomain::infer_from_goal("a = b"), SpecDomain::TypeTheory);
 
         // Data structures detection
-        assert_eq!(SpecDomain::infer_from_goal("List.length xs"), SpecDomain::DataStructures);
+        assert_eq!(
+            SpecDomain::infer_from_goal("List.length xs"),
+            SpecDomain::DataStructures
+        );
 
         // General fallback
-        assert_eq!(SpecDomain::infer_from_goal("something_else"), SpecDomain::General);
+        assert_eq!(
+            SpecDomain::infer_from_goal("something_else"),
+            SpecDomain::General
+        );
     }
 
     #[test]
@@ -588,11 +612,7 @@ mod tests {
         assert!(success.success);
         assert!(success.is_complete());
 
-        let partial = TacticResult::success(
-            "intro x",
-            vec![Goal::from_string("x -> P x")],
-            50,
-        );
+        let partial = TacticResult::success("intro x", vec![Goal::from_string("x -> P x")], 50);
         assert!(partial.success);
         assert!(!partial.is_complete());
         assert!(partial.made_progress(2));
@@ -641,7 +661,11 @@ mod tests {
     fn test_boost_tactic() {
         let mut strategy = ProofStrategy::new(
             SpecDomain::Arithmetic,
-            vec!["omega".to_string(), "linarith".to_string(), "ring".to_string()],
+            vec![
+                "omega".to_string(),
+                "linarith".to_string(),
+                "ring".to_string(),
+            ],
         );
 
         strategy.boost_tactic("ring");

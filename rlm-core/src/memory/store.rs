@@ -31,8 +31,7 @@ impl SqliteMemoryStore {
 
     /// Create an in-memory store (for testing).
     pub fn in_memory() -> Result<Self> {
-        let conn =
-            Connection::open_in_memory().map_err(|e| Error::MemoryStorage(e.to_string()))?;
+        let conn = Connection::open_in_memory().map_err(|e| Error::MemoryStorage(e.to_string()))?;
         initialize_schema(&conn).map_err(|e| Error::MemoryStorage(e.to_string()))?;
 
         Ok(Self {
@@ -56,11 +55,10 @@ impl SqliteMemoryStore {
     /// Add a node to the store.
     pub fn add_node(&self, node: &Node) -> Result<()> {
         self.with_conn(|conn| {
-            let embedding_blob = node.embedding.as_ref().map(|e| {
-                e.iter()
-                    .flat_map(|f| f.to_le_bytes())
-                    .collect::<Vec<u8>>()
-            });
+            let embedding_blob = node
+                .embedding
+                .as_ref()
+                .map(|e| e.iter().flat_map(|f| f.to_le_bytes()).collect::<Vec<u8>>());
 
             let provenance_context = node
                 .provenance
@@ -91,9 +89,7 @@ impl SqliteMemoryStore {
                         .as_ref()
                         .map(|p| format!("{:?}", p.source_type)),
                     node.provenance.as_ref().and_then(|p| p.source_ref.clone()),
-                    node.provenance
-                        .as_ref()
-                        .map(|p| p.observed_at.to_rfc3339()),
+                    node.provenance.as_ref().map(|p| p.observed_at.to_rfc3339()),
                     provenance_context,
                     node.created_at.to_rfc3339(),
                     node.updated_at.to_rfc3339(),
@@ -124,11 +120,10 @@ impl SqliteMemoryStore {
     /// Update a node.
     pub fn update_node(&self, node: &Node) -> Result<()> {
         self.with_conn(|conn| {
-            let embedding_blob = node.embedding.as_ref().map(|e| {
-                e.iter()
-                    .flat_map(|f| f.to_le_bytes())
-                    .collect::<Vec<u8>>()
-            });
+            let embedding_blob = node
+                .embedding
+                .as_ref()
+                .map(|e| e.iter().flat_map(|f| f.to_le_bytes()).collect::<Vec<u8>>());
 
             let metadata = node
                 .metadata
@@ -257,9 +252,9 @@ impl SqliteMemoryStore {
                 .collect()
         });
 
-        let metadata: Option<HashMap<String, Value>> =
-            row.get::<_, Option<String>>(15)?
-                .and_then(|s| serde_json::from_str(&s).ok());
+        let metadata: Option<HashMap<String, Value>> = row
+            .get::<_, Option<String>>(15)?
+            .and_then(|s| serde_json::from_str(&s).ok());
 
         let node_type = match node_type_str.as_str() {
             "entity" => NodeType::Entity,
@@ -362,7 +357,11 @@ impl SqliteMemoryStore {
         })
     }
 
-    fn get_edge_internal(&self, conn: &Connection, edge_id: &str) -> rusqlite::Result<Option<HyperEdge>> {
+    fn get_edge_internal(
+        &self,
+        conn: &Connection,
+        edge_id: &str,
+    ) -> rusqlite::Result<Option<HyperEdge>> {
         let edge_opt = conn
             .query_row(
                 "SELECT id, edge_type, label, weight, created_at, metadata
@@ -381,7 +380,8 @@ impl SqliteMemoryStore {
                     };
 
                     Ok(HyperEdge {
-                        id: EdgeId::parse(&row.get::<_, String>(0)?).unwrap_or_else(|_| EdgeId::new()),
+                        id: EdgeId::parse(&row.get::<_, String>(0)?)
+                            .unwrap_or_else(|_| EdgeId::new()),
                         edge_type,
                         label: row.get(2)?,
                         weight: row.get(3)?,
@@ -403,7 +403,8 @@ impl SqliteMemoryStore {
             edge.members = stmt
                 .query_map(params![edge_id], |row| {
                     Ok(EdgeMember {
-                        node_id: NodeId::parse(&row.get::<_, String>(0)?).unwrap_or_else(|_| NodeId::new()),
+                        node_id: NodeId::parse(&row.get::<_, String>(0)?)
+                            .unwrap_or_else(|_| NodeId::new()),
                         role: row.get(1)?,
                         position: row.get(2)?,
                     })
@@ -420,8 +421,10 @@ impl SqliteMemoryStore {
     /// Delete an edge.
     pub fn delete_edge(&self, id: &EdgeId) -> Result<bool> {
         self.with_conn(|conn| {
-            let rows =
-                conn.execute("DELETE FROM hyperedges WHERE id = ?1", params![id.to_string()])?;
+            let rows = conn.execute(
+                "DELETE FROM hyperedges WHERE id = ?1",
+                params![id.to_string()],
+            )?;
             Ok(rows > 0)
         })
     }
@@ -439,7 +442,13 @@ impl SqliteMemoryStore {
                     node.tier = next_tier;
                     node.updated_at = Utc::now();
                     self.update_node(&node)?;
-                    self.log_evolution(node_id, "promote", Some(from_tier), Some(next_tier), reason)?;
+                    self.log_evolution(
+                        node_id,
+                        "promote",
+                        Some(from_tier),
+                        Some(next_tier),
+                        reason,
+                    )?;
                     promoted.push(node_id.clone());
                 }
             }
@@ -477,7 +486,11 @@ impl SqliteMemoryStore {
 
         // For now, just promote nodes above a confidence threshold
         let promoted = self.promote(
-            &source_ids.iter().filter(|_| true).cloned().collect::<Vec<_>>(),
+            &source_ids
+                .iter()
+                .filter(|_| true)
+                .cloned()
+                .collect::<Vec<_>>(),
             &format!("Consolidation from {} to {}", from_tier, to_tier),
         )?;
 
@@ -645,8 +658,12 @@ mod tests {
     fn test_query_nodes_by_type() {
         let store = SqliteMemoryStore::in_memory().unwrap();
 
-        store.add_node(&Node::new(NodeType::Fact, "Fact 1")).unwrap();
-        store.add_node(&Node::new(NodeType::Fact, "Fact 2")).unwrap();
+        store
+            .add_node(&Node::new(NodeType::Fact, "Fact 1"))
+            .unwrap();
+        store
+            .add_node(&Node::new(NodeType::Fact, "Fact 2"))
+            .unwrap();
         store
             .add_node(&Node::new(NodeType::Entity, "Entity 1"))
             .unwrap();
@@ -663,7 +680,10 @@ mod tests {
         let store = SqliteMemoryStore::in_memory().unwrap();
 
         store
-            .add_node(&Node::new(NodeType::Fact, "The authentication system uses JWT"))
+            .add_node(&Node::new(
+                NodeType::Fact,
+                "The authentication system uses JWT",
+            ))
             .unwrap();
         store
             .add_node(&Node::new(NodeType::Fact, "Users can login with OAuth"))
@@ -686,7 +706,12 @@ mod tests {
         store.add_node(&node1).unwrap();
         store.add_node(&node2).unwrap();
 
-        let edge = HyperEdge::binary(EdgeType::Structural, node1.id.clone(), node2.id.clone(), "has");
+        let edge = HyperEdge::binary(
+            EdgeType::Structural,
+            node1.id.clone(),
+            node2.id.clone(),
+            "has",
+        );
         store.add_edge(&edge).unwrap();
 
         let edges = store.get_edges_for_node(&node1.id).unwrap();
@@ -714,8 +739,12 @@ mod tests {
 
         let node = Node::new(NodeType::Fact, "Test").with_tier(Tier::Task);
         store.add_node(&node).unwrap();
-        store.promote(&[node.id.clone()], "First promotion").unwrap();
-        store.promote(&[node.id.clone()], "Second promotion").unwrap();
+        store
+            .promote(&[node.id.clone()], "First promotion")
+            .unwrap();
+        store
+            .promote(&[node.id.clone()], "Second promotion")
+            .unwrap();
 
         let history = store.get_evolution_history(&node.id).unwrap();
         assert_eq!(history.len(), 2);

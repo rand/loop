@@ -88,8 +88,9 @@ impl QueryPatterns {
                 how\s+should|what\s+approach|
                 trade.?off|alternative|option|
                 scale|performance|security
-                "
-            ).unwrap(),
+                ",
+            )
+            .unwrap(),
             multi_file: Regex::new(
                 r"(?x)
                 all\s+files|multiple\s+files|across|
@@ -97,8 +98,9 @@ impl QueryPatterns {
                 every|find\s+all|search|grep|
                 dependency|import|reference|
                 rename|move|reorganize
-                "
-            ).unwrap(),
+                ",
+            )
+            .unwrap(),
             debugging: Regex::new(
                 r"(?x)
                 debug|error|bug|issue|problem|
@@ -106,16 +108,18 @@ impl QueryPatterns {
                 why\s+does|why\s+is|what.s\s+wrong|
                 doesn.t\s+work|not\s+working|broken|
                 fix|diagnose|investigate|root\s+cause
-                "
-            ).unwrap(),
+                ",
+            )
+            .unwrap(),
             extraction: Regex::new(
                 r"(?x)
                 extract|parse|summarize|list|
                 what\s+is|what\s+are|describe|explain|
                 get|find|show|tell\s+me|give\s+me|
                 count|how\s+many|identify
-                "
-            ).unwrap(),
+                ",
+            )
+            .unwrap(),
         }
     }
 }
@@ -207,7 +211,9 @@ impl SwitchStrategy {
         query_type: Option<QueryType>,
     ) -> bool {
         match self {
-            SwitchStrategy::Depth { depth: switch_depth } => depth >= *switch_depth,
+            SwitchStrategy::Depth {
+                depth: switch_depth,
+            } => depth >= *switch_depth,
             SwitchStrategy::TokenBudget { tokens } => tokens_used >= *tokens,
             SwitchStrategy::QueryType { reasoning_only } => {
                 if *reasoning_only {
@@ -219,9 +225,10 @@ impl SwitchStrategy {
                     false
                 }
             }
-            SwitchStrategy::Hybrid { depth: switch_depth, tokens } => {
-                depth >= *switch_depth || tokens_used >= *tokens
-            }
+            SwitchStrategy::Hybrid {
+                depth: switch_depth,
+                tokens,
+            } => depth >= *switch_depth || tokens_used >= *tokens,
             SwitchStrategy::Custom {
                 max_root_depth,
                 max_root_tokens,
@@ -403,7 +410,9 @@ impl DualModelConfig {
         Self {
             root_model: ModelSpec::claude_opus(),
             recursive_model: ModelSpec::claude_haiku(),
-            switch_strategy: SwitchStrategy::TokenBudget { tokens: premium_tokens },
+            switch_strategy: SwitchStrategy::TokenBudget {
+                tokens: premium_tokens,
+            },
             extraction_model: Some(ModelSpec::claude_haiku()),
             name: Some(format!("token_limited_{}", premium_tokens)),
         }
@@ -411,7 +420,9 @@ impl DualModelConfig {
 
     /// Get the configured extraction model, defaulting to recursive model.
     pub fn extraction_model(&self) -> &ModelSpec {
-        self.extraction_model.as_ref().unwrap_or(&self.recursive_model)
+        self.extraction_model
+            .as_ref()
+            .unwrap_or(&self.recursive_model)
     }
 
     /// Select the appropriate model based on current state.
@@ -421,7 +432,10 @@ impl DualModelConfig {
         tokens_used: u64,
         query_type: Option<QueryType>,
     ) -> &ModelSpec {
-        if self.switch_strategy.should_use_recursive(depth, tokens_used, query_type) {
+        if self
+            .switch_strategy
+            .should_use_recursive(depth, tokens_used, query_type)
+        {
             &self.recursive_model
         } else {
             &self.root_model
@@ -445,7 +459,9 @@ impl DualModelConfig {
 
     /// Check if currently using the root (premium) model.
     pub fn is_using_root(&self, depth: u32, tokens_used: u64) -> bool {
-        !self.switch_strategy.should_use_recursive(depth, tokens_used, None)
+        !self
+            .switch_strategy
+            .should_use_recursive(depth, tokens_used, None)
     }
 }
 
@@ -671,10 +687,11 @@ impl SmartRouter {
         tokens_used: u64,
     ) -> RoutingDecision {
         let query_type = QueryType::classify(query);
-        let call_tier = if config
-            .switch_strategy
-            .should_use_recursive(context.depth, tokens_used, Some(query_type))
-        {
+        let call_tier = if config.switch_strategy.should_use_recursive(
+            context.depth,
+            tokens_used,
+            Some(query_type),
+        ) {
             ModelCallTier::Recursive
         } else {
             ModelCallTier::Root
@@ -698,9 +715,12 @@ impl SmartRouter {
         let query_type = QueryType::classify(query);
 
         let model = match call_tier {
-            ModelCallTier::Root | ModelCallTier::Recursive => {
-                config.select_model_for_tier(context.depth, tokens_used, Some(query_type), call_tier)
-            }
+            ModelCallTier::Root | ModelCallTier::Recursive => config.select_model_for_tier(
+                context.depth,
+                tokens_used,
+                Some(query_type),
+                call_tier,
+            ),
             ModelCallTier::Extraction => config.select_model_for_tier(
                 context.depth,
                 tokens_used,
@@ -826,6 +846,45 @@ impl Default for SmartRouter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
+
+    fn query_type_strategy() -> impl Strategy<Value = QueryType> {
+        prop_oneof![
+            Just(QueryType::Architecture),
+            Just(QueryType::MultiFile),
+            Just(QueryType::Debugging),
+            Just(QueryType::Extraction),
+            Just(QueryType::Simple),
+        ]
+    }
+
+    fn switch_strategy_strategy() -> impl Strategy<Value = SwitchStrategy> {
+        prop_oneof![
+            (0u32..6).prop_map(|depth| SwitchStrategy::Depth { depth }),
+            (0u64..50_000).prop_map(|tokens| SwitchStrategy::TokenBudget { tokens }),
+            (0u32..6, 0u64..50_000)
+                .prop_map(|(depth, tokens)| SwitchStrategy::Hybrid { depth, tokens }),
+            any::<bool>().prop_map(|reasoning_only| SwitchStrategy::QueryType { reasoning_only }),
+            (
+                prop::option::of(0u32..6),
+                prop::option::of(0u64..50_000),
+                proptest::collection::vec(query_type_strategy(), 0..4),
+                proptest::collection::vec(query_type_strategy(), 0..4)
+            )
+                .prop_map(
+                    |(max_root_depth, max_root_tokens, force_recursive_for, force_root_for)| {
+                        SwitchStrategy::Custom {
+                            max_root_depth,
+                            max_root_tokens,
+                            force_recursive_for,
+                            force_root_for,
+                        }
+                    }
+                ),
+            Just(SwitchStrategy::AlwaysRoot),
+            Just(SwitchStrategy::AlwaysRecursive),
+        ]
+    }
 
     #[test]
     fn test_query_type_classification() {
@@ -1012,7 +1071,10 @@ mod tests {
 
     #[test]
     fn test_switch_strategy_hybrid() {
-        let strategy = SwitchStrategy::Hybrid { depth: 2, tokens: 10000 };
+        let strategy = SwitchStrategy::Hybrid {
+            depth: 2,
+            tokens: 10000,
+        };
 
         // Neither condition met
         assert!(!strategy.should_use_recursive(1, 5000, None));
@@ -1029,7 +1091,9 @@ mod tests {
 
     #[test]
     fn test_switch_strategy_query_type() {
-        let strategy = SwitchStrategy::QueryType { reasoning_only: true };
+        let strategy = SwitchStrategy::QueryType {
+            reasoning_only: true,
+        };
 
         // Architecture queries use root
         assert!(!strategy.should_use_recursive(0, 0, Some(QueryType::Architecture)));
@@ -1112,7 +1176,12 @@ mod tests {
     #[test]
     fn test_dual_model_select_model_for_extraction_tier() {
         let config = DualModelConfig::quality_first();
-        let model = config.select_model_for_tier(10, 200_000, Some(QueryType::Extraction), ModelCallTier::Extraction);
+        let model = config.select_model_for_tier(
+            10,
+            200_000,
+            Some(QueryType::Extraction),
+            ModelCallTier::Extraction,
+        );
         assert_eq!(model.id, "claude-3-5-sonnet-20241022");
     }
 
@@ -1224,5 +1293,112 @@ mod tests {
         let config = DualModelConfig::aggressive();
         let decision = router.route_with_config("Simple question", &context, Some(&config), 0);
         assert_eq!(decision.model.id, "claude-3-opus-20240229"); // Root at depth 0
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(96))]
+
+        #[test]
+        fn prop_depth_switch_strategy_is_monotonic(
+            switch_depth in 0u32..10,
+            depth_a in 0u32..16,
+            depth_b in 0u32..16
+        ) {
+            let strategy = SwitchStrategy::Depth { depth: switch_depth };
+            let (low, high) = if depth_a <= depth_b {
+                (depth_a, depth_b)
+            } else {
+                (depth_b, depth_a)
+            };
+
+            let low_decision = strategy.should_use_recursive(low, 0, None);
+            let high_decision = strategy.should_use_recursive(high, 0, None);
+            prop_assert!(!(low_decision && !high_decision));
+        }
+
+        #[test]
+        fn prop_token_budget_switch_strategy_is_monotonic(
+            budget in 0u64..100_000,
+            used_a in 0u64..120_000,
+            used_b in 0u64..120_000
+        ) {
+            let strategy = SwitchStrategy::TokenBudget { tokens: budget };
+            let (low, high) = if used_a <= used_b {
+                (used_a, used_b)
+            } else {
+                (used_b, used_a)
+            };
+
+            let low_decision = strategy.should_use_recursive(0, low, None);
+            let high_decision = strategy.should_use_recursive(0, high, None);
+            prop_assert!(!(low_decision && !high_decision));
+        }
+
+        #[test]
+        fn prop_dual_model_selection_matches_switch_strategy(
+            strategy in switch_strategy_strategy(),
+            depth in 0u32..12,
+            tokens_used in 0u64..120_000,
+            query_type in prop::option::of(query_type_strategy())
+        ) {
+            let config = DualModelConfig::new(ModelSpec::claude_opus(), ModelSpec::claude_haiku())
+                .with_strategy(strategy.clone());
+
+            let selected = config.select_model(depth, tokens_used, query_type);
+            let should_recursive = strategy.should_use_recursive(depth, tokens_used, query_type);
+
+            if should_recursive {
+                prop_assert_eq!(selected.id.as_str(), config.recursive_model.id.as_str());
+            } else {
+                prop_assert_eq!(selected.id.as_str(), config.root_model.id.as_str());
+            }
+        }
+
+        #[test]
+        fn prop_custom_force_root_override_wins(
+            query_type in query_type_strategy(),
+            depth in 0u32..12,
+            tokens_used in 0u64..120_000
+        ) {
+            let strategy = SwitchStrategy::Custom {
+                max_root_depth: Some(0),
+                max_root_tokens: Some(0),
+                force_recursive_for: vec![query_type],
+                force_root_for: vec![query_type],
+            };
+
+            prop_assert!(!strategy.should_use_recursive(depth, tokens_used, Some(query_type)));
+        }
+
+        #[test]
+        fn prop_tiered_cost_accounting_request_counts_are_exact(
+            root_calls in 0u8..6,
+            recursive_calls in 0u8..6,
+            extraction_calls in 0u8..6
+        ) {
+            let mut tracker = crate::llm::CostTracker::new();
+            let usage = crate::llm::TokenUsage {
+                input_tokens: 120,
+                output_tokens: 40,
+                cache_read_tokens: None,
+                cache_creation_tokens: None,
+            };
+
+            for _ in 0..root_calls {
+                tracker.record_tiered("root", &usage, Some(0.01), ModelCallTier::Root);
+            }
+            for _ in 0..recursive_calls {
+                tracker.record_tiered("recursive", &usage, Some(0.002), ModelCallTier::Recursive);
+            }
+            for _ in 0..extraction_calls {
+                tracker.record_tiered("extraction", &usage, Some(0.001), ModelCallTier::Extraction);
+            }
+
+            let breakdown = tracker.tier_breakdown();
+            prop_assert_eq!(breakdown.root_requests, root_calls as u64);
+            prop_assert_eq!(breakdown.recursive_requests, recursive_calls as u64);
+            prop_assert_eq!(breakdown.extraction_requests, extraction_calls as u64);
+            prop_assert!(breakdown.total_cost >= 0.0);
+        }
     }
 }

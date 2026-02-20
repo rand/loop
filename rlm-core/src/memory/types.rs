@@ -534,7 +534,12 @@ mod tests {
         let node1 = NodeId::new();
         let node2 = NodeId::new();
 
-        let edge = HyperEdge::binary(EdgeType::Reference, node1.clone(), node2.clone(), "depends_on");
+        let edge = HyperEdge::binary(
+            EdgeType::Reference,
+            node1.clone(),
+            node2.clone(),
+            "depends_on",
+        );
 
         assert_eq!(edge.members.len(), 2);
         assert!(edge.contains(&node1));
@@ -558,7 +563,10 @@ mod tests {
             .limit(10);
 
         assert_eq!(query.text, Some("auth".to_string()));
-        assert_eq!(query.node_types, Some(vec![NodeType::Entity, NodeType::Fact]));
+        assert_eq!(
+            query.node_types,
+            Some(vec![NodeType::Entity, NodeType::Fact])
+        );
         assert_eq!(query.min_confidence, Some(0.5));
         assert_eq!(query.limit, Some(10));
     }

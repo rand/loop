@@ -122,12 +122,7 @@ impl RlmSkill {
             "rlm_execute",
             "Execute RLM orchestration for complex multi-step reasoning tasks",
         )
-        .with_triggers(vec![
-            "/rlm",
-            "rlm execute",
-            "use rlm",
-            "activate rlm",
-        ])
+        .with_triggers(vec!["/rlm", "rlm execute", "use rlm", "activate rlm"])
         .with_keywords(vec![
             "analyze",
             "architecture",
@@ -145,16 +140,8 @@ impl RlmSkill {
     /// Create the rlm_status skill.
     pub fn rlm_status() -> Self {
         Self::new("rlm_status", "Check RLM status, mode, and budget")
-            .with_triggers(vec![
-                "/rlm status",
-                "rlm status",
-                "check rlm",
-            ])
-            .with_keywords(vec![
-                "rlm mode",
-                "budget",
-                "cost",
-            ])
+            .with_triggers(vec!["/rlm status", "rlm status", "check rlm"])
+            .with_keywords(vec!["rlm mode", "budget", "cost"])
             .with_category("rlm")
             .with_priority(90)
             .with_content(RLM_STATUS_SKILL_CONTENT)
@@ -163,17 +150,8 @@ impl RlmSkill {
     /// Create the rlm_mode skill.
     pub fn rlm_mode() -> Self {
         Self::new("rlm_mode", "Change RLM execution mode")
-            .with_triggers(vec![
-                "/rlm mode",
-                "rlm mode",
-                "set mode",
-            ])
-            .with_keywords(vec![
-                "micro",
-                "fast",
-                "balanced",
-                "thorough",
-            ])
+            .with_triggers(vec!["/rlm mode", "rlm mode", "set mode"])
+            .with_keywords(vec!["micro", "fast", "balanced", "thorough"])
             .with_category("rlm")
             .with_priority(80)
             .with_content(RLM_MODE_SKILL_CONTENT)
@@ -182,17 +160,8 @@ impl RlmSkill {
     /// Create the memory_query skill.
     pub fn memory_query() -> Self {
         Self::new("memory_query", "Query the RLM memory store for knowledge")
-            .with_triggers(vec![
-                "memory query",
-                "search memory",
-                "recall",
-            ])
-            .with_keywords(vec![
-                "remember",
-                "what do you know",
-                "previous",
-                "earlier",
-            ])
+            .with_triggers(vec!["memory query", "search memory", "recall"])
+            .with_keywords(vec!["remember", "what do you know", "previous", "earlier"])
             .with_category("memory")
             .with_priority(70)
             .with_content(MEMORY_QUERY_SKILL_CONTENT)
@@ -201,16 +170,8 @@ impl RlmSkill {
     /// Create the memory_store skill.
     pub fn memory_store() -> Self {
         Self::new("memory_store", "Store knowledge in RLM memory")
-            .with_triggers(vec![
-                "memory store",
-                "remember this",
-                "save to memory",
-            ])
-            .with_keywords(vec![
-                "store",
-                "save",
-                "persist",
-            ])
+            .with_triggers(vec!["memory store", "remember this", "save to memory"])
+            .with_keywords(vec!["store", "save", "persist"])
             .with_category("memory")
             .with_priority(70)
             .with_content(MEMORY_STORE_SKILL_CONTENT)
@@ -517,8 +478,7 @@ mod tests {
 
     #[test]
     fn test_skill_matches_trigger() {
-        let skill = RlmSkill::new("test", "test")
-            .with_triggers(vec!["/rlm execute"]);
+        let skill = RlmSkill::new("test", "test").with_triggers(vec!["/rlm execute"]);
 
         assert!(skill.matches("/rlm execute the task"));
         assert!(!skill.matches("regular query"));
@@ -526,8 +486,7 @@ mod tests {
 
     #[test]
     fn test_skill_matches_keyword() {
-        let skill = RlmSkill::new("test", "test")
-            .with_keywords(vec!["analyze", "architecture"]);
+        let skill = RlmSkill::new("test", "test").with_keywords(vec!["analyze", "architecture"]);
 
         assert!(skill.matches("analyze the codebase"));
         assert!(skill.matches("describe the architecture"));

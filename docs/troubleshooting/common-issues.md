@@ -76,4 +76,32 @@ Actions:
 3. Align local commands with policy commands.
 4. Re-run from clean state.
 
+## 8. Ignored Lean/REPL integration tests hang or leave subprocesses behind
+
+Symptoms:
+- `cargo test ... -- --ignored` appears stuck
+- Later runs show odd REPL startup errors
+- Background `rlm_repl` or Lean `repl` processes linger
+
+Actions:
+1. Run ignored subprocess tests serially:
+   `cd /Users/rand/src/loop/rlm-core && cargo test --no-default-features --features gemini test_repl_spawn -- --ignored --test-threads=1 && cargo test --no-default-features --features gemini test_lean_repl_spawn -- --ignored --test-threads=1`
+2. Treat runtime > 120s as a failure signal and capture logs to evidence.
+3. Scan for leftovers:
+   `ps -axo pid=,command=,rss= -ww | rg -n "rlm_repl|lake env repl|\\brepl\\b" -S`
+4. If environment prerequisites are missing (Python package path, Lean toolchain), record the actionable stderr and classify as environment blocker, not runtime success.
+5. Re-run after fixing prerequisites; unattended runs should complete without manual process cleanup.
+
+## 9. Proof automation reports "Missing proof state"
+
+Symptoms:
+- Tactic execution fails immediately with a deterministic missing proof-state error
+- AI tactic validation returns failure before trying any tactic
+
+Actions:
+1. Ensure you are targeting a `sorry` location with a real `proof_state_id` (protocol session target selection prefers these).
+2. Run the protocol path (`execute_tactic_with_feedback` / `execute_tactic_with_repl`) instead of ad hoc tactic calls without state.
+3. Confirm operation IDs are stateful (`sorry:<proof_state>:<idx>`) rather than `sorry:missing:<idx>`.
+4. If Lean response omitted proof state, treat as runtime blocker and capture the raw response in evidence.
+
 Because gravity is also optional until it is not.

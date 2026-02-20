@@ -464,7 +464,12 @@ impl<S: Signature> FallbackLoop<S> {
         loop {
             history.total_time_ms = started.elapsed().as_millis() as u64;
             if let Some(trigger) = self.extractor.should_trigger(&history, &self.limits) {
-                return self.extract_with_trigger(&history, &variables, trigger, &mut extract_response);
+                return self.extract_with_trigger(
+                    &history,
+                    &variables,
+                    trigger,
+                    &mut extract_response,
+                );
             }
 
             let Some(step) = next_step()? else {
@@ -485,10 +490,7 @@ impl<S: Signature> FallbackLoop<S> {
                             Ok(parsed) => parsed,
                             Err(err) => {
                                 return Ok(ExecutionResult::failed(
-                                    format!(
-                                        "SUBMIT outputs failed signature decode: {}",
-                                        err
-                                    ),
+                                    format!("SUBMIT outputs failed signature decode: {}", err),
                                     FallbackTrigger::Manual,
                                 ));
                             }
@@ -514,7 +516,12 @@ impl<S: Signature> FallbackLoop<S> {
 
             history.total_time_ms = started.elapsed().as_millis() as u64;
             if let Some(trigger) = self.extractor.should_trigger(&history, &self.limits) {
-                return self.extract_with_trigger(&history, &variables, trigger, &mut extract_response);
+                return self.extract_with_trigger(
+                    &history,
+                    &variables,
+                    trigger,
+                    &mut extract_response,
+                );
             }
         }
     }
@@ -602,7 +609,9 @@ mod tests {
 
     #[test]
     fn test_mode_budgets() {
-        assert!(ExecutionMode::Micro.typical_budget_usd() < ExecutionMode::Fast.typical_budget_usd());
+        assert!(
+            ExecutionMode::Micro.typical_budget_usd() < ExecutionMode::Fast.typical_budget_usd()
+        );
         assert!(
             ExecutionMode::Fast.typical_budget_usd() < ExecutionMode::Balanced.typical_budget_usd()
         );
@@ -616,8 +625,14 @@ mod tests {
     fn test_execution_mode_default_dual_model_config() {
         let micro = ExecutionMode::Micro.default_dual_model_config();
         let thorough = ExecutionMode::Thorough.default_dual_model_config();
-        assert_eq!(micro.switch_strategy, crate::llm::SwitchStrategy::Depth { depth: 1 });
-        assert_eq!(thorough.switch_strategy, crate::llm::SwitchStrategy::Depth { depth: 3 });
+        assert_eq!(
+            micro.switch_strategy,
+            crate::llm::SwitchStrategy::Depth { depth: 1 }
+        );
+        assert_eq!(
+            thorough.switch_strategy,
+            crate::llm::SwitchStrategy::Depth { depth: 3 }
+        );
     }
 
     #[test]
@@ -626,8 +641,13 @@ mod tests {
             .execution_mode(ExecutionMode::Fast)
             .build_config();
 
-        let dual = config.dual_model.expect("expected dual-model config from mode");
-        assert_eq!(dual.switch_strategy, crate::llm::SwitchStrategy::Depth { depth: 1 });
+        let dual = config
+            .dual_model
+            .expect("expected dual-model config from mode");
+        assert_eq!(
+            dual.switch_strategy,
+            crate::llm::SwitchStrategy::Depth { depth: 1 }
+        );
     }
 
     #[test]
@@ -636,7 +656,10 @@ mod tests {
 
         let (root_decision, root_tier) = runtime.route_recursive("Design system architecture", 0);
         assert_eq!(root_tier, ModelCallTier::Root);
-        assert_eq!(root_decision.model.id, runtime.dual_model_config().root_model.id);
+        assert_eq!(
+            root_decision.model.id,
+            runtime.dual_model_config().root_model.id
+        );
 
         let root_usage = TokenUsage {
             input_tokens: 1200,
@@ -659,7 +682,12 @@ mod tests {
             cache_read_tokens: None,
             cache_creation_tokens: None,
         };
-        runtime.record_usage(&recursive_decision, &recursive_usage, Some(0.004), recursive_tier);
+        runtime.record_usage(
+            &recursive_decision,
+            &recursive_usage,
+            Some(0.004),
+            recursive_tier,
+        );
 
         let (extraction_decision, extraction_tier) =
             runtime.route_extraction("Extract final answer", 2);
@@ -723,10 +751,9 @@ mod tests {
         #[test]
         fn test_submit_success_bypasses_fallback_extraction() {
             let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(1, 1, 1));
-            let mut steps = VecDeque::from(vec![
-                FallbackLoopStep::new("SUBMIT({'answer': 'done'})")
-                    .with_submit_result(SubmitResult::success(json!({"answer": "done"}))),
-            ]);
+            let mut steps =
+                VecDeque::from(vec![FallbackLoopStep::new("SUBMIT({'answer': 'done'})")
+                    .with_submit_result(SubmitResult::success(json!({"answer": "done"})))]);
 
             let mut fallback_called = false;
             let result = loop_runner
@@ -746,12 +773,13 @@ mod tests {
 
         #[test]
         fn test_max_iterations_triggers_fallback_extraction() {
-            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(1, 10, 60_000));
+            let loop_runner =
+                FallbackLoop::<TestSignature>::new(ExecutionLimits::new(1, 10, 60_000));
             let mut vars = HashMap::new();
             vars.insert("answer".to_string(), json!("from_vars"));
 
             let mut steps = VecDeque::from(vec![
-                FallbackLoopStep::new("x = 'from_vars'").with_variables(vars),
+                FallbackLoopStep::new("x = 'from_vars'").with_variables(vars)
             ]);
 
             let result = loop_runner
@@ -776,9 +804,10 @@ mod tests {
 
         #[test]
         fn test_max_llm_calls_triggers_fallback_extraction() {
-            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 1, 60_000));
+            let loop_runner =
+                FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 1, 60_000));
             let mut steps = VecDeque::from(vec![
-                FallbackLoopStep::new("LLM_QUERY('hello')").with_llm_calls(1),
+                FallbackLoopStep::new("LLM_QUERY('hello')").with_llm_calls(1)
             ]);
 
             let result = loop_runner
@@ -823,12 +852,12 @@ mod tests {
 
         #[test]
         fn test_submit_validation_error_is_terminal_without_fallback() {
-            let loop_runner = FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 10, 60_000));
-            let mut steps = VecDeque::from(vec![
-                FallbackLoopStep::new("SUBMIT({})").with_submit_result(SubmitResult::validation_error(vec![
+            let loop_runner =
+                FallbackLoop::<TestSignature>::new(ExecutionLimits::new(10, 10, 60_000));
+            let mut steps = VecDeque::from(vec![FallbackLoopStep::new("SUBMIT({})")
+                .with_submit_result(SubmitResult::validation_error(vec![
                     SubmitError::NoSignatureRegistered,
-                ])),
-            ]);
+                ]))]);
 
             let mut fallback_called = false;
             let result = loop_runner

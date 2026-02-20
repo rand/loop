@@ -12,22 +12,19 @@ use super::types::{LeanRef, LinkMetadata, LinkSource, LinkType, ToposRef};
 /// Regex for parsing @lean annotations in Topos files.
 /// Matches: `@lean: path/to/file.lean#ArtifactName`
 ///          `@lean.invariant: path/to/file.lean#TheoremName`
-static LEAN_ANNOTATION_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"@lean(?:\.(\w+))?:\s*([^\s\]]+)").expect("Invalid regex")
-});
+static LEAN_ANNOTATION_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"@lean(?:\.(\w+))?:\s*([^\s\]]+)").expect("Invalid regex"));
 
 /// Regex for parsing @topos annotations in Lean files.
 /// Matches: `@topos: path/to/spec.tps#ElementName`
 ///          `@topos: path/to/spec.tps#Element.subfield`
-static TOPOS_ANNOTATION_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"@topos:\s*([^\s]+)").expect("Invalid regex")
-});
+static TOPOS_ANNOTATION_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"@topos:\s*([^\s]+)").expect("Invalid regex"));
 
 /// Regex for parsing @spec annotations in Lean files.
 /// Matches: `@spec: SPEC-01.01`
-static SPEC_ANNOTATION_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"@spec:\s*([A-Z]+-[\d.]+)").expect("Invalid regex")
-});
+static SPEC_ANNOTATION_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"@spec:\s*([A-Z]+-[\d.]+)").expect("Invalid regex"));
 
 /// A parsed annotation from a source file.
 #[derive(Debug, Clone)]
@@ -122,7 +119,10 @@ impl AnnotationParser {
 
             // Parse @spec annotations
             for cap in SPEC_ANNOTATION_RE.captures_iter(line) {
-                let spec_id = cap.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                let spec_id = cap
+                    .get(1)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
                 let col = cap.get(0).map(|m| m.start()).unwrap_or(0);
                 annotations.push(ParsedAnnotation {
                     annotation_type: AnnotationType::Spec,
@@ -174,7 +174,12 @@ impl AnnotationParser {
                     || artifact.contains("_invariant")
                 {
                     LinkType::Theorem
-                } else if artifact.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+                } else if artifact
+                    .chars()
+                    .next()
+                    .map(|c| c.is_uppercase())
+                    .unwrap_or(false)
+                {
                     LinkType::Structure
                 } else {
                     LinkType::Annotation
@@ -184,7 +189,12 @@ impl AnnotationParser {
                 let element = &topos_ref.element;
                 if element.starts_with("REQ-") {
                     LinkType::Property
-                } else if element.chars().next().map(|c| c.is_lowercase()).unwrap_or(false) {
+                } else if element
+                    .chars()
+                    .next()
+                    .map(|c| c.is_lowercase())
+                    .unwrap_or(false)
+                {
                     // Lowercase typically indicates a behavior
                     LinkType::FunctionSpec
                 } else {
@@ -324,7 +334,9 @@ theorem create_order_reserves_inventory
         let annotations = AnnotationParser::parse_topos_annotations(content);
         assert_eq!(annotations.len(), 2);
 
-        let spec_ann = annotations.iter().find(|a| a.annotation_type == AnnotationType::Spec);
+        let spec_ann = annotations
+            .iter()
+            .find(|a| a.annotation_type == AnnotationType::Spec);
         assert!(spec_ann.is_some());
         assert_eq!(spec_ann.unwrap().spec_id, Some("SPEC-01.01".to_string()));
     }

@@ -23,6 +23,7 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 Interpretation:
 - Build succeeds: no rustdoc warnings.
 - Build fails: fix docs or signatures before merge.
+- Latest local verification on `main` (`75f806f85985302c498e9d8e4915af6f144ed6ad`): pass (`2026-02-20`).
 
 ## Policy
 

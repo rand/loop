@@ -467,7 +467,10 @@ impl LLMClient for OpenAIClient {
                     error.error.message
                 )));
             }
-            return Err(Error::LLM(format!("OpenAI API error ({}): {}", status, body)));
+            return Err(Error::LLM(format!(
+                "OpenAI API error ({}): {}",
+                status, body
+            )));
         }
 
         let api_response: OpenAIResponse = serde_json::from_str(&body)
@@ -546,17 +549,16 @@ impl LLMClient for OpenAIClient {
                     error.error.message
                 )));
             }
-            return Err(Error::LLM(format!("OpenAI API error ({}): {}", status, body)));
+            return Err(Error::LLM(format!(
+                "OpenAI API error ({}): {}",
+                status, body
+            )));
         }
 
         let api_response: OpenAIEmbeddingResponse = serde_json::from_str(&body)
             .map_err(|e| Error::LLM(format!("Failed to parse response: {}", e)))?;
 
-        let embeddings = api_response
-            .data
-            .into_iter()
-            .map(|d| d.embedding)
-            .collect();
+        let embeddings = api_response.data.into_iter().map(|d| d.embedding).collect();
 
         Ok(EmbeddingResponse {
             model: api_response.model,
@@ -754,7 +756,10 @@ impl LLMClient for GoogleClient {
                     error.error.message
                 )));
             }
-            return Err(Error::LLM(format!("Gemini API error ({}): {}", status, body)));
+            return Err(Error::LLM(format!(
+                "Gemini API error ({}): {}",
+                status, body
+            )));
         }
 
         let api_response: GeminiResponse = serde_json::from_str(&body)

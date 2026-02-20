@@ -91,6 +91,5 @@ pub use types::{
     TraceEdgeLabel, TraceId,
 };
 pub use visualize::{
-    DotConfig, HtmlConfig, HtmlTheme, NetworkXGraph, NetworkXGraphAttrs, NetworkXLink,
-    NetworkXNode,
+    DotConfig, HtmlConfig, HtmlTheme, NetworkXGraph, NetworkXGraphAttrs, NetworkXLink, NetworkXNode,
 };

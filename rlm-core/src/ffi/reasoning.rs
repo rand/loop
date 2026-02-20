@@ -268,7 +268,9 @@ pub unsafe extern "C" fn rlm_reasoning_trace_to_json(
 /// - `json` must be a valid null-terminated string.
 /// - The returned pointer must be freed with `rlm_reasoning_trace_free()`.
 #[no_mangle]
-pub unsafe extern "C" fn rlm_reasoning_trace_from_json(json: *const c_char) -> *mut RlmReasoningTrace {
+pub unsafe extern "C" fn rlm_reasoning_trace_from_json(
+    json: *const c_char,
+) -> *mut RlmReasoningTrace {
     let json_str = match cstr_to_str(json) {
         Ok(s) => s,
         Err(e) => {
@@ -316,9 +318,7 @@ pub unsafe extern "C" fn rlm_reasoning_trace_to_mermaid(
 /// - `trace` must be a valid pointer.
 /// - The returned string must be freed with `rlm_string_free()`.
 #[no_mangle]
-pub unsafe extern "C" fn rlm_reasoning_trace_stats(
-    trace: *const RlmReasoningTrace,
-) -> *mut c_char {
+pub unsafe extern "C" fn rlm_reasoning_trace_stats(trace: *const RlmReasoningTrace) -> *mut c_char {
     if trace.is_null() {
         set_last_error("null trace pointer");
         return std::ptr::null_mut();

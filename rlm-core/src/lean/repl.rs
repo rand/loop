@@ -3,7 +3,7 @@
 //! This module provides the Rust interface to the leanprover-community/repl,
 //! spawning a Lean process and communicating via JSON over stdin/stdout.
 //!
-//! See: https://github.com/leanprover-community/repl
+//! See: <https://github.com/leanprover-community/repl>
 
 use crate::error::{Error, Result};
 use crate::repl::{ExecuteResult, ReplEnvironment};
@@ -15,6 +15,45 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::time::{Duration, Instant};
 
 use super::types::{Goal, LeanCommand, LeanEventMetadata, LeanResponse, ProofState, ProofStep};
+
+const SHUTDOWN_GRACE_MS: u64 = 2_000;
+const SHUTDOWN_POLL_MS: u64 = 10;
+
+fn wait_for_exit_with_timeout(child: &mut Child, timeout: Duration, context: &str) -> Result<()> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => return Ok(()),
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(Error::SubprocessComm(format!(
+                        "{context} did not exit within {}ms; process was terminated",
+                        timeout.as_millis()
+                    )));
+                }
+                std::thread::sleep(Duration::from_millis(SHUTDOWN_POLL_MS));
+            }
+            Err(e) => {
+                return Err(Error::SubprocessComm(format!(
+                    "Failed while waiting for {context} to exit: {e}"
+                )));
+            }
+        }
+    }
+}
+
+fn parse_proof_state_from_operation_id(id: &str) -> Option<u64> {
+    let mut parts = id.split(':');
+    let kind = parts.next()?;
+    let state = parts.next()?;
+    let _index = parts.next()?;
+    if kind != "sorry" || state == "missing" {
+        return None;
+    }
+    state.parse::<u64>().ok()
+}
 
 /// Configuration for the Lean REPL subprocess.
 #[derive(Debug, Clone)]
@@ -76,7 +115,7 @@ pub struct LeanRepl {
     /// Child process handle.
     child: Child,
     /// Stdin writer.
-    stdin: ChildStdin,
+    stdin: Option<ChildStdin>,
     /// Stdout reader.
     stdout: BufReader<ChildStdout>,
     /// Current environment ID.
@@ -120,7 +159,7 @@ impl LeanRepl {
 
         let repl = Self {
             child,
-            stdin,
+            stdin: Some(stdin),
             stdout,
             current_env: None,
             config,
@@ -158,10 +197,14 @@ impl LeanRepl {
         }
 
         // Send request
-        writeln!(self.stdin, "{}", request_json).map_err(|e| {
+        let stdin = self.stdin.as_mut().ok_or_else(|| {
+            Error::SubprocessComm("Lean REPL stdin is already closed".to_string())
+        })?;
+
+        writeln!(stdin, "{}", request_json).map_err(|e| {
             Error::SubprocessComm(format!("Failed to send command to Lean REPL: {}", e))
         })?;
-        self.stdin.flush().map_err(|e| {
+        stdin.flush().map_err(|e| {
             Error::SubprocessComm(format!("Failed to flush Lean REPL stdin: {}", e))
         })?;
 
@@ -234,11 +277,10 @@ impl LeanRepl {
         // Update pending sorries
         self.pending_sorries.clear();
         for (i, sorry) in response.sorries.iter().enumerate() {
-            let id = format!(
-                "sorry:{}:{}",
-                sorry.proof_state.unwrap_or(0),
-                i
-            );
+            let id = match sorry.proof_state {
+                Some(proof_state_id) => format!("sorry:{proof_state_id}:{i}"),
+                None => format!("sorry:missing:{i}"),
+            };
             self.pending_sorries.push(id);
         }
 
@@ -273,10 +315,7 @@ impl LeanRepl {
             state.add_step(step);
 
             // Update goals
-            state.goals = post_goals
-                .into_iter()
-                .map(Goal::from_string)
-                .collect();
+            state.goals = post_goals.into_iter().map(Goal::from_string).collect();
 
             // Update proof state ID if changed
             if let Some(new_ps) = response.proof_state {
@@ -285,6 +324,18 @@ impl LeanRepl {
         }
 
         Ok(response)
+    }
+
+    /// Return the currently tracked proof-state ID, if one is known.
+    pub fn active_proof_state_id(&self) -> Option<u64> {
+        self.proof_states
+            .values()
+            .find_map(|state| state.proof_state_id)
+            .or_else(|| {
+                self.pending_sorries
+                    .iter()
+                    .find_map(|id| parse_proof_state_from_operation_id(id))
+            })
     }
 
     /// Type check an expression and return its type.
@@ -315,7 +366,10 @@ impl LeanRepl {
 
         if response.has_errors() {
             let error = response.format_errors();
-            return Err(Error::repl_execution(format!("Evaluation failed: {}", error)));
+            return Err(Error::repl_execution(format!(
+                "Evaluation failed: {}",
+                error
+            )));
         }
 
         Ok(response.format_output())
@@ -323,9 +377,9 @@ impl LeanRepl {
 
     /// Save the current environment to a pickle file.
     pub fn pickle(&mut self, path: &Path) -> Result<()> {
-        let env = self.current_env.ok_or_else(|| {
-            Error::repl_execution("No environment to pickle")
-        })?;
+        let env = self
+            .current_env
+            .ok_or_else(|| Error::repl_execution("No environment to pickle"))?;
 
         let command = LeanCommand::pickle(path.to_path_buf(), env);
         let response = self.send_command(&command)?;
@@ -352,9 +406,9 @@ impl LeanRepl {
             )));
         }
 
-        let env = response.env.ok_or_else(|| {
-            Error::repl_execution("Unpickle did not return environment ID")
-        })?;
+        let env = response
+            .env
+            .ok_or_else(|| Error::repl_execution("Unpickle did not return environment ID"))?;
 
         self.current_env = Some(env);
         Ok(env)
@@ -366,9 +420,9 @@ impl LeanRepl {
         let code = format!("{} := by sorry", theorem);
         let response = self.execute_command(&code)?;
 
-        let env = response.env.ok_or_else(|| {
-            Error::repl_execution("Proof did not create new environment")
-        })?;
+        let env = response
+            .env
+            .ok_or_else(|| Error::repl_execution("Proof did not create new environment"))?;
 
         let mut state = ProofState::new(env);
 
@@ -412,15 +466,14 @@ impl LeanRepl {
 
     /// Shutdown the REPL subprocess.
     pub fn shutdown(&mut self) -> Result<()> {
-        // Close stdin to signal EOF
-        drop(std::mem::replace(
-            &mut self.stdin,
-            unsafe { std::mem::zeroed() },
-        ));
+        // Close stdin to signal EOF.
+        let _ = self.stdin.take();
 
-        // Wait for the process to exit
-        let _ = self.child.wait();
-        Ok(())
+        wait_for_exit_with_timeout(
+            &mut self.child,
+            Duration::from_millis(SHUTDOWN_GRACE_MS),
+            "Lean REPL subprocess",
+        )
     }
 
     /// Create event metadata from the current state.
@@ -507,9 +560,11 @@ impl ReplEnvironment for LeanRepl {
             Value::Number(n) => n.to_string(),
             Value::String(s) => format!("\"{}\"", s),
             Value::Bool(b) => b.to_string(),
-            _ => return Err(Error::repl_execution(
-                "Cannot set complex values in Lean REPL"
-            )),
+            _ => {
+                return Err(Error::repl_execution(
+                    "Cannot set complex values in Lean REPL",
+                ))
+            }
         };
 
         let code = format!("def {} := {}", name, value_str);
@@ -539,16 +594,23 @@ impl ReplEnvironment for LeanRepl {
         }
 
         let parts: Vec<&str> = id.split(':').collect();
-        if parts.len() < 2 {
+        if parts.len() < 3 {
             return Err(Error::repl_execution(format!(
                 "Invalid sorry ID format: {}",
                 id
             )));
         }
 
-        let proof_state: u64 = parts[1].parse().map_err(|_| {
-            Error::repl_execution(format!("Invalid proof state in ID: {}", id))
-        })?;
+        if parts[1] == "missing" {
+            return Err(Error::repl_execution(format!(
+                "Cannot resolve operation {}: Lean response did not provide a proof state ID",
+                id
+            )));
+        }
+
+        let proof_state: u64 = parts[1]
+            .parse()
+            .map_err(|_| Error::repl_execution(format!("Invalid proof state in ID: {}", id)))?;
 
         // Get the tactic from the result
         let tactic = result
@@ -613,9 +675,10 @@ impl LeanReplPool {
 
     /// Acquire a REPL handle from the pool.
     pub fn acquire(&self) -> Result<LeanRepl> {
-        let mut handles = self.handles.lock().map_err(|e| {
-            Error::Internal(format!("Failed to lock pool: {}", e))
-        })?;
+        let mut handles = self
+            .handles
+            .lock()
+            .map_err(|e| Error::Internal(format!("Failed to lock pool: {}", e)))?;
 
         // Try to get an existing handle
         while let Some(mut handle) = handles.pop() {
@@ -658,10 +721,7 @@ mod tests {
     #[test]
     fn test_lean_repl_config_with_project() {
         let config = LeanReplConfig::with_project("/path/to/project");
-        assert_eq!(
-            config.project_root,
-            Some(PathBuf::from("/path/to/project"))
-        );
+        assert_eq!(config.project_root, Some(PathBuf::from("/path/to/project")));
     }
 
     // Integration tests require Lean environment
@@ -695,5 +755,39 @@ mod tests {
 
         let ty = repl.type_check("42").unwrap();
         assert_eq!(ty, Some("Nat".to_string()));
+    }
+
+    #[test]
+    fn test_wait_for_exit_with_timeout_allows_fast_exit() {
+        let mut child = Command::new("sh")
+            .arg("-c")
+            .arg("exit 0")
+            .spawn()
+            .expect("expected short-lived process to spawn");
+
+        let result =
+            wait_for_exit_with_timeout(&mut child, Duration::from_millis(100), "test process");
+        assert!(result.is_ok(), "expected fast process exit to pass");
+    }
+
+    #[test]
+    fn test_wait_for_exit_with_timeout_kills_stuck_process() {
+        let mut child = Command::new("sh")
+            .arg("-c")
+            .arg("sleep 10")
+            .spawn()
+            .expect("expected long-lived process to spawn");
+
+        let err = wait_for_exit_with_timeout(&mut child, Duration::from_millis(50), "test process")
+            .expect_err("expected timeout for long-lived process");
+        assert!(err.to_string().contains("did not exit within"));
+        assert!(matches!(child.try_wait(), Ok(Some(_))));
+    }
+
+    #[test]
+    fn test_parse_proof_state_from_operation_id() {
+        assert_eq!(parse_proof_state_from_operation_id("sorry:42:0"), Some(42));
+        assert_eq!(parse_proof_state_from_operation_id("sorry:missing:1"), None);
+        assert_eq!(parse_proof_state_from_operation_id("invalid"), None);
     }
 }

@@ -1013,6 +1013,112 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_execute_e2e_incident_triage_ooda_flow() {
+        let config =
+            AdapterConfig::default().with_budget(crate::trajectory::BudgetConfig::unlimited());
+        let adapter = ClaudeCodeAdapter::new(config).unwrap();
+
+        adapter
+            .store_fact(
+                "perform thorough architecture security analysis across auth files explain why triagebeacon login failures increased include concrete signals",
+                0.92,
+            )
+            .unwrap();
+        adapter
+            .store_fact(
+                "Session middleware retries token refresh twice before failing",
+                0.88,
+            )
+            .unwrap();
+
+        let context = RequestContext::new()
+            .with_message(
+                "user",
+                "Production login failures started after key rotation",
+            )
+            .with_message(
+                "assistant",
+                "I will inspect auth middleware, session handling, and test failures.",
+            )
+            .with_file(
+                "src/auth/middleware.rs",
+                "fn validate_token(token: &str) -> Result<UserId> { /* ... */ }",
+            )
+            .with_file(
+                "src/session/store.rs",
+                "pub fn refresh_session(user_id: UserId) -> Result<()> { /* ... */ }",
+            )
+            .with_tool_output(
+                "pytest -q tests/auth/test_login_flow.py",
+                "FAILED test_login_flow::test_rotation_handles_expiry",
+                Some(1),
+            )
+            .with_memory("incident_id", serde_json::json!("INC-2048"))
+            .with_memory("focus", serde_json::json!("auth"));
+
+        let request = RlmRequest::new(
+            "Perform a thorough architecture and security analysis across auth files, explain why triagebeacon login failures increased, and include concrete signals.",
+        )
+        .with_mode(ExecutionMode::Fast)
+        .with_context(context);
+
+        let response = adapter.execute(request).await.unwrap();
+        let answer = response
+            .answer
+            .as_deref()
+            .expect("activated path must produce an answer");
+
+        // Observe: context and memory become explicit execution inputs.
+        assert!(answer.contains("Context variables:"));
+        assert!(answer.contains("Memory matches:"));
+
+        // Orient + Decide: complexity signals and auto-escalation are explicit.
+        assert!(response.activated);
+        assert!(response.success);
+        assert_eq!(response.mode, ExecutionMode::Thorough);
+        assert!(response.metadata.complexity_score >= 3);
+        assert!(response
+            .metadata
+            .signals
+            .iter()
+            .any(|signal| signal == "architecture_analysis"));
+
+        // Act: execution produces REPL output + accounting metadata.
+        assert!(answer.contains("RLM mode: thorough"));
+        assert!(response.metadata.used_repl);
+        assert_eq!(response.metadata.memory_queries, 1);
+        assert!(response.cost.total_cost_usd > 0.0);
+    }
+
+    #[tokio::test]
+    async fn test_execute_e2e_fast_path_skip_with_context_noise() {
+        let config =
+            AdapterConfig::default().with_budget(crate::trajectory::BudgetConfig::unlimited());
+        let adapter = ClaudeCodeAdapter::new(config).unwrap();
+
+        let context = RequestContext::new()
+            .with_message("user", "Need a quick status ping.")
+            .with_file("src/auth/middleware.rs", "auth middleware snapshot")
+            .with_file("src/session/store.rs", "session store snapshot")
+            .with_tool_output("git status", "working tree clean", Some(0))
+            .with_memory("ticket", serde_json::json!("OPS-11"));
+
+        let request = RlmRequest::new("quick status update only").with_context(context);
+        let response = adapter.execute(request).await.unwrap();
+
+        assert!(!response.activated);
+        assert!(response.success);
+        assert_eq!(response.activation_reason, "simple_task");
+        assert!(response.answer.is_none());
+        assert!(response
+            .metadata
+            .signals
+            .iter()
+            .any(|signal| signal == "user_fast"));
+        assert_eq!(response.cost.total_cost_usd, 0.0);
+    }
+
+    #[tokio::test]
     async fn test_execute_activate_budget_failure() {
         let adapter = ClaudeCodeAdapter::testing().unwrap();
 

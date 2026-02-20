@@ -1,0 +1,43 @@
+{
+  "gate": "VG-PERF-002",
+  "budget_pct": 10.0,
+  "min_abs_throughput_drop_ops": 150.0,
+  "max_error_rate_delta": 0.01,
+  "aggregation": "median_across_runs",
+  "baseline_files": [
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.json",
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-baseline.run2.json"
+  ],
+  "candidate_files": [
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.json",
+    "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/post-review-hardening/loop-5ut.2-same-tuple-calibration/M5-T01-candidate.run2.json"
+  ],
+  "baseline_commits": [
+    "75f806f85985302c498e9d8e4915af6f144ed6ad"
+  ],
+  "candidate_commits": [
+    "75f806f85985302c498e9d8e4915af6f144ed6ad"
+  ],
+  "allow_same_commit": true,
+  "checks": {
+    "throughput": {
+      "baseline_ops_per_sec": 5826.351789446277,
+      "candidate_ops_per_sec": 5840.910472531126,
+      "regression_pct": -0.2498764855088387,
+      "abs_drop_ops_per_sec": -14.55868308484969,
+      "pass": true
+    },
+    "error_rate_delta": {
+      "baseline_error_rate": 0.0,
+      "candidate_error_rate": 0.0,
+      "delta": 0.0,
+      "max_allowed_delta": 0.01,
+      "pass": true
+    }
+  },
+  "baseline_throughput_ops_per_sec": 5826.351789446277,
+  "candidate_throughput_ops_per_sec": 5840.910472531126,
+  "baseline_error_rate": 0.0,
+  "candidate_error_rate": 0.0,
+  "pass": true
+}

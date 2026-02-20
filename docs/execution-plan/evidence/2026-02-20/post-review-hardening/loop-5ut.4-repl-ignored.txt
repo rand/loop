@@ -1,0 +1,112 @@
+safe_run: heavy command admitted (available=4352MiB, threshold=3072MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:658:13
+    |
+658 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: multiple fields are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             optional_list_field: Option<Vec<i32>>,
+    |             ^^^^^^^^^^^^^^^^^^^
+...
+811 |             array_field: [i32; 2],
+    |             ^^^^^^^^^^^
+...
+814 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:835:13
+    |
+832 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+835 |             severity: String,
+    |             ^^^^^^^^
+...
+839 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 8 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 1 test
+test repl::tests::test_repl_spawn ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 637 filtered out; finished in 0.19s
+

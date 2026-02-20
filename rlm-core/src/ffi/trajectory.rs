@@ -32,7 +32,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_rlm_start(
     query: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let query = ffi_try!(cstr_to_str(query));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::rlm_start(query))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::rlm_start(
+        query,
+    ))))
 }
 
 /// Create an analyze event.
@@ -42,7 +44,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_analyze(
     analysis: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let analysis = ffi_try!(cstr_to_str(analysis));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::analyze(depth, analysis))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::analyze(
+        depth, analysis,
+    ))))
 }
 
 /// Create a REPL exec event.
@@ -52,7 +56,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_repl_exec(
     code: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let code = ffi_try!(cstr_to_str(code));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::repl_exec(depth, code))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::repl_exec(
+        depth, code,
+    ))))
 }
 
 /// Create a REPL result event.
@@ -77,7 +83,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_reason(
     reasoning: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let reasoning = ffi_try!(cstr_to_str(reasoning));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::reason(depth, reasoning))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::reason(
+        depth, reasoning,
+    ))))
 }
 
 /// Create a recurse start event.
@@ -87,7 +95,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_recurse_start(
     query: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let query = ffi_try!(cstr_to_str(query));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::recurse_start(depth, query))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(
+        TrajectoryEvent::recurse_start(depth, query),
+    )))
 }
 
 /// Create a recurse end event.
@@ -97,7 +107,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_recurse_end(
     result: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let result = ffi_try!(cstr_to_str(result));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::recurse_end(depth, result))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::recurse_end(
+        depth, result,
+    ))))
 }
 
 /// Create a final answer event.
@@ -107,7 +119,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_final_answer(
     answer: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let answer = ffi_try!(cstr_to_str(answer));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::final_answer(depth, answer))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::final_answer(
+        depth, answer,
+    ))))
 }
 
 /// Create an error event.
@@ -117,7 +131,9 @@ pub unsafe extern "C" fn rlm_trajectory_event_error(
     error: *const c_char,
 ) -> *mut RlmTrajectoryEvent {
     let error = ffi_try!(cstr_to_str(error));
-    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::error(depth, error))))
+    Box::into_raw(Box::new(RlmTrajectoryEvent(TrajectoryEvent::error(
+        depth, error,
+    ))))
 }
 
 /// Free a trajectory event.
@@ -199,7 +215,11 @@ pub unsafe extern "C" fn rlm_trajectory_event_is_error(event: *const RlmTrajecto
     if event.is_null() {
         return 0;
     }
-    if (*event).0.is_error() { 1 } else { 0 }
+    if (*event).0.is_error() {
+        1
+    } else {
+        0
+    }
 }
 
 /// Check if the event is a final answer.
@@ -208,7 +228,11 @@ pub unsafe extern "C" fn rlm_trajectory_event_is_final(event: *const RlmTrajecto
     if event.is_null() {
         return 0;
     }
-    if (*event).0.is_final() { 1 } else { 0 }
+    if (*event).0.is_final() {
+        1
+    } else {
+        0
+    }
 }
 
 /// Serialize event to JSON.
