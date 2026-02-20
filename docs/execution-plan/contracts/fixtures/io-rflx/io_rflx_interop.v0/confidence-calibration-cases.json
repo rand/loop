@@ -1,0 +1,31 @@
+{
+  "schema_version": "io_rflx_interop.v0",
+  "method": "confidence_bucket_v1",
+  "thresholds": {
+    "speculative": 0.25,
+    "plausible": 0.5,
+    "high": 0.85
+  },
+  "cases": [
+    {
+      "loop_status": "unsupported_claim",
+      "p1": 0.12,
+      "expected": "Speculative"
+    },
+    {
+      "loop_status": "weakly_supported_claim",
+      "p1": 0.38,
+      "expected": "Plausible"
+    },
+    {
+      "loop_status": "strongly_supported_claim",
+      "p1": 0.72,
+      "expected": "High"
+    },
+    {
+      "loop_status": "formally_validated_claim",
+      "p1": 0.93,
+      "expected": "Verified"
+    }
+  ]
+}

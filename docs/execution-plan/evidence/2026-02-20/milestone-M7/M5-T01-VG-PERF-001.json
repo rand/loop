@@ -4,12 +4,12 @@
   "baseline_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-baseline.json",
   "candidate_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-candidate.json",
   "checks": {
-    "startup_p50": 0.9137480370241184,
-    "startup_p95": 2.600685990845308,
-    "execute_no_submit_p50": 1.7546702190636836,
-    "execute_no_submit_p95": -14.556264781863145,
-    "execute_with_submit_p50": 14.160641424324064,
-    "execute_with_submit_p95": 26.450445022413007
+    "startup_p50": 0.21528117987080966,
+    "startup_p95": -6.196406628646031,
+    "execute_no_submit_p50": 22.45161131387197,
+    "execute_no_submit_p95": 8.626586114823546,
+    "execute_with_submit_p50": -12.346116992548826,
+    "execute_with_submit_p95": 29.85729755284254
   },
   "pass": false
 }

@@ -1,5 +1,5 @@
 {
-  "gate": "VG-PERF-002",
+  "gate": "VG-PERF-003",
   "budget_pct": 10.0,
   "baseline_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-baseline.json",
   "candidate_file": "/Users/rand/src/loop/docs/execution-plan/evidence/2026-02-20/milestone-M7/M5-T01-candidate.json",
@@ -11,5 +11,6 @@
   "candidate_throughput_ops_per_sec": 6494.54076464147,
   "baseline_error_rate": 0.0,
   "candidate_error_rate": 0.0,
+  "io_rflx_calibration_review": "validated_via_M7-T09-VG-RFLX-002",
   "pass": true
 }

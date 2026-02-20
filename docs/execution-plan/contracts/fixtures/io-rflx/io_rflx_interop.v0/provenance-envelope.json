@@ -1,0 +1,17 @@
+{
+  "schema_version": "io_rflx_interop.v0",
+  "payload_type": "provenance_envelope",
+  "payload": {
+    "source": {
+      "Agent": {
+        "model": "claude-opus-4.1"
+      }
+    },
+    "confidence": "High",
+    "created_at": 1763510400,
+    "evidence": [
+      "trace:auth:step-14",
+      "spec:rate-limiter:section-2"
+    ]
+  }
+}

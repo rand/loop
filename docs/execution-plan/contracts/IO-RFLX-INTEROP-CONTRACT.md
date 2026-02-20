@@ -63,12 +63,25 @@ Define a concrete interoperability contract between `loop` and `io-rflx` for tra
 - Every payload includes `schema_version` (initially `io_rflx_interop.v0`).
 - Backward-compatible additions (new optional fields) keep minor version.
 - Breaking changes (field rename/removal/semantic rewrite) require major version bump and explicit migration note in M4/M6 docs.
+- Fixture corpus for `io_rflx_interop.v0` is stored under `docs/execution-plan/contracts/fixtures/io-rflx/io_rflx_interop.v0/`.
+
+## Fixture Corpus and Calibration
+
+- Canonical fixture files:
+- `provenance-envelope.json`
+- `trajectory-envelope.json`
+- `verification-envelope.json`
+- `confidence-calibration-cases.json`
+- Fixture validation script: `scripts/validate_rflx_interop_fixtures.py`.
+- Gate runner script: `scripts/run_rflx_interop_fixture_gate.sh`.
+- Calibration policy source: `docs/execution-plan/contracts/IO-RFLX-CALIBRATION-POLICY.md`.
+- Calibration method: `confidence_bucket_v1` (deterministic confidence bucket thresholds and drift checks).
 
 ## Validation Hooks
 
-1. `VG-RFLX-001`: `cargo check -p rflx-core` in `/Users/rand/src/io-rflx`.
-2. Contract evidence review against `rflx-core` exported structures.
-3. Adapter fixture plan (M5): roundtrip JSON samples for provenance, trajectory, and verification envelopes.
+1. `VG-RFLX-001`: `CARGO_TARGET_DIR=/tmp/io-rflx-cargo-target cargo check -p rflx-core` in `/Users/rand/src/io-rflx`.
+2. `VG-RFLX-002`: run `scripts/run_rflx_interop_fixture_gate.sh` (fixture schema+calibration validation plus targeted `io-rflx` roundtrip serialization tests).
+3. Contract evidence review against `rflx-core` exported structures and active fixture schema version.
 
 ## M5 Benchmark Touchpoints
 

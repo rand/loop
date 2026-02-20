@@ -1,0 +1,31 @@
+{
+  "schema_version": "io_rflx_interop.v0",
+  "payload_type": "verification_envelope",
+  "payload": {
+    "model_loaded": true,
+    "outcomes": [
+      {
+        "statement": "thm auth_accepts_valid_token",
+        "critical": true,
+        "outcome": "Verified"
+      },
+      {
+        "statement": "thm auth_rejects_expired_token",
+        "critical": true,
+        "outcome": "Verified"
+      },
+      {
+        "statement": "thm auth_logs_rejected_attempt",
+        "critical": false,
+        "outcome": "Unproved"
+      }
+    ],
+    "confidence": 0.6667,
+    "total_elapsed_ms": 1530
+  },
+  "calibration": {
+    "method": "confidence_bucket_v1",
+    "expected_bucket": "High",
+    "max_bucket_distance": 1
+  }
+}

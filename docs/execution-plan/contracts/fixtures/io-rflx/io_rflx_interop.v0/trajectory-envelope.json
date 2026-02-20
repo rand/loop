@@ -1,0 +1,28 @@
+{
+  "schema_version": "io_rflx_interop.v0",
+  "payload_type": "trajectory_envelope",
+  "payload": {
+    "id": "traj-20260220-0001",
+    "session_id": "sess-auth-20260220",
+    "timestamp": 1763510400,
+    "routing": {
+      "hole_id": "hole-auth-check",
+      "hole_type": "Function",
+      "constraint_count": 6,
+      "complexity_score": 58,
+      "chosen_tier": "Standard"
+    },
+    "generation": {
+      "provider": "anthropic",
+      "model": "claude-3.7-sonnet",
+      "prompt_tokens": 1220,
+      "completion_tokens": 244,
+      "latency_ms": 840,
+      "estimated_cost_usd": 0.0132
+    },
+    "outcome": {
+      "status": "Verified",
+      "score": 0.94
+    }
+  }
+}

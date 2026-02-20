@@ -97,6 +97,7 @@ Required contract invariants:
 Required validation:
 
 - VG-RFLX-001 baseline compile gate + contract evidence artifacts.
+- VG-RFLX-002 fixture/calibration gate for schema roundtrip and confidence-policy checks.
 
 ## Change Management Rules
 
