@@ -20,7 +20,7 @@ Last updated: 2026-02-20
 | M4 Consumers | Complete | M4-T01 through M4-T04 complete; cross-repo pipeline script validated |
 | M5 Performance | Complete | M5-T01 through M5-T03 complete; no >10% regression observed in comparison report |
 | M6 Rollout/governance | Complete | M6-T01 through M6-T03 complete; steady-state cadence/ownership policy active |
-| M7 Spec completion | In progress | `M7-T01`..`M7-T07` complete; remaining SPEC-25 + interop/governance follow-up tracked in `M7-T08`..`M7-T10` |
+| M7 Spec completion | In progress | `M7-T01`..`M7-T08` complete; remaining interop/governance follow-up tracked in `M7-T09`..`M7-T10` |
 
 ## Baseline Findings
 
@@ -97,13 +97,13 @@ Last updated: 2026-02-20
 | R43 | Closed M7-T05 by replacing Tier-3 placeholder behavior with executable tactic-candidate synthesis, wiring proof-pattern persistence/context retrieval, and capturing proof + efficacy gate evidence | `evidence/2026-02-20/milestone-M7/M7-T05-validation-summary.md` |
 | R44 | Closed M7-T06 by adding enhanced Mermaid export, TUI/MCP visualization integration surfaces, and SPEC-23 reconciliation with passing visualization + doc gates | `evidence/2026-02-20/milestone-M7/M7-T06-validation-summary.md` |
 | R45 | Closed M7-T07 by implementing optimizer reasoning-capture summaries and persistence helpers (`OptimizedModule::save/load`), then validating optimizer/efficacy/perf guardrails | `evidence/2026-02-20/milestone-M7/M7-T07-validation-summary.md` |
+| R46 | Closed M7-T08 by enforcing SPEC-25 root prompt submit semantics, aligning helper-surface guidance with runtime helpers, and passing context/REPL/doc gates | `evidence/2026-02-20/milestone-M7/M7-T08-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | M7-T08 (`loop-bih.8`) | Align context externalization prompt contract/runtime helpers (SPEC-25) |
-| P1 | M7-T09 (`loop-bih.9`) | Deliver `io-rflx` fixture/calibration follow-up with contract evidence |
+| P0 | M7-T09 (`loop-bih.9`) | Deliver `io-rflx` fixture/calibration follow-up with contract evidence |
 | P1 | M7-T10 (`loop-bih.10`) | Reconcile SPEC/runtime/governance traceability and refresh support claims |
 
 ## Consumer Readiness Snapshot

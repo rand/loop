@@ -11,7 +11,7 @@ Single source of truth for execution tasks and dependencies.
 
 ## Lane Assignment
 
-- Lane A: `M7-T01`..`M7-T08` core runtime/spec closure (active heavy lane in safe mode)
+- Lane A: `M7-T01`..`M7-T08` core runtime/spec closure (complete)
 - Lane B: M7 spec/governance reconciliation (`M7-T10`) and documentation-only maintenance
 - Lane C: consumer cadence + `M7-T09` interop fixture/calibration track
 
@@ -26,7 +26,7 @@ Single source of truth for execution tasks and dependencies.
 | 5 | M7-T05 (`loop-bih.5`) | done | Replaced proof-engine Tier-3 placeholders with executable tactic synthesis and memory-backed persistence/context coverage |
 | 6 | M7-T06 (`loop-bih.6`) | done | Added enhanced Mermaid export + TUI/MCP visualization endpoints with passing visualization/doc gates |
 | 7 | M7-T07 (`loop-bih.7`) | done | Added reasoning capture + save/load persistence helpers with passing optimizer/efficacy/perf gates |
-| 8 | M7-T08 (`loop-bih.8`) | todo | Resolves context externalization prompt contract drift (SPEC-25) |
+| 8 | M7-T08 (`loop-bih.8`) | done | Closed prompt/helper contract drift with submit semantics and helper-surface parity evidence (`M7-T08-validation-summary.md`) |
 | 9 | M7-T09 (`loop-bih.9`) | todo | Delivers deferred `io-rflx` fixtures/calibration needed for active integration posture |
 | 10 | M7-T10 (`loop-bih.10`) | todo | Reconciles spec status/governance after implementation closure |
 | 11 | Ops-Weekly | in_progress | Continue steady-state compatibility cadence while M7 executes |
@@ -106,6 +106,6 @@ Single source of truth for execution tasks and dependencies.
 | M7-T05 SPEC-22 proof protocol execution closure (`loop-bih.5`) | done | M7-T04 | VG-LOOP-PROOF-001, VG-EFFICACY-001 | Proof engine placeholder removal and persistence coverage |
 | M7-T06 SPEC-23 graph visualization integration closure (`loop-bih.6`) | done | M7-T05 | VG-LOOP-VIZ-001, VG-DOC-SPEC-002 | Visualization export/integration parity with explicit fixtures |
 | M7-T07 SPEC-24 bootstrap optimizer parity closure (`loop-bih.7`) | done | M7-T06 | VG-LOOP-OPT-001, VG-EFFICACY-001, VG-PERF-003 | Reasoning capture + persistence + metric alignment |
-| M7-T08 SPEC-25 context externalization contract closure (`loop-bih.8`) | todo | M7-T07 | VG-LOOP-CONTEXT-001, VG-LOOP-REPL-001, VG-DOC-SPEC-002 | Runtime prompt/guide behavior aligned with SPEC-25 |
+| M7-T08 SPEC-25 context externalization contract closure (`loop-bih.8`) | done | M7-T07 | VG-LOOP-CONTEXT-001, VG-LOOP-REPL-001, VG-DOC-SPEC-002 | Runtime prompt/guide behavior aligned with SPEC-25 |
 | M7-T09 `io-rflx` adapter fixtures + calibration delivery (`loop-bih.9`) | todo | M7-T08 | VG-RFLX-001, VG-RFLX-002, VG-PERF-003, VG-CONTRACT-001 | Roundtrip fixture set and calibration policy/evidence |
 | M7-T10 spec/governance reconciliation and promotion (`loop-bih.10`) | todo | M7-T09 | VG-DOC-SPEC-002, VG-CONTRACT-001, VG-RCC-001, VG-LA-001, VG-RFLX-001 | SPEC-20..27 status reconciliation with refreshed traceability and support claims |

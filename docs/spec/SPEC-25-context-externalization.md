@@ -2,7 +2,7 @@
 
 > Prevent context rot via externalized context variables
 
-**Status**: Draft
+**Status**: Partially implemented (M7-T08 closes root prompt and helper-surface contract drift; advanced size-policy APIs remain deferred)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-bw2
@@ -12,6 +12,15 @@
 ## Overview
 
 Enforce the context-as-variable pattern where the root LLM receives only the query while full context is stored as Python variables in the REPL. This prevents "context rot" where LLM performance degrades with lengthy context in prompts.
+
+## Implementation Snapshot (2026-02-20)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-25.01 Context externalization | Implemented | `ExternalizedContext::{from_session,from_session_with_config}` and variable typing in `rlm-core/src/context/externalize.rs` |
+| SPEC-25.02 Root prompt generation contract | Implemented | `ExternalizedContext::root_prompt_with_config` includes helper guidance + explicit `SUBMIT({...})` semantics; coverage in `test_root_prompt_generation` and `test_root_prompt_omits_full_context_content` |
+| SPEC-25.03 Variable access helpers | Implemented | Active helpers in `rlm-core/python/rlm_repl/helpers.py` (`peek`, `search`, `summarize`, `find_relevant`) with test coverage in `rlm-core/python/tests/test_repl.py` |
+| SPEC-25.04 Size tracking and chunking warnings | Partially implemented | `ContextVariable` size flags, warning thresholds, and `ContextSizeTracker` in `rlm-core/src/context/externalize.rs`; explicit `SizeConfig`/`auto_chunk` APIs remain deferred |
 
 ## Background
 
@@ -82,9 +91,9 @@ impl ExternalizedContext {
 ```
 
 **Acceptance Criteria**:
-- [ ] All context types externalized
-- [ ] Summaries generated for each variable
-- [ ] Size tracking accurate
+- [x] All context types externalized
+- [x] Summaries generated for each variable
+- [x] Size tracking accurate
 
 ### SPEC-25.02: Root Prompt Generation
 
@@ -128,9 +137,9 @@ When done, call SUBMIT({{...}}) with your outputs.
 - Root prompt MUST instruct REPL exploration
 
 **Acceptance Criteria**:
-- [ ] Prompt contains summaries, not full content
-- [ ] Helper functions documented in prompt
-- [ ] SUBMIT instruction included
+- [x] Prompt contains summaries, not full content
+- [x] Helper functions documented in prompt
+- [x] SUBMIT instruction included
 
 ### SPEC-25.03: Variable Access Helpers
 
@@ -229,10 +238,10 @@ def find_relevant(var, query: str, top_k: int = 5):
 ```
 
 **Acceptance Criteria**:
-- [ ] peek() works for all collection types
-- [ ] search() supports regex and literal
-- [ ] summarize() returns deferred operation
-- [ ] find_relevant() uses embeddings
+- [x] peek() works for all collection types
+- [x] search() supports regex and literal
+- [x] summarize() returns deferred operation
+- [x] find_relevant() uses embeddings
 
 ### SPEC-25.04: Context Size Limits
 
@@ -319,9 +328,9 @@ impl ExternalizedContext {
 ```
 
 **Acceptance Criteria**:
-- [ ] Warnings generated for large variables
-- [ ] Chunking suggested when needed
-- [ ] Total size tracked
+- [x] Warnings generated for large variables
+- [x] Chunking suggested when needed
+- [x] Total size tracked
 
 ---
 
@@ -339,15 +348,16 @@ impl ExternalizedContext {
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `test_externalize_session` | Externalize SessionContext | SPEC-25.01 |
-| `test_prompt_no_full_context` | Prompt lacks full context | SPEC-25.02 |
-| `test_peek_list` | peek() on list | SPEC-25.03 |
-| `test_peek_dict` | peek() on dict | SPEC-25.03 |
-| `test_search_literal` | search() literal | SPEC-25.03 |
-| `test_search_regex` | search() regex | SPEC-25.03 |
-| `test_size_warning` | Large variable warning | SPEC-25.04 |
-| `test_chunking` | Auto-chunking | SPEC-25.04 |
-| `test_comparison` | With/without externalization | SPEC-25.04 |
+| `test_externalized_context_from_session` | Externalize `SessionContext` into REPL variable metadata | SPEC-25.01 |
+| `test_root_prompt_generation` | Prompt includes summaries/helper guidance and submit contract | SPEC-25.02 |
+| `test_root_prompt_omits_full_context_content` | Prompt omits raw file body content | SPEC-25.02 |
+| `test_peek_list` | `peek()` behavior on list input | SPEC-25.03 |
+| `test_search_string` | `search()` literal matching | SPEC-25.03 |
+| `test_search_regex` | `search()` regex matching | SPEC-25.03 |
+| `test_summarize_returns_deferred` | `summarize()` returns deferred operation | SPEC-25.03 |
+| `test_find_relevant_returns_embed_operation` | `find_relevant()` emits embedding/deferred operation | SPEC-25.03 |
+| `test_size_tracker` | Warning generation and threshold tracking | SPEC-25.04 |
+| `test_context_variable_requires_chunking` | Chunking threshold flag behavior | SPEC-25.04 |
 
 ---
 

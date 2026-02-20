@@ -287,8 +287,12 @@ impl ExternalizedContext {
             prompt.push_str("```python\n");
             prompt.push_str("# Slice messages (start/end are indices)\n");
             prompt.push_str("peek(conversation, start=0, end=10)\n\n");
-            prompt.push_str("# Search in files by regex pattern\n");
-            prompt.push_str("search(files, pattern=\"def.*auth\")\n\n");
+            prompt.push_str("# Literal search in files\n");
+            prompt.push_str("search(files, pattern=\"auth\")\n\n");
+            prompt.push_str("# Regex search in files (set regex=True)\n");
+            prompt.push_str("search(files, pattern=r\"def\\s+auth\", regex=True)\n\n");
+            prompt.push_str("# Find semantically relevant chunks\n");
+            prompt.push_str("find_relevant(files, query=\"authentication flow\", top_k=5)\n\n");
             prompt.push_str("# Summarize a tool output\n");
             prompt.push_str("summarize(tool_outputs[-1])\n\n");
             prompt.push_str("# Get length of any context variable\n");
@@ -314,6 +318,10 @@ impl ExternalizedContext {
             prompt.push_str(
                 "to access exactly what you need. This keeps the conversation efficient.\n",
             );
+            prompt.push_str("When you have the final structured result, call SUBMIT({...}) exactly once.\n");
+            prompt.push_str(
+                "Do not stop at print/debug output; SUBMIT is required to complete the task.\n",
+            );
         }
 
         prompt
@@ -325,7 +333,9 @@ impl ExternalizedContext {
     pub fn repl_setup_code(&self, ctx: &SessionContext) -> String {
         let mut code = String::new();
         code.push_str("# Context variable setup\n");
-        code.push_str("from rlm_helpers import peek, search, summarize\n\n");
+        code.push_str(
+            "# Helpers are preloaded in the sandbox: peek, search, summarize, find_relevant\n\n",
+        );
 
         // Set up conversation
         if self.variables.contains_key("conversation") {
@@ -473,151 +483,139 @@ impl VariableAccessHelper {
         vec![
             Self {
                 name: "peek",
-                signature: "peek(messages, start=0, end=None)",
-                description: "Slice messages by index range",
+                signature: "peek(data, start=0, end=None)",
+                description: "Slice string/sequence data for inspection",
                 implementation: r#"
-def peek(messages, start=0, end=None):
-    """Slice messages from a conversation.
+def peek(data, start=0, end=None):
+    """Peek at a slice of data.
 
     Args:
-        messages: List of message dicts with 'role' and 'content'
-        start: Start index (default: 0)
-        end: End index (default: None = all remaining)
+        data: Data to inspect
+        start: Start index
+        end: End index (default: None = to end)
 
     Returns:
-        List of messages in the range
+        String preview of the selected content
     """
-    if end is None:
-        return messages[start:]
-    return messages[start:end]
+    if isinstance(data, str):
+        lines = data.splitlines()
+        return '\n'.join(lines[start:end])
+    if isinstance(data, (list, tuple)):
+        sliced = data[start:end]
+        if all(isinstance(item, str) for item in sliced):
+            return '\n'.join(sliced)
+        return repr(sliced)
+    if hasattr(data, '__getitem__'):
+        return repr(data[start:end])
+    return repr(data)
 "#,
             },
             Self {
                 name: "search",
-                signature: "search(files, pattern)",
-                description: "Search files by regex pattern",
+                signature: "search(data, pattern, regex=False, case_sensitive=True, context_lines=0)",
+                description: "Search strings/lists/dicts with literal or regex pattern",
                 implementation: r#"
-def search(files, pattern):
-    """Search for pattern in files.
+def search(data, pattern, regex=False, case_sensitive=True, context_lines=0):
+    """Search for pattern in data.
 
     Args:
-        files: Dict mapping path -> content
-        pattern: Regex pattern to search for
+        data: Data to search
+        pattern: Pattern to search for
+        regex: Interpret pattern as regex when True
+        case_sensitive: Match case-sensitive when True
+        context_lines: Include surrounding lines for string matches
 
     Returns:
-        Dict of path -> list of matching lines
+        List of match dictionaries with location metadata
     """
     import re
-    results = {}
-    regex = re.compile(pattern)
-    for path, content in files.items():
-        matches = []
-        for i, line in enumerate(content.split('\n'), 1):
-            if regex.search(line):
-                matches.append((i, line))
-        if matches:
-            results[path] = matches
-    return results
+    flags = 0 if case_sensitive else re.IGNORECASE
+    compiled = re.compile(pattern if regex else re.escape(pattern), flags)
+    matches = []
+    if isinstance(data, str):
+        lines = data.splitlines()
+        for i, line in enumerate(lines):
+            if compiled.search(line):
+                result = {'index': i, 'content': line}
+                if context_lines > 0:
+                    start = max(0, i - context_lines)
+                    end = min(len(lines), i + context_lines + 1)
+                    result['context'] = '\n'.join(lines[start:end])
+                matches.append(result)
+    elif isinstance(data, (list, tuple)):
+        for i, item in enumerate(data):
+            item_str = item if isinstance(item, str) else str(item)
+            if compiled.search(item_str):
+                matches.append({'index': i, 'content': item})
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            if compiled.search(str(key)) or compiled.search(str(value)):
+                matches.append({'key': key, 'content': value})
+    return matches
 "#,
             },
             Self {
                 name: "summarize",
-                signature: "summarize(item, max_len=500)",
-                description: "Summarize a tool output or message",
+                signature: "summarize(data, max_tokens=500, focus=None)",
+                description: "Create a deferred LLM summary operation",
                 implementation: r#"
-def summarize(item, max_len=500):
-    """Summarize an item (message or tool output).
+def summarize(data, max_tokens=500, focus=None):
+    """Summarize data using an LLM (deferred).
 
     Args:
-        item: Dict with 'content' key
-        max_len: Maximum length of summary
+        data: Data to summarize
+        max_tokens: Maximum summary tokens
+        focus: Optional focus direction
 
     Returns:
-        Truncated content with indicator if truncated
+        Deferred summarize operation
     """
-    content = item.get('content', str(item))
-    if len(content) <= max_len:
-        return content
-    return content[:max_len] + f'... [{len(content) - max_len} more chars]'
+    content = data if isinstance(data, str) else str(data)
+    prompt = f"Summarize the following in at most {max_tokens} tokens"
+    if focus:
+        prompt += f", focusing on {focus}"
+    prompt += f":\n\n{content}"
+    return get_registry().create(
+        OperationType.SUMMARIZE,
+        params={
+            'content': content,
+            'max_tokens': max_tokens,
+            'focus': focus,
+            'prompt': prompt,
+        },
+    )
 "#,
             },
             Self {
-                name: "grep",
-                signature: "grep(files, pattern, context=2)",
-                description: "Grep files with context lines",
+                name: "find_relevant",
+                signature: "find_relevant(data, query, top_k=5)",
+                description: "Create a deferred embedding-relevance search operation",
                 implementation: r#"
-def grep(files, pattern, context=2):
-    """Grep for pattern in files with context.
+def find_relevant(data, query, top_k=5):
+    """Find relevant chunks for a query (deferred embedding search).
 
     Args:
-        files: Dict mapping path -> content
-        pattern: Regex pattern to search for
-        context: Number of context lines before/after
+        data: Data to search
+        query: Query string
+        top_k: Number of relevant chunks to return
 
     Returns:
-        Dict of path -> list of (line_num, line, context_before, context_after)
+        Deferred embedding search operation
     """
-    import re
-    results = {}
-    regex = re.compile(pattern)
-    for path, content in files.items():
-        lines = content.split('\n')
-        matches = []
-        for i, line in enumerate(lines):
-            if regex.search(line):
-                before = lines[max(0, i-context):i]
-                after = lines[i+1:min(len(lines), i+1+context)]
-                matches.append({
-                    'line_num': i + 1,
-                    'line': line,
-                    'before': before,
-                    'after': after
-                })
-        if matches:
-            results[path] = matches
-    return results
-"#,
-            },
-            Self {
-                name: "file_tree",
-                signature: "file_tree(files)",
-                description: "Show file tree structure",
-                implementation: r#"
-def file_tree(files):
-    """Show tree structure of files.
-
-    Args:
-        files: Dict mapping path -> content
-
-    Returns:
-        String representation of file tree
-    """
-    from collections import defaultdict
-    import os
-
-    tree = defaultdict(list)
-    for path in sorted(files.keys()):
-        parts = path.split(os.sep)
-        for i in range(len(parts)):
-            parent = os.sep.join(parts[:i]) or '.'
-            child = parts[i]
-            if child not in tree[parent]:
-                tree[parent].append(child)
-
-    def render(path, prefix=''):
-        result = []
-        children = tree.get(path, [])
-        for i, child in enumerate(children):
-            is_last = i == len(children) - 1
-            connector = '└── ' if is_last else '├── '
-            result.append(f'{prefix}{connector}{child}')
-            child_path = f'{path}{os.sep}{child}' if path != '.' else child
-            if child_path in tree:
-                extension = '    ' if is_last else '│   '
-                result.extend(render(child_path, prefix + extension))
-        return result
-
-    return '\n'.join(render('.'))
+    if isinstance(data, str):
+        chunks = [data]
+    elif isinstance(data, list):
+        chunks = [str(item) for item in data]
+    else:
+        chunks = [str(data)]
+    return get_registry().create(
+        OperationType.EMBED,
+        params={
+            'query': query,
+            'chunks': chunks,
+            'top_k': top_k,
+        },
+    )
 "#,
             },
         ]
@@ -627,15 +625,16 @@ def file_tree(files):
     pub fn generate_module() -> String {
         let mut code = String::new();
         code.push_str("\"\"\"RLM context access helpers.\n\n");
-        code.push_str("These functions help efficiently access externalized context.\n");
+        code.push_str("These functions mirror the active helpers in rlm_repl.helpers.\n");
         code.push_str("\"\"\"\n\n");
+        code.push_str("from rlm_repl.deferred import OperationType, get_registry\n\n");
 
         for helper in Self::standard_helpers() {
             code.push_str(helper.implementation);
             code.push('\n');
         }
 
-        code.push_str("\n__all__ = ['peek', 'search', 'summarize', 'grep', 'file_tree']\n");
+        code.push_str("\n__all__ = ['peek', 'search', 'summarize', 'find_relevant']\n");
         code
     }
 }
@@ -780,6 +779,22 @@ mod tests {
         assert!(prompt.contains("files"));
         assert!(prompt.contains("peek("));
         assert!(prompt.contains("search("));
+        assert!(prompt.contains("find_relevant("));
+        assert!(prompt.contains("SUBMIT({...})"));
+    }
+
+    #[test]
+    fn test_root_prompt_omits_full_context_content() {
+        let mut ctx = SessionContext::new();
+        ctx.add_user_message("Analyze auth");
+        ctx.cache_file(
+            "/src/auth.rs",
+            "fn auth_secret() { panic!(\"do-not-include-in-root-prompt\"); }",
+        );
+
+        let externalized = ExternalizedContext::from_session(&ctx, "Analyze the auth system");
+        let prompt = externalized.root_prompt();
+        assert!(!prompt.contains("do-not-include-in-root-prompt"));
     }
 
     #[test]
@@ -843,9 +858,36 @@ mod tests {
         assert!(module.contains("def peek("));
         assert!(module.contains("def search("));
         assert!(module.contains("def summarize("));
-        assert!(module.contains("def grep("));
-        assert!(module.contains("def file_tree("));
+        assert!(module.contains("def find_relevant("));
+        assert!(module.contains("OperationType"));
+        assert!(module.contains("__all__ = ['peek', 'search', 'summarize', 'find_relevant']"));
         assert!(module.contains("__all__"));
+    }
+
+    #[test]
+    fn test_standard_helper_signatures_match_runtime_surface() {
+        let helpers = VariableAccessHelper::standard_helpers();
+
+        assert_eq!(helpers.len(), 4);
+        assert!(
+            helpers
+                .iter()
+                .any(|helper| helper.signature == "peek(data, start=0, end=None)")
+        );
+        assert!(helpers.iter().any(|helper| {
+            helper.signature
+                == "search(data, pattern, regex=False, case_sensitive=True, context_lines=0)"
+        }));
+        assert!(
+            helpers
+                .iter()
+                .any(|helper| helper.signature == "summarize(data, max_tokens=500, focus=None)")
+        );
+        assert!(
+            helpers
+                .iter()
+                .any(|helper| helper.signature == "find_relevant(data, query, top_k=5)")
+        );
     }
 
     #[test]
@@ -859,6 +901,6 @@ mod tests {
 
         assert!(setup.contains("conversation = ["));
         assert!(setup.contains("files = {"));
-        assert!(setup.contains("from rlm_helpers import"));
+        assert!(setup.contains("Helpers are preloaded in the sandbox"));
     }
 }

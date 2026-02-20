@@ -12,6 +12,7 @@ from rlm_repl.deferred import (
 from rlm_repl.helpers import (
     count_tokens,
     extract_code_blocks,
+    find_relevant,
     llm_batch,
     llm_query_batched,
     peek,
@@ -107,6 +108,17 @@ class TestHelpers:
         text = "Hello\nhello\nHELLO"
         matches = search(text, "hello", case_sensitive=False)
         assert len(matches) == 3
+
+    def test_find_relevant_returns_embed_operation(self):
+        op = find_relevant(
+            data=["auth middleware", "payments service", "metrics pipeline"],
+            query="authentication",
+            top_k=2,
+        )
+        assert isinstance(op, DeferredOperation)
+        assert op.operation_type == OperationType.EMBED
+        assert op.params["query"] == "authentication"
+        assert op.params["top_k"] == 2
 
     def test_count_tokens(self):
         text = "This is a test string"
