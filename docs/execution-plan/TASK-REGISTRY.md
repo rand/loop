@@ -19,9 +19,9 @@ Single source of truth for execution tasks and dependencies.
 
 | Rank | Task ID | Status | Why Next |
 |---|---|---|---|
-| 1 | M7-T01 (`loop-bih.1`) | in_progress | Recovered REPL/SUBMIT + helper/test bundle integrated; remaining host-orchestration closure still required for full G-001 exit |
-| 2 | M7-T02 (`loop-bih.2`) | in_progress | Runtime fallback loop wiring and gate artifacts landed; keep active until M7-T01 sequencing dependency is closed |
-| 3 | M7-T03 (`loop-bih.3`) | todo | Restores typed-signature parity required by SPEC-20 acceptance and downstream contracts |
+| 1 | M7-T01 (`loop-bih.1`) | done | Closed G-001 with Rust host `llm_batch` resolver wiring + refreshed gate evidence |
+| 2 | M7-T02 (`loop-bih.2`) | done | SPEC-27 fallback loop wiring landed with deterministic trigger tests and gate artifacts |
+| 3 | M7-T03 (`loop-bih.3`) | done | Added enum field semantics + deterministic pre-exec input validation parity with refreshed signature/predict/efficacy evidence |
 | 4 | M7-T04 (`loop-bih.4`) | todo | Completes dual-model orchestration integration before proof/optimizer refinements |
 | 5 | M7-T05 (`loop-bih.5`) | todo | Removes proof-engine placeholder paths that currently block full SPEC-22 closure |
 | 6 | M7-T06 (`loop-bih.6`) | todo | Brings visualization runtime/API surfaces to SPEC-23 parity |
@@ -99,9 +99,9 @@ Single source of truth for execution tasks and dependencies.
 
 | Task ID | Status | Depends On | Required Gates | Deliverable |
 |---|---|---|---|---|
-| M7-T01 SPEC-26 `LLM_BATCH` end-to-end runtime closure (`loop-bih.1`) | in_progress | M6-T03 | VG-LOOP-BATCH-001, VG-LOOP-REPL-001, VG-EFFICACY-001 | Rust-host + Python REPL batched path integration with deterministic tests |
-| M7-T02 SPEC-27 orchestrator fallback wiring (`loop-bih.2`) | in_progress | M7-T01 | VG-LOOP-FALLBACK-001, VG-EFFICACY-001, VG-LOOP-SIG-001 | Fallback extraction triggered and validated in orchestrator runtime loop |
-| M7-T03 SPEC-20 typed-signature parity completion (`loop-bih.3`) | todo | M7-T02 | VG-LOOP-SIG-002, VG-LOOP-SIG-001, VG-EFFICACY-001 | Enum/input-validation parity and deterministic pre-exec errors |
+| M7-T01 SPEC-26 `LLM_BATCH` end-to-end runtime closure (`loop-bih.1`) | done | M6-T03 | VG-LOOP-BATCH-001, VG-LOOP-REPL-001, VG-EFFICACY-001 | Rust-host + Python REPL batched path integration with deterministic tests |
+| M7-T02 SPEC-27 orchestrator fallback wiring (`loop-bih.2`) | done | M7-T01 | VG-LOOP-FALLBACK-001, VG-EFFICACY-001, VG-LOOP-SIG-001 | Fallback extraction triggered and validated in orchestrator runtime loop |
+| M7-T03 SPEC-20 typed-signature parity completion (`loop-bih.3`) | done | M7-T02 | VG-LOOP-SIG-002, VG-LOOP-SIG-001, VG-EFFICACY-001 | Enum/input-validation parity and deterministic pre-exec errors |
 | M7-T04 SPEC-21 dual-model orchestration integration (`loop-bih.4`) | todo | M7-T03 | VG-LOOP-DUAL-001, VG-LOOP-CORE-001, VG-PERF-002 | Orchestrator-applied dual-model routing with tiered accounting |
 | M7-T05 SPEC-22 proof protocol execution closure (`loop-bih.5`) | todo | M7-T04 | VG-LOOP-PROOF-001, VG-EFFICACY-001 | Proof engine placeholder removal and persistence coverage |
 | M7-T06 SPEC-23 graph visualization integration closure (`loop-bih.6`) | todo | M7-T05 | VG-LOOP-VIZ-001, VG-DOC-SPEC-002 | Visualization export/integration parity with explicit fixtures |

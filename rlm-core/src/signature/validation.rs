@@ -225,6 +225,9 @@ pub fn validate_fields(value: &Value, fields: &[FieldSpec]) -> ValidationResult 
     for field in fields {
         match obj.get(&field.name) {
             Some(field_value) => {
+                if field_value.is_null() && !field.required {
+                    continue;
+                }
                 // Validate the field type
                 if let Err(e) = validate_value(field_value, &field.field_type, &field.name) {
                     errors.extend(e);
@@ -444,6 +447,17 @@ mod tests {
         ];
 
         let value = json!({"name": "Alice"});
+        assert!(validate_fields(&value, &fields).is_ok());
+    }
+
+    #[test]
+    fn test_validate_fields_optional_null() {
+        let fields = vec![
+            FieldSpec::new("name", FieldType::String),
+            FieldSpec::new("age", FieldType::Integer).optional(),
+        ];
+
+        let value = json!({"name": "Alice", "age": null});
         assert!(validate_fields(&value, &fields).is_ok());
     }
 

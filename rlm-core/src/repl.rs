@@ -12,6 +12,7 @@
 //! 4. Results are returned in `ExecuteResult.submit_result`
 
 use crate::error::{Error, Result};
+use crate::llm::{BatchExecutor, BatchedLLMQuery, BatchedQueryResults, LLMClient};
 use crate::signature::{FieldSpec, SubmitResult, SignatureRegistration};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -382,6 +383,42 @@ impl ReplHandle {
         Ok(())
     }
 
+    /// List pending deferred operations with operation metadata.
+    pub fn list_pending_operations(&mut self) -> Result<Vec<PendingOperation>> {
+        let result = self.send_request("pending_operations", Value::Null)?;
+        let operations = result
+            .get("operations")
+            .cloned()
+            .unwrap_or(Value::Array(Vec::new()));
+        let pending: Vec<PendingOperation> = serde_json::from_value(operations)?;
+        Ok(pending)
+    }
+
+    /// Resolve all pending `llm_batch` operations using the provided batch executor.
+    ///
+    /// Returns the number of operations resolved.
+    pub async fn resolve_pending_llm_batches<C: LLMClient + 'static>(
+        &mut self,
+        executor: &BatchExecutor<C>,
+    ) -> Result<usize> {
+        let pending = self.list_pending_operations()?;
+        let mut resolved = 0usize;
+
+        for operation in pending {
+            if operation.operation_type != "llm_batch" {
+                continue;
+            }
+
+            let query = llm_batch_query_from_operation(&operation)?;
+            let results = executor.execute(query).await?;
+            let payload = llm_batch_results_to_payload(&results);
+            self.resolve_operation(&operation.id, payload)?;
+            resolved += 1;
+        }
+
+        Ok(resolved)
+    }
+
     /// List all variables in the REPL namespace.
     pub fn list_variables(&mut self) -> Result<HashMap<String, String>> {
         let result = self.send_request("list_variables", Value::Null)?;
@@ -465,6 +502,103 @@ impl Drop for ReplHandle {
     }
 }
 
+fn llm_batch_query_from_operation(operation: &PendingOperation) -> Result<BatchedLLMQuery> {
+    let prompts_value = operation.params.get("prompts").ok_or_else(|| {
+        Error::repl_execution("llm_batch operation missing 'prompts' parameter")
+    })?;
+
+    let prompts_array = prompts_value.as_array().ok_or_else(|| {
+        Error::repl_execution("llm_batch operation 'prompts' must be an array")
+    })?;
+
+    let prompts = prompts_array
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .map(|s| s.to_string())
+                .ok_or_else(|| {
+                    Error::repl_execution("llm_batch prompt values must be strings")
+                })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    let max_parallel = operation
+        .params
+        .get("max_parallel")
+        .and_then(|v| v.as_u64())
+        .map(|n| n as usize)
+        .unwrap_or(5)
+        .max(1);
+
+    let contexts = match operation.params.get("contexts") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(values)) => values
+            .iter()
+            .map(|value| {
+                value
+                    .as_str()
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| {
+                        Error::repl_execution("llm_batch context values must be strings")
+                    })
+            })
+            .collect::<Result<Vec<_>>>()?,
+        Some(_) => {
+            return Err(Error::repl_execution(
+                "llm_batch operation 'contexts' must be an array or null",
+            ))
+        }
+    };
+
+    let model = operation
+        .params
+        .get("model")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    let max_tokens = operation
+        .params
+        .get("max_tokens")
+        .and_then(|v| v.as_u64())
+        .map(|n| n.min(u32::MAX as u64) as u32);
+
+    let mut query = BatchedLLMQuery::from_prompts(prompts).with_max_parallel(max_parallel);
+    if !contexts.is_empty() {
+        query = query.with_contexts(contexts.into_iter().map(Some).collect());
+    }
+    if let Some(model) = model {
+        query = query.with_model(model);
+    }
+    if let Some(max_tokens) = max_tokens {
+        query = query.with_max_tokens(max_tokens);
+    }
+
+    Ok(query)
+}
+
+fn llm_batch_results_to_payload(results: &BatchedQueryResults) -> Value {
+    let entries = results
+        .results
+        .iter()
+        .map(|result| {
+            if result.success {
+                serde_json::json!({
+                    "status": "success",
+                    "value": result.response.clone().unwrap_or_default(),
+                })
+            } else {
+                serde_json::json!({
+                    "status": "error",
+                    "value": result.error.clone().unwrap_or_else(|| "unknown error".to_string()),
+                })
+            }
+        })
+        .collect::<Vec<_>>();
+
+    Value::Array(entries)
+}
+
 /// Thread-safe REPL pool for managing multiple REPL instances.
 pub struct ReplPool {
     config: ReplConfig,
@@ -546,6 +680,12 @@ pub trait ReplEnvironment: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_trait::async_trait;
+    use chrono::Utc;
+    use crate::llm::{
+        BatchExecutor, CompletionRequest, CompletionResponse, EmbeddingRequest,
+        EmbeddingResponse, LLMClient, ModelSpec, Provider, TokenUsage,
+    };
 
     fn local_repl_config() -> ReplConfig {
         let mut config = ReplConfig::default();
@@ -568,6 +708,54 @@ mod tests {
         }
 
         config
+    }
+
+    struct MockBatchClient;
+
+    #[async_trait]
+    impl LLMClient for MockBatchClient {
+        async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {
+            let prompt = request
+                .messages
+                .iter()
+                .rev()
+                .find(|m| matches!(m.role, crate::llm::ChatRole::User))
+                .map(|m| m.content.as_str())
+                .unwrap_or("");
+
+            if prompt == "q2" {
+                return Err(Error::LLM("timeout".to_string()));
+            }
+
+            Ok(CompletionResponse {
+                id: "mock-1".to_string(),
+                model: request
+                    .model
+                    .unwrap_or_else(|| "mock-model".to_string()),
+                content: format!("answer-for-{prompt}"),
+                stop_reason: None,
+                usage: TokenUsage {
+                    input_tokens: 10,
+                    output_tokens: 5,
+                    cache_read_tokens: None,
+                    cache_creation_tokens: None,
+                },
+                timestamp: Utc::now(),
+                cost: Some(0.0),
+            })
+        }
+
+        async fn embed(&self, _request: EmbeddingRequest) -> Result<EmbeddingResponse> {
+            Err(Error::LLM("embedding not implemented in test mock".to_string()))
+        }
+
+        fn provider(&self) -> Provider {
+            Provider::OpenRouter
+        }
+
+        fn available_models(&self) -> Vec<ModelSpec> {
+            vec![]
+        }
     }
 
     #[test]
@@ -847,6 +1035,125 @@ SUBMIT({'answer': 'second'})
         assert_eq!(step.stderr, "err");
         assert_eq!(step.variables, vars);
         assert!(matches!(step.submit_result, Some(SubmitResult::Success { .. })));
+    }
+
+    #[test]
+    fn test_llm_batch_operation_to_query() {
+        let operation = PendingOperation {
+            id: "op-1".to_string(),
+            operation_type: "llm_batch".to_string(),
+            params: HashMap::from([
+                (
+                    "prompts".to_string(),
+                    serde_json::json!(["q1", "q2"]),
+                ),
+                (
+                    "contexts".to_string(),
+                    serde_json::json!(["c1", "c2"]),
+                ),
+                (
+                    "max_parallel".to_string(),
+                    serde_json::json!(3),
+                ),
+                (
+                    "model".to_string(),
+                    serde_json::json!("test-model"),
+                ),
+                (
+                    "max_tokens".to_string(),
+                    serde_json::json!(512),
+                ),
+            ]),
+        };
+
+        let query = llm_batch_query_from_operation(&operation).unwrap();
+        assert_eq!(query.prompts, vec!["q1".to_string(), "q2".to_string()]);
+        assert_eq!(
+            query.contexts,
+            vec![Some("c1".to_string()), Some("c2".to_string())]
+        );
+        assert_eq!(query.max_parallel, 3);
+        assert_eq!(query.model, Some("test-model".to_string()));
+        assert_eq!(query.max_tokens, Some(512));
+    }
+
+    #[test]
+    fn test_llm_batch_operation_to_query_rejects_non_string_prompt() {
+        let operation = PendingOperation {
+            id: "op-1".to_string(),
+            operation_type: "llm_batch".to_string(),
+            params: HashMap::from([(
+                "prompts".to_string(),
+                serde_json::json!(["q1", 2]),
+            )]),
+        };
+
+        let err = llm_batch_query_from_operation(&operation).unwrap_err();
+        assert!(err.to_string().contains("prompt values must be strings"));
+    }
+
+    #[test]
+    fn test_llm_batch_results_payload_mixed_success_failure() {
+        let results = BatchedQueryResults::from_results(vec![
+            crate::llm::BatchQueryResult::success(0, "answer-1".to_string(), Some(10)),
+            crate::llm::BatchQueryResult::failure(1, "timeout".to_string()),
+        ]);
+
+        let payload = llm_batch_results_to_payload(&results);
+        let arr = payload.as_array().expect("payload should be array");
+        assert_eq!(arr.len(), 2);
+        assert_eq!(arr[0]["status"], serde_json::json!("success"));
+        assert_eq!(arr[0]["value"], serde_json::json!("answer-1"));
+        assert_eq!(arr[1]["status"], serde_json::json!("error"));
+        assert_eq!(arr[1]["value"], serde_json::json!("timeout"));
+    }
+
+    #[tokio::test]
+    #[ignore = "requires Python environment with rlm-repl installed"]
+    async fn test_llm_batch_host_resolution_roundtrip() {
+        let mut handle = ReplHandle::spawn(local_repl_config())
+            .expect("expected REPL subprocess to start");
+
+        let exec = handle
+            .execute("op = llm_batch(['q1', 'q2'], max_parallel=2)")
+            .expect("expected llm_batch operation creation to succeed");
+        assert!(exec.success);
+        assert!(!exec.pending_operations.is_empty());
+
+        let executor = BatchExecutor::new(MockBatchClient).with_max_parallel(4);
+        let resolved = handle
+            .resolve_pending_llm_batches(&executor)
+            .await
+            .expect("expected pending llm_batch operations to resolve");
+        assert_eq!(resolved, 1);
+
+        let pending_after = handle
+            .list_pending_operations()
+            .expect("expected pending operations query to succeed");
+        assert!(pending_after.is_empty());
+
+        let read = handle
+            .execute("resolved = op.get()")
+            .expect("expected reading resolved operation to succeed");
+        assert!(read.success);
+
+        let resolved_value = handle
+            .get_variable("resolved")
+            .expect("expected resolved variable lookup to succeed");
+        let arr = resolved_value
+            .as_array()
+            .expect("resolved value should be list");
+        assert_eq!(arr[0]["status"], serde_json::json!("success"));
+        assert_eq!(arr[0]["value"], serde_json::json!("answer-for-q1"));
+        assert_eq!(arr[1]["status"], serde_json::json!("error"));
+        assert!(
+            arr[1]["value"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("timeout")
+        );
+
+        handle.shutdown().unwrap();
     }
 
     #[test]

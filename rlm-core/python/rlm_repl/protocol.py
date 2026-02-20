@@ -152,6 +152,14 @@ class ResolveOperationRequest(BaseModel):
     result: Any
 
 
+class PendingOperationsResponse(BaseModel):
+    """Response listing pending deferred operations with metadata."""
+
+    operations: list[dict[str, Any]] = Field(
+        default_factory=list, description="Pending deferred operation descriptors"
+    )
+
+
 class RegisterSignatureRequest(BaseModel):
     """Request to register output signature metadata for SUBMIT validation."""
 

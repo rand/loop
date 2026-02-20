@@ -20,7 +20,7 @@ Last updated: 2026-02-19
 | M4 Consumers | Complete | M4-T01 through M4-T04 complete; cross-repo pipeline script validated |
 | M5 Performance | Complete | M5-T01 through M5-T03 complete; no >10% regression observed in comparison report |
 | M6 Rollout/governance | Complete | M6-T01 through M6-T03 complete; steady-state cadence/ownership policy active |
-| M7 Spec completion | Planned | Remaining SPEC-20..27 + interop follow-up work packeted into `M7-T01`..`M7-T10` with explicit M7 validation gates |
+| M7 Spec completion | In progress | `M7-T01` and `M7-T02` complete; remaining SPEC-20..27 + interop follow-up tracked in `M7-T03`..`M7-T10` |
 
 ## Baseline Findings
 
@@ -90,15 +90,15 @@ Last updated: 2026-02-19
 | R36 | Opened Beads execution epic `loop-bih` with child tasks `loop-bih.1`..`loop-bih.10` to track M7 implementation across sessions | `bd show loop-bih` |
 | R37 | Integrated crash-session recovery bundles in audited commit trains (REPL/SUBMIT/batch, stabilization, behavior adjustments) with evidence-backed validation and residue cleanup | `evidence/2026-02-19/milestone-M7/recovery-integration-summary.md` |
 | R38 | Implemented SPEC-27 runtime fallback-loop wiring (`orchestrator::FallbackLoop`) with deterministic trigger coverage and submit/fallback efficacy revalidation artifacts | `evidence/2026-02-19/milestone-M7/M7-T02-validation-summary.md` |
+| R39 | Closed G-001 / M7-T01 by wiring Rust host `llm_batch` resolution path (`ReplHandle::resolve_pending_llm_batches`) and refreshing M7-T01 gate artifacts | `evidence/2026-02-19/milestone-M7/M7-T01-validation-summary.md` |
+| R40 | Closed `loop-bih.2` after landing SPEC-27 fallback loop runtime wiring and corresponding gate evidence | `bd show loop-bih.2` |
+| R41 | Closed M7-T03 typed-signature parity by adding derive enum field semantics (`#[field(enum_values = \"...\")]`), deterministic pre-exec input validation in `Predict::forward`, and optional-null validation parity | `evidence/2026-02-19/milestone-M7/M7-T03-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | M7-T01 (`loop-bih.1`) | Complete remaining SPEC-26 host-orchestration closure after recovered REPL/helper integration (`G-001`) |
-| P0 | M7-T02 (`loop-bih.2`) | Finalize SPEC-27 closure bookkeeping after runtime fallback-loop implementation and gate evidence landing (`G-002`) |
-| P0 | M7-T03 (`loop-bih.3`) | Complete SPEC-20 typed-signature parity (enum + input validation) |
-| P1 | M7-T04 (`loop-bih.4`) | Integrate dual-model orchestration behavior (SPEC-21) |
+| P0 | M7-T04 (`loop-bih.4`) | Integrate dual-model orchestration behavior (SPEC-21) |
 | P1 | M7-T05 (`loop-bih.5`) | Remove proof-engine placeholders and persist learning/session behavior (SPEC-22) |
 | P1 | M7-T06 (`loop-bih.6`) | Complete visualization integration/export parity (SPEC-23) |
 | P1 | M7-T07 (`loop-bih.7`) | Complete optimizer reasoning/persistence/metric parity (SPEC-24) |

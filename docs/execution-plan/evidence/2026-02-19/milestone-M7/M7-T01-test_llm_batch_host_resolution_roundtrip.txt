@@ -1,4 +1,4 @@
-safe_run: heavy command admitted (available=4431MiB, threshold=3000MiB)
+safe_run: heavy command admitted (available=4433MiB, threshold=3000MiB)
 warning: unused import: `std::path::PathBuf`
    --> src/dp_integration/review.rs:560:9
     |
@@ -95,27 +95,12 @@ warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_
 808 |             output: String,
     |             ^^^^^^
 
-warning: fields `severity` and `category` are never read
-   --> src/signature/mod.rs:827:13
-    |
-824 |         struct EnumAnnotated {
-    |                ------------- fields in this struct
-...
-827 |             severity: String,
-    |             ^^^^^^^^
-...
-831 |             category: String,
-    |             ^^^^^^^^
-
-warning: `rlm-core` (lib test) generated 10 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+warning: `rlm-core` (lib test) generated 9 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
      Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
 
-running 4 tests
-test repl::tests::test_llm_batch_host_resolution_roundtrip ... ignored, requires Python environment with rlm-repl installed
-test repl::tests::test_llm_batch_results_payload_mixed_success_failure ... ok
-test repl::tests::test_llm_batch_operation_to_query_rejects_non_string_prompt ... ok
-test repl::tests::test_llm_batch_operation_to_query ... ok
+running 1 test
+test repl::tests::test_llm_batch_host_resolution_roundtrip ... ok
 
-test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 579 filtered out; finished in 0.01s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 578 filtered out; finished in 0.14s
 

@@ -1,0 +1,299 @@
+safe_run: heavy command admitted (available=4318MiB, threshold=3000MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> src/module/compose.rs:305:9
+    |
+305 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:605:13
+    |
+605 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_field`, and `output` are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:827:13
+    |
+824 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+827 |             severity: String,
+    |             ^^^^^^^^
+...
+831 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 10 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 61 tests
+test signature::fallback::tests::test_execution_limits_presets ... ok
+test signature::fallback::tests::test_execution_result_failed ... ok
+test signature::fallback::tests::test_execution_result_map ... ok
+test signature::fallback::tests::test_execution_result_submitted ... ok
+test signature::fallback::tests::test_execution_result_trigger_accessor ... ok
+test signature::fallback::tests::test_execution_result_extracted ... ok
+test signature::fallback::tests::test_fallback_trigger_display ... ok
+test signature::fallback::tests::test_should_trigger ... ok
+test signature::submit::tests::test_signature_registration ... ok
+test signature::submit::tests::test_submit_result_success ... ok
+test signature::submit::tests::test_submit_error_from_validation_error ... ok
+test signature::submit::tests::test_submit_result_validation_error ... ok
+test signature::fallback::tests::test_repl_history ... ok
+test signature::fallback::tests::test_parse_extraction_response_failure ... ok
+test signature::submit::tests::test_submit_error_messages ... ok
+test signature::tests::derive_tests::test_derive_field_enum_values_attribute ... ok
+test signature::tests::derive_tests::test_derive_input_fields ... ok
+test signature::tests::derive_tests::test_derive_instructions ... ok
+test signature::tests::derive_tests::test_derive_generated_structs ... ok
+test signature::tests::derive_tests::test_derive_output_fields ... ok
+test signature::fallback::tests::test_extraction_prompt ... ok
+test signature::tests::derive_tests::test_derive_type_inference ... ok
+test signature::tests::test_extract_json_raw ... ok
+test signature::tests::test_extract_json_code_block ... ok
+test signature::tests::test_from_response_empty ... ok
+test signature::tests::test_from_response_invalid_json ... ok
+test signature::tests::test_from_response_markdown ... ok
+test signature::tests::test_from_response_json ... ok
+test signature::fallback::tests::test_parse_extraction_response_markdown ... ok
+test signature::tests::test_from_response_validation_error ... ok
+test signature::fallback::tests::test_parse_extraction_response ... ok
+test signature::tests::derive_tests::test_derive_to_prompt ... ok
+test signature::tests::test_parse_error_display ... ok
+test signature::tests::test_to_prompt ... ok
+test signature::tests::derive_tests::test_derive_from_response ... ok
+test signature::types::tests::test_display_label ... ok
+test signature::types::tests::test_field_spec_with_default ... ok
+test signature::types::tests::test_field_spec_builder ... ok
+test signature::types::tests::test_field_spec_creation ... ok
+test signature::tests::test_enum_validation_in_response ... ok
+test signature::tests::derive_tests::test_derive_field_enum_values_validation_in_from_response ... ok
+test signature::types::tests::test_field_type_compatibility ... ok
+test signature::types::tests::test_field_type_prompt_hints ... ok
+test signature::tests::test_output_schema ... ok
+test signature::types::tests::test_field_type_json_schema ... ok
+test signature::types::tests::test_to_prompt_line ... ok
+test signature::types::tests::test_nested_object_compatibility ... ok
+test signature::validation::tests::test_error_user_message ... ok
+test signature::validation::tests::test_apply_defaults ... ok
+test signature::validation::tests::test_validate_fields_missing_required ... ok
+test signature::validation::tests::test_validate_fields_success ... ok
+test signature::validation::tests::test_nested_error_path ... ok
+test signature::validation::tests::test_validate_fields_optional_null ... ok
+test signature::validation::tests::test_validate_fields_optional_missing ... ok
+test signature::validation::tests::test_validate_fields_type_mismatch ... ok
+test signature::validation::tests::test_validate_enum ... ok
+test signature::validation::tests::test_validate_nested_object ... ok
+test signature::validation::tests::test_validate_list ... ok
+test signature::submit::tests::test_serialization ... ok
+test signature::validation::tests::test_serialization ... ok
+test signature::types::tests::test_serialization ... ok
+
+test result: ok. 61 passed; 0 failed; 0 ignored; 0 measured; 522 filtered out; finished in 0.01s
+
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> src/module/compose.rs:305:9
+    |
+305 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:605:13
+    |
+605 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_field`, and `output` are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:827:13
+    |
+824 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+827 |             severity: String,
+    |             ^^^^^^^^
+...
+831 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 10 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 5 tests
+test module::predict::tests::test_format_inputs ... ok
+test module::predict::tests::test_predict_config ... ok
+test module::predict::tests::test_system_prompt_generation ... ok
+test module::predict::tests::test_predict_creation ... ok
+test module::predict::tests::test_predict_forward_input_validation_happens_pre_exec ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 578 filtered out; finished in 0.00s
+

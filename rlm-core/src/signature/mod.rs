@@ -818,5 +818,49 @@ I hope this helps!
             assert!(matches!(fields[3].field_type, FieldType::Boolean));
             assert!(matches!(fields[4].field_type, FieldType::List(_)));
         }
+
+        #[derive(rlm_core_derive::Signature)]
+        #[signature(instructions = "Test enum field metadata")]
+        struct EnumAnnotated {
+            #[input(desc = "Severity level")]
+            #[field(enum_values = "low,medium,high")]
+            severity: String,
+
+            #[output(desc = "Classification")]
+            #[field(enum_values = "bug,feature,question")]
+            category: String,
+        }
+
+        #[test]
+        fn test_derive_field_enum_values_attribute() {
+            let input_fields = EnumAnnotated::input_fields();
+            assert_eq!(input_fields.len(), 1);
+            match &input_fields[0].field_type {
+                FieldType::Enum(values) => {
+                    assert_eq!(
+                        values,
+                        &vec![
+                            "low".to_string(),
+                            "medium".to_string(),
+                            "high".to_string(),
+                        ]
+                    );
+                }
+                other => panic!("expected enum field type, got {:?}", other),
+            }
+
+            let output_fields = EnumAnnotated::output_fields();
+            assert_eq!(output_fields.len(), 1);
+            assert!(matches!(output_fields[0].field_type, FieldType::Enum(_)));
+        }
+
+        #[test]
+        fn test_derive_field_enum_values_validation_in_from_response() {
+            let valid = r#"{"category":"bug"}"#;
+            assert!(EnumAnnotated::from_response(valid).is_ok());
+
+            let invalid = r#"{"category":"other"}"#;
+            assert!(EnumAnnotated::from_response(invalid).is_err());
+        }
     }
 }

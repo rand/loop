@@ -2,7 +2,7 @@
 
 > DSPy-inspired typed signatures for rlm-core
 
-**Status**: In progress (runtime protocol implemented through M2-T04)
+**Status**: Partially implemented (typed runtime protocol and validation parity implemented through M7-T03; remaining composition/runtime-governance refinements tracked in M7+ tasks)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Tasks**: loop-d75, loop-jqo, loop-9l6, loop-bzz
@@ -12,6 +12,20 @@
 ## Overview
 
 Implement DSPy-style typed signatures that enable composable modules, automatic output validation, and optimization. This is the foundational system upon which module composition and BootstrapFewShot optimization depend.
+
+## Implementation Snapshot (2026-02-19)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-20.01 Signature trait | Implemented | `rlm-core/src/signature/mod.rs` |
+| SPEC-20.02 Field specification model | Implemented | `rlm-core/src/signature/types.rs` |
+| SPEC-20.03 Runtime validation | Implemented (input pre-validation + output validation path) | `validate_fields` in `rlm-core/src/signature/validation.rs`, `Predict::forward` in `rlm-core/src/module/predict.rs` |
+| SPEC-20.04 Derive macro attributes | Implemented (including explicit enum values) | `rlm-core-derive/src/lib.rs` |
+| SPEC-20.05 Type inference | Partially implemented | Primitive/List/Option inference in `rlm-core-derive/src/lib.rs`; explicit enum via `#[field(enum_values = \"...\")]` |
+| SPEC-20.07..20.10 SUBMIT + REPL protocol | Implemented | `rlm-core/python/rlm_repl/sandbox.py`, `rlm-core/python/rlm_repl/main.py`, `rlm-core/src/repl.rs` |
+| SPEC-20.11 Module trait | Implemented | `rlm-core/src/module/mod.rs` |
+| SPEC-20.12 Predict wrapper | Implemented (with deterministic pre-exec input validation) | `rlm-core/src/module/predict.rs` |
+| SPEC-20.13 Composition validation | Partially implemented | `rlm-core/src/module/compose.rs` |
 
 ## Requirements
 
@@ -144,6 +158,7 @@ pub struct AnalyzeCode {
 - `#[input(desc = "...", prefix = "...")]` - Mark as input field
 - `#[output(desc = "...", prefix = "...")]` - Mark as output field
 - `#[field(required = false, default = "...")]` - Optional field config
+- `#[field(enum_values = "a,b,c")]` - Explicit enum value list for field validation
 
 **Acceptance Criteria**:
 - [ ] Macro generates correct Signature impl
@@ -162,7 +177,8 @@ Automatic FieldType inference from Rust types.
 | `bool` | `FieldType::Boolean` |
 | `Vec<T>` | `FieldType::List(T)` |
 | `Option<T>` | Same as T, but `required = false` |
-| Enum with `#[derive(Signature)]` | `FieldType::Enum(variants)` |
+| `String` + `#[field(enum_values = "...")]` | `FieldType::Enum(values)` |
+| Rust enum type without `enum_values` annotation | `FieldType::Custom(type_name)` (current behavior) |
 | Other | `FieldType::Custom(type_name)` |
 
 **Acceptance Criteria**:

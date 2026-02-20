@@ -49,6 +49,7 @@ use syn::{
 /// - `#[output(desc = "...", prefix = "...")]` - Output with custom display prefix.
 /// - `#[field(required = false)]` - Mark field as optional (also inferred from `Option<T>`).
 /// - `#[field(default = "...")]` - Set default value (JSON).
+/// - `#[field(enum_values = "a,b,c")]` - Treat field as enum with explicit allowed values.
 ///
 /// # Generated Code
 ///
@@ -255,6 +256,7 @@ struct FieldAttrs {
     prefix: Option<String>,
     required: Option<bool>,
     default: Option<String>,
+    enum_values: Option<Vec<String>>,
 }
 
 /// Parse field attributes (#[input], #[output], #[field]).
@@ -317,8 +319,22 @@ fn parse_field_attr(attr: &syn::Attribute, result: &mut FieldAttrs) -> Result<()
             let value: LitStr = meta.value()?.parse()?;
             result.default = Some(value.value());
             Ok(())
+        } else if meta.path.is_ident("enum_values") {
+            let value: LitStr = meta.value()?.parse()?;
+            let parsed = value
+                .value()
+                .split(',')
+                .map(|v| v.trim())
+                .filter(|v| !v.is_empty())
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>();
+            if parsed.is_empty() {
+                return Err(meta.error("enum_values cannot be empty"));
+            }
+            result.enum_values = Some(parsed);
+            Ok(())
         } else {
-            Err(meta.error("unknown field attribute, expected 'required' or 'default'"))
+            Err(meta.error("unknown field attribute, expected 'required', 'default', or 'enum_values'"))
         }
     })
 }
@@ -333,7 +349,19 @@ struct ParsedField {
 /// Generate FieldSpec construction code for a field.
 fn generate_field_spec(field: &ParsedField) -> TokenStream2 {
     let name_str = field.name.to_string();
-    let field_type = infer_field_type(&field.ty);
+    let field_type = if let Some(values) = &field.attrs.enum_values {
+        let value_literals: Vec<_> = values
+            .iter()
+            .map(|value| LitStr::new(value, field.name.span()))
+            .collect();
+        quote! {
+            ::rlm_core::signature::FieldType::Enum(vec![
+                #(::std::string::String::from(#value_literals)),*
+            ])
+        }
+    } else {
+        infer_field_type(&field.ty)
+    };
 
     let desc = field.attrs.desc.as_deref().unwrap_or("");
 

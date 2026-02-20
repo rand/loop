@@ -461,6 +461,34 @@ SUBMIT({'answer': 'second'})
         assert resolved[0]["status"] == "success"
         assert resolved[1]["status"] == "error"
 
+    def test_pending_operations_exposes_operation_metadata(self):
+        server = ReplServer()
+        server.handle_request(JsonRpcRequest(method="reset", params={}, id=0))
+
+        create_req = JsonRpcRequest(
+            method="execute",
+            params={"code": "op = llm_batch(['q1', 'q2'], max_parallel=3)"},
+            id=1,
+        )
+        create_resp = server.handle_request(create_req)
+
+        assert create_resp is not None
+        assert create_resp.error is None
+        assert create_resp.result["success"] is True
+        assert len(create_resp.result["pending_operations"]) >= 1
+
+        pending_req = JsonRpcRequest(method="pending_operations", params={}, id=2)
+        pending_resp = server.handle_request(pending_req)
+
+        assert pending_resp is not None
+        assert pending_resp.error is None
+        operations = pending_resp.result["operations"]
+        assert len(operations) >= 1
+        op = operations[-1]
+        assert op["operation_type"] == OperationType.LLM_BATCH.value
+        assert op["params"]["prompts"] == ["q1", "q2"]
+        assert op["params"]["max_parallel"] == 3
+
 
 class TestSandbox:
     """Tests for the sandbox execution environment."""

@@ -55,6 +55,8 @@ class ReplServer:
                 result = self._set_variable(params)
             elif method == "resolve_operation":
                 result = self._resolve_operation(params)
+            elif method == "pending_operations":
+                result = self._pending_operations()
             elif method == "list_variables":
                 result = self._list_variables()
             elif method == "status":
@@ -178,6 +180,19 @@ class ReplServer:
         req = ResolveOperationRequest(**params)
         get_registry().resolve(req.operation_id, req.result)
         return {"success": True}
+
+    def _pending_operations(self) -> dict[str, Any]:
+        """List pending deferred operations with operation metadata."""
+        operations = []
+        for op in get_registry().pending_operations():
+            operations.append(
+                {
+                    "id": op.id,
+                    "operation_type": op.operation_type.value,
+                    "params": op.params,
+                }
+            )
+        return {"operations": operations}
 
     def _list_variables(self) -> dict[str, Any]:
         """List all variables."""

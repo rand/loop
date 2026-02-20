@@ -17,7 +17,7 @@ use super::example::ErasedDemonstration;
 use super::{Module, ModuleConfig, Predictor};
 use crate::error::{Error, Result};
 use crate::llm::{ChatMessage, CompletionRequest, LLMClient};
-use crate::signature::Signature;
+use crate::signature::{validate_fields, Signature};
 
 /// Configuration for a Predict module.
 #[derive(Debug, Clone)]
@@ -245,6 +245,17 @@ impl<S: Signature + 'static> Module for Predict<S> {
     type Sig = S;
 
     async fn forward(&self, inputs: S::Inputs) -> Result<S::Outputs> {
+        // Validate typed inputs before any LM call for deterministic pre-execution failures.
+        let input_value = serde_json::to_value(&inputs)?;
+        if let Err(errors) = validate_fields(&input_value, &S::input_fields()) {
+            let detail = errors
+                .iter()
+                .map(|e| e.to_user_message())
+                .collect::<Vec<_>>()
+                .join("; ");
+            return Err(Error::Config(format!("Input validation failed: {}", detail)));
+        }
+
         // Get the LM
         let lm_guard = self.lm.read().await;
         let lm = lm_guard.as_ref().ok_or_else(|| {
@@ -378,7 +389,13 @@ impl<S: Signature> Clone for Predict<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_trait::async_trait;
+    use chrono::Utc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use crate::signature::{FieldSpec, FieldType};
+    use crate::llm::{
+        CompletionResponse, EmbeddingRequest, EmbeddingResponse, ModelSpec, Provider, TokenUsage,
+    };
     use serde::{Deserialize, Serialize};
 
     // Mock signature for testing
@@ -451,5 +468,101 @@ mod tests {
         let formatted = format_inputs_for_prompt(&inputs);
         assert!(formatted.contains("text: Hello world"));
         assert!(formatted.contains("count: 42"));
+    }
+
+    struct CountingMockClient {
+        calls: Arc<AtomicUsize>,
+    }
+
+    #[async_trait]
+    impl LLMClient for CountingMockClient {
+        async fn complete(&self, _request: CompletionRequest) -> Result<CompletionResponse> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(CompletionResponse {
+                id: "mock".to_string(),
+                model: "mock-model".to_string(),
+                content: r#"{"result":"ok"}"#.to_string(),
+                stop_reason: None,
+                usage: TokenUsage {
+                    input_tokens: 1,
+                    output_tokens: 1,
+                    cache_read_tokens: None,
+                    cache_creation_tokens: None,
+                },
+                timestamp: Utc::now(),
+                cost: Some(0.0),
+            })
+        }
+
+        async fn embed(&self, _request: EmbeddingRequest) -> Result<EmbeddingResponse> {
+            Err(Error::LLM("not implemented".to_string()))
+        }
+
+        fn provider(&self) -> Provider {
+            Provider::OpenRouter
+        }
+
+        fn available_models(&self) -> Vec<ModelSpec> {
+            vec![]
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct EnumInputs {
+        severity: String,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct EnumOutputs {
+        result: String,
+    }
+
+    struct EnumInputSignature;
+
+    impl Signature for EnumInputSignature {
+        type Inputs = EnumInputs;
+        type Outputs = EnumOutputs;
+
+        fn instructions() -> &'static str {
+            "Classify severity"
+        }
+
+        fn input_fields() -> Vec<FieldSpec> {
+            vec![FieldSpec::new(
+                "severity",
+                FieldType::enum_of(["low", "medium", "high"]),
+            )]
+        }
+
+        fn output_fields() -> Vec<FieldSpec> {
+            vec![FieldSpec::new("result", FieldType::String)]
+        }
+    }
+
+    #[tokio::test]
+    async fn test_predict_forward_input_validation_happens_pre_exec() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let lm: Arc<dyn LLMClient> = Arc::new(CountingMockClient {
+            calls: calls.clone(),
+        });
+        let predict = Predict::<EnumInputSignature>::with_lm(lm);
+
+        let err = predict
+            .forward(EnumInputs {
+                severity: "critical".to_string(),
+            })
+            .await
+            .expect_err("invalid enum input should fail before LM execution");
+
+        assert!(matches!(err, Error::Config(_)));
+        assert!(
+            err.to_string().contains("Input validation failed"),
+            "error should include deterministic validation prefix"
+        );
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            0,
+            "LM should not be called when inputs fail validation"
+        );
     }
 }
