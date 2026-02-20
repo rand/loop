@@ -7,6 +7,9 @@ Sandboxed Python REPL subprocess for rlm-core.
 This package provides a JSON-RPC based Python REPL that runs as a subprocess,
 offering safe code execution with RLM-specific helper functions.
 
+For broader project documentation (user/dev/internals/troubleshooting), see:
+- `../../docs/README.md`
+
 ## Features
 
 - **Sandboxed Execution**: Uses RestrictedPython for safe code execution

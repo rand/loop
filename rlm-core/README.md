@@ -39,6 +39,24 @@ A Rust library with Python and Go bindings that provides foundational RLM capabi
 | `sync` | Dual-track sync (informal ↔ formal) |
 | `adapters` | Claude Code plugin integration |
 
+## Documentation by Role
+
+### Users and Operators
+- [Documentation Portal](../docs/README.md)
+- [User Guide](../docs/user-guide/README.md)
+- [Troubleshooting](../docs/troubleshooting/README.md)
+
+### Contributors
+- [Developer Guide](../docs/developer-guide/README.md)
+- [Quality Gates](../docs/developer-guide/quality-gates.md)
+- [Execution Plan](../docs/execution-plan/README.md)
+
+### Internals and Design
+- [Internals](../docs/internals/README.md)
+- [Concepts](../docs/concepts/README.md)
+- [Specification Contracts](../docs/spec/)
+- [Architecture Decisions](../docs/adr/)
+
 ## Installation
 
 ### Rust

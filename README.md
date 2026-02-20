@@ -158,10 +158,27 @@ rlm-core powers these projects:
 
 ## Documentation
 
-- [Unified Library Design](docs/unified-rlm-library-design.md) - Architecture overview
-- [Migration Spec: recurse](docs/migration-spec-recurse.md) - Go integration guide
-- [Migration Spec: rlm-claude-code](docs/migration-spec-rlm-claude-code.md) - Python integration guide
-- [Implementation Roadmap](docs/implementation-roadmap.md) - Development phases
+### Start Here
+- [Documentation Portal](docs/README.md) - Role-based index and workflow-oriented navigation.
+- [User Guide](docs/user-guide/README.md) - New user to power-user guidance.
+- [Developer Guide](docs/developer-guide/README.md) - Setup, gates, and contribution workflow.
+- [Internals](docs/internals/README.md) - Architecture, OODA flow, and module map.
+- [Troubleshooting](docs/troubleshooting/README.md) - Incident triage and diagnostics checklists.
+
+### Conceptual and Architecture
+- [Concepts](docs/concepts/README.md) - Mental model and system vocabulary.
+- [Unified Library Design](docs/unified-rlm-library-design.md) - Long-form architecture background.
+- [Lean Formal Verification Design](docs/lean-formal-verification-design.md) - Formal methods design rationale.
+- [ADR Index](docs/adr/) - Decision records and architectural tradeoffs.
+
+### Specifications and Planning
+- [Spec Contracts](docs/spec/) - Canonical feature-level specifications (SPEC-20 through SPEC-27).
+- [Execution Plan](docs/execution-plan/README.md) - Program execution, evidence, and governance operations.
+- [Implementation Roadmap](docs/implementation-roadmap.md) - Development phases.
+
+### Integration and Migration
+- [Migration Spec: recurse](docs/migration-spec-recurse.md) - Go integration plan.
+- [Migration Spec: rlm-claude-code](docs/migration-spec-rlm-claude-code.md) - Python/plugin integration plan.
 
 ## License
 
