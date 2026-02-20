@@ -28,6 +28,7 @@ Runs:
 Notes:
 - If `cargo-llvm-cov` is missing locally, the script exits with actionable install guidance.
 - GitHub Actions workflow `rlm-core-coverage.yml` is the canonical enforcement path.
+- Coverage CI bootstraps `rlm-core/python/.venv` and installs `rlm-core/python` so REPL-backed Rust tests run with deterministic Python dependencies.
 
 ### Layer 2.5: API docs contract
 

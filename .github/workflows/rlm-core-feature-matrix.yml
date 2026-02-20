@@ -60,8 +60,14 @@ jobs:
         run: |
           set -euo pipefail
           echo "Running ${{ matrix.vg_id }} (${{ matrix.label }})"
-          if [[ -n "${{ matrix.cargo_args }}" ]]; then
-            cargo check --locked ${{ matrix.cargo_args }}
+          lock_arg=""
+          if [[ -f Cargo.lock ]]; then
+            lock_arg="--locked"
           else
-            cargo check --locked
+            echo "Cargo.lock not present in rlm-core; running without --locked"
+          fi
+          if [[ -n "${{ matrix.cargo_args }}" ]]; then
+            cargo check ${lock_arg} ${{ matrix.cargo_args }}
+          else
+            cargo check ${lock_arg}
           fi
