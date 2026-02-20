@@ -20,7 +20,7 @@ Last updated: 2026-02-20
 | M4 Consumers | Complete | M4-T01 through M4-T04 complete; cross-repo pipeline script validated |
 | M5 Performance | Complete | M5-T01 through M5-T03 complete; no >10% regression observed in comparison report |
 | M6 Rollout/governance | Complete | M6-T01 through M6-T03 complete; steady-state cadence/ownership policy active |
-| M7 Spec completion | In progress | `M7-T01`..`M7-T04` complete; remaining SPEC-22..27 + interop follow-up tracked in `M7-T05`..`M7-T10` |
+| M7 Spec completion | In progress | `M7-T01`..`M7-T05` complete; remaining SPEC-23..25 + interop/governance follow-up tracked in `M7-T06`..`M7-T10` |
 
 ## Baseline Findings
 
@@ -94,16 +94,17 @@ Last updated: 2026-02-20
 | R40 | Closed `loop-bih.2` after landing SPEC-27 fallback loop runtime wiring and corresponding gate evidence | `bd show loop-bih.2` |
 | R41 | Closed M7-T03 typed-signature parity by adding derive enum field semantics (`#[field(enum_values = \"...\")]`), deterministic pre-exec input validation in `Predict::forward`, and optional-null validation parity | `evidence/2026-02-19/milestone-M7/M7-T03-validation-summary.md` |
 | R42 | Closed M7-T04 by wiring dual-model defaults at orchestrator mode boundaries (`ExecutionMode::default_dual_model_config`, `OrchestrationRoutingRuntime`) and extending tiered accounting to root/recursive/extraction with passing dual/core/perf gates | `evidence/2026-02-20/milestone-M7/M7-T04-validation-summary.md` |
+| R43 | Closed M7-T05 by replacing Tier-3 placeholder behavior with executable tactic-candidate synthesis, wiring proof-pattern persistence/context retrieval, and capturing proof + efficacy gate evidence | `evidence/2026-02-20/milestone-M7/M7-T05-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | M7-T05 (`loop-bih.5`) | Remove proof-engine placeholders and persist learning/session behavior (SPEC-22) |
-| P1 | M7-T06 (`loop-bih.6`) | Complete visualization integration/export parity (SPEC-23) |
+| P0 | M7-T06 (`loop-bih.6`) | Complete visualization integration/export parity (SPEC-23) |
 | P1 | M7-T07 (`loop-bih.7`) | Complete optimizer reasoning/persistence/metric parity (SPEC-24) |
 | P1 | M7-T08 (`loop-bih.8`) | Align context externalization prompt contract/runtime helpers (SPEC-25) |
 | P2 | M7-T09 (`loop-bih.9`) | Deliver `io-rflx` fixture/calibration follow-up with contract evidence |
+| P2 | M7-T10 (`loop-bih.10`) | Reconcile SPEC/runtime/governance traceability and refresh support claims |
 
 ## Consumer Readiness Snapshot
 

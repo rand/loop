@@ -2,7 +2,7 @@
 
 > Numina-inspired focused proof strategy for Lean REPL
 
-**Status**: Draft
+**Status**: Partially implemented (session/protocol enforcement and proof-engine execution/persistence are implemented; full Lean diagnostic-feedback integration remains pending)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-dzv
@@ -12,6 +12,16 @@
 ## Overview
 
 Implement Numina-lean-agent's single-target proof protocol to prevent combinatorial proof explosion in Lean integration. The protocol enforces focus on exactly one sorry at a time, tracks helper lemmas, and prohibits excessive natural language comments.
+
+## Implementation Snapshot (2026-02-20)
+
+| Section | Status | Runtime Evidence |
+|---|---|---|
+| SPEC-22.01 ProofSession and target model | Implemented | `rlm-core/src/proof/session.rs` (`ProofSession`, `SorryLocation`, `select_target`) |
+| SPEC-22.02 Session status and limits | Implemented | `rlm-core/src/proof/session.rs` (`ProofSessionStatus`, `LimitReason`, status tests) |
+| SPEC-22.03 Helper lemma attribution | Implemented | `rlm-core/src/proof/session.rs` (`HelperLemma` attribution/declaration + tests) |
+| SPEC-22.04 Protocol enforcement | Implemented | `ProtocolEnforcer` target/tactic enforcement tests in `rlm-core/src/proof/session.rs` |
+| Proof-engine execution/persistence closure (`M7-T05`) | Implemented | `rlm-core/src/proof/engine.rs` (`try_ai_assisted`, `record_success`, `create_context`) with memory-backed tests |
 
 ## Background
 

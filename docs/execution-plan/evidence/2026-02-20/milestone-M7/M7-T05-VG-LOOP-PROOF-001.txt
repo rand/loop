@@ -1,0 +1,157 @@
+safe_run: heavy command admitted (available=6557MiB, threshold=3000MiB)
+warning: unused import: `std::path::PathBuf`
+   --> src/dp_integration/review.rs:560:9
+    |
+560 |     use std::path::PathBuf;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `super::*`
+   --> src/module/compose.rs:305:9
+    |
+305 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `LinkSource`
+    --> src/sync/drift.rs:1063:40
+     |
+1063 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+     |                                        ^^^^^^^^^^
+
+warning: unused imports: `LeanRef`, `LinkSource`, `LinkType`, and `Link`
+   --> src/sync/engine.rs:609:24
+    |
+609 |     use crate::topos::{Link, LinkType, LinkSource, LeanRef, ToposRef};
+    |                        ^^^^  ^^^^^^^^  ^^^^^^^^^^  ^^^^^^^
+
+warning: unused variable: `action_id`
+   --> src/reasoning/store.rs:741:14
+    |
+741 |         let (action_id, outcome_id) = trace.log_action(&chosen, "Action", "Outcome");
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `questions`
+   --> src/spec_agent/agent.rs:605:13
+    |
+605 |         let questions = agent.refine(&mut ctx, &[]).await.unwrap();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_questions`
+
+warning: function `probability_with_edges` is never used
+  --> src/epistemic/proptest.rs:27:8
+   |
+27 |     fn probability_with_edges() -> impl Strategy<Value = f64> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: fields `code`, `language`, `max_issues`, `vulnerabilities`, `severity`, and `confidence` are never read
+   --> src/signature/mod.rs:684:13
+    |
+682 |         struct AnalyzeCode {
+    |                ----------- fields in this struct
+683 |             #[input(desc = "Source code to analyze")]
+684 |             code: String,
+    |             ^^^^
+...
+687 |             language: String,
+    |             ^^^^^^^^
+...
+690 |             max_issues: Option<u32>,
+    |             ^^^^^^^^^^
+...
+693 |             vulnerabilities: Vec<String>,
+    |             ^^^^^^^^^^^^^^^
+...
+696 |             severity: String,
+    |             ^^^^^^^^
+...
+699 |             confidence: f64,
+    |             ^^^^^^^^^^
+
+warning: fields `string_field`, `int_field`, `float_field`, `bool_field`, `list_field`, and `output` are never read
+   --> src/signature/mod.rs:793:13
+    |
+791 |         struct AllTypes {
+    |                -------- fields in this struct
+792 |             #[input(desc = "A string")]
+793 |             string_field: String,
+    |             ^^^^^^^^^^^^
+...
+796 |             int_field: i32,
+    |             ^^^^^^^^^
+...
+799 |             float_field: f64,
+    |             ^^^^^^^^^^^
+...
+802 |             bool_field: bool,
+    |             ^^^^^^^^^^
+...
+805 |             list_field: Vec<String>,
+    |             ^^^^^^^^^^
+...
+808 |             output: String,
+    |             ^^^^^^
+
+warning: fields `severity` and `category` are never read
+   --> src/signature/mod.rs:827:13
+    |
+824 |         struct EnumAnnotated {
+    |                ------------- fields in this struct
+...
+827 |             severity: String,
+    |             ^^^^^^^^
+...
+831 |             category: String,
+    |             ^^^^^^^^
+
+warning: `rlm-core` (lib test) generated 10 warnings (run `cargo fix --lib -p rlm-core --tests` to apply 4 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/rlm_core-0bdc05604fa9bebd)
+
+running 40 tests
+test proof::ai_assistant::tests::test_config_default ... ok
+test proof::ai_assistant::tests::test_config_builder ... ok
+test proof::ai_assistant::tests::test_build_system_prompt ... ok
+test proof::ai_assistant::tests::test_build_prompt ... ok
+test proof::ai_assistant::tests::test_parse_suggestions_with_preamble ... ok
+test proof::engine::tests::test_config_default ... ok
+test proof::engine::tests::test_automation_creation ... ok
+test proof::ai_assistant::tests::test_parse_suggestions_json ... ok
+test proof::engine::tests::test_builder ... ok
+test proof::engine::tests::test_create_context ... ok
+test proof::engine::tests::test_ai_candidate_tactics_not_empty ... ok
+test proof::engine::tests::test_mark_for_human ... ok
+test proof::ai_assistant::tests::test_generate_proof ... ok
+test proof::engine::tests::test_record_success ... ok
+test proof::ai_assistant::tests::test_suggest_tactics_json ... ok
+test proof::ai_assistant::tests::test_suggest_tactics_fallback ... ok
+test proof::session::tests::test_helper_lemma ... ok
+test proof::session::tests::test_proof_session ... ok
+test proof::session::tests::test_proof_session_status ... ok
+test proof::session::tests::test_protocol_enforcer_target ... ok
+test proof::session::tests::test_protocol_enforcer_nl_prohibition ... ok
+test proof::session::tests::test_select_target ... ok
+test proof::session::tests::test_sorry_location ... ok
+test proof::session::tests::test_tactic_limit ... ok
+test proof::session::tests::test_token_limit ... ok
+test proof::tactics::tests::test_domain_specific_tactics ... ok
+test proof::tactics::tests::test_sorry_placeholder ... ok
+test proof::tactics::tests::test_tactic_sequence ... ok
+test proof::tactics::tests::test_tactic_variations ... ok
+test proof::tactics::tests::test_tactics_for_tier ... ok
+test proof::tactics::tests::test_tactics_for_goal ... ok
+test proof::types::tests::test_automation_tier_escalation ... ok
+test proof::types::tests::test_boost_tactic ... ok
+test proof::types::tests::test_proof_attempt ... ok
+test proof::types::tests::test_proof_stats ... ok
+test proof::types::tests::test_proof_strategy ... ok
+test proof::types::tests::test_spec_domain_inference ... ok
+test proof::types::tests::test_tactic_result ... ok
+test proof::engine::tests::test_record_success_persists_pattern_when_memory_enabled ... ok
+test proof::engine::tests::test_create_context_loads_similar_proofs_from_memory ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 554 filtered out; finished in 0.01s
+

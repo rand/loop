@@ -103,7 +103,7 @@ Single source of truth for execution tasks and dependencies.
 | M7-T02 SPEC-27 orchestrator fallback wiring (`loop-bih.2`) | done | M7-T01 | VG-LOOP-FALLBACK-001, VG-EFFICACY-001, VG-LOOP-SIG-001 | Fallback extraction triggered and validated in orchestrator runtime loop |
 | M7-T03 SPEC-20 typed-signature parity completion (`loop-bih.3`) | done | M7-T02 | VG-LOOP-SIG-002, VG-LOOP-SIG-001, VG-EFFICACY-001 | Enum/input-validation parity and deterministic pre-exec errors |
 | M7-T04 SPEC-21 dual-model orchestration integration (`loop-bih.4`) | done | M7-T03 | VG-LOOP-DUAL-001, VG-LOOP-CORE-001, VG-PERF-002 | Orchestrator-applied dual-model routing with tiered accounting |
-| M7-T05 SPEC-22 proof protocol execution closure (`loop-bih.5`) | todo | M7-T04 | VG-LOOP-PROOF-001, VG-EFFICACY-001 | Proof engine placeholder removal and persistence coverage |
+| M7-T05 SPEC-22 proof protocol execution closure (`loop-bih.5`) | done | M7-T04 | VG-LOOP-PROOF-001, VG-EFFICACY-001 | Proof engine placeholder removal and persistence coverage |
 | M7-T06 SPEC-23 graph visualization integration closure (`loop-bih.6`) | todo | M7-T05 | VG-LOOP-VIZ-001, VG-DOC-SPEC-002 | Visualization export/integration parity with explicit fixtures |
 | M7-T07 SPEC-24 bootstrap optimizer parity closure (`loop-bih.7`) | todo | M7-T06 | VG-LOOP-OPT-001, VG-EFFICACY-001, VG-PERF-003 | Reasoning capture + persistence + metric alignment |
 | M7-T08 SPEC-25 context externalization contract closure (`loop-bih.8`) | todo | M7-T07 | VG-LOOP-CONTEXT-001, VG-LOOP-REPL-001, VG-DOC-SPEC-002 | Runtime prompt/guide behavior aligned with SPEC-25 |

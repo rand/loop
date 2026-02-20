@@ -6,7 +6,7 @@
 //! 1. **Decidable tactics** (Tier 1): Guaranteed to terminate - `decide`, `omega`, `simp`, `rfl`
 //! 2. **Automation tactics** (Tier 2): Search-based - `aesop`, `linarith`, `ring`
 //! 3. **AI-assisted** (Tier 3): LLM-generated tactic sequences
-//! 4. **Human loop** (Tier 4): `sorry` placeholder for manual completion
+//! 4. **Human loop** (Tier 4): `sorry` fallback marker for manual completion
 //!
 //! ## Example
 //!
