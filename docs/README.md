@@ -32,6 +32,7 @@ This documentation is organized by audience and workflow, not by who happened to
 - [Internals](./internals/README.md): Runtime architecture and module boundaries.
 - [Architecture](./internals/architecture.md): System structure and data flow.
 - [OODA + Execution Flow](./internals/ooda-and-execution.md): Observe/Orient/Decide/Act mapping.
+- [Python Orchestrator Swap Analysis](./internals/python-orchestrator-swap-analysis.md): Tradeoffs and decision framework for full Python orchestrator migration.
 - [Module Map](./internals/module-map.md): Where behavior actually lives.
 
 ### Operational and Recovery

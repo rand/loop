@@ -54,7 +54,7 @@ Current specification approaches have a gap:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key insight**: LLMs are well-suited for proof generation because invalid proofs are rejected by the type checker. The challenge shifts to writing good specifications—which is exactly what the Spec Agent addresses.
+**Key insight**: LLMs are well-suited for proof generation because invalid proofs are rejected by the type checker. The challenge shifts to writing good specifications, which is exactly what the Spec Agent addresses.
 
 ### 1.3 Traceability Chain
 

@@ -259,7 +259,7 @@ pub trait TrajectoryEmitter: Send + Sync {
 
 Information-theoretic hallucination detection based on Pythea/Strawberry methodology.
 
-**Problem**: LLMs exhibit "procedural hallucinations" where they have correct information but fail to use it correctly—citing evidence that doesn't support claims or presenting confident answers disconnected from context.
+**Problem**: LLMs exhibit "procedural hallucinations" where they have correct information but fail to use it correctly, citing evidence that does not support claims or presenting confident answers disconnected from context.
 
 **Solution**: Compute information budget for claims by comparing P(claim|evidence) vs P(claim|no evidence).
 

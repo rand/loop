@@ -8,6 +8,8 @@ This project uses a consistent documentation voice: precise, pragmatic, mildly p
 2. **Dryly human**: allow small bits of humor; do not turn docs into stand-up.
 3. **Actionable**: every procedure includes commands and success criteria.
 4. **Honest**: document limitations and sharp edges plainly.
+5. **No hype**: avoid hyperbole and marketing tone.
+6. **ASCII punctuation first**: prefer hyphen/comma/colon over typographic em-dashes.
 
 ## Tone Examples
 

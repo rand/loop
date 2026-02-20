@@ -46,7 +46,7 @@ We will implement:
 **Decision**: Create a specialized agent for specification creation and refinement with first-class Topos integration.
 
 **Rationale**:
-- Specifications are the bottleneck—proofs can be automated
+- Specifications are the bottleneck; proofs can be automated
 - Human-AI collaboration on specs is more valuable than pure AI generation
 - Topos provides the semantic contract layer; Lean provides formal verification
 - Dual-track approach gives both human readability and machine verifiability

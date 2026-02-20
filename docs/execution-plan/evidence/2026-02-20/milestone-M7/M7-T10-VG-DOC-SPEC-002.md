@@ -14,7 +14,7 @@ Reconcile SPEC-20 through SPEC-27 status metadata, implementation snapshots, and
 
 ## Up-Next Gap Tracking
 Residual critical items from partially implemented specs are explicitly tracked in:
-- `loop-azq` — Up-next critical SPEC refinements backlog
+- `loop-azq` - Up-next critical SPEC refinements backlog
 
 ## Result
 - Pass
