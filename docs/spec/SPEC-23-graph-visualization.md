@@ -2,7 +2,7 @@
 
 > Interactive debugging visualization for reasoning traces
 
-**Status**: Partially implemented (core exports + TUI/MCP integration endpoints are implemented; CLI command and advanced HTML controls remain deferred)
+**Status**: Partially implemented (core exports + TUI/MCP integration endpoints are implemented; deferred CLI/advanced HTML controls are tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-wve

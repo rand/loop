@@ -2,7 +2,7 @@
 
 > Parallel LLM query execution in REPL
 
-**Status**: Partially implemented (end-to-end `llm_batch` REPL-host runtime path implemented; advanced provider-aware rate-limit/backoff policy still pending)
+**Status**: Partially implemented (end-to-end `llm_batch` REPL-host runtime path implemented; deferred provider-aware rate-limit/backoff policy is tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-1d2
@@ -13,7 +13,7 @@
 
 Implement parallel batched LLM queries in the REPL, enabling efficient processing of multiple prompts simultaneously (e.g., for map-reduce patterns over context chunks).
 
-## Implementation Snapshot (2026-02-19)
+## Implementation Snapshot (2026-02-20)
 
 | Section | Status | Runtime Evidence |
 |---|---|---|

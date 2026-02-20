@@ -2,7 +2,7 @@
 
 > Cost-optimized model selection for RLM orchestration
 
-**Status**: Partially implemented (router and orchestrator-boundary dual-model routing are implemented; full end-to-end orchestrator trait wiring remains in progress)
+**Status**: Partially implemented (router and orchestrator-boundary dual-model routing are implemented; remaining dual-model strategy refinements are tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-z6x

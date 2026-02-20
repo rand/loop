@@ -2,7 +2,7 @@
 
 > DSPy-inspired typed signatures for rlm-core
 
-**Status**: Partially implemented (typed runtime protocol and validation parity implemented through M7-T03; remaining composition/runtime-governance refinements tracked in M7+ tasks)
+**Status**: Partially implemented (typed runtime protocol and validation parity implemented through M7-T03; remaining composition/runtime-governance refinements are tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Tasks**: loop-d75, loop-jqo, loop-9l6, loop-bzz
@@ -13,7 +13,7 @@
 
 Implement DSPy-style typed signatures that enable composable modules, automatic output validation, and optimization. This is the foundational system upon which module composition and BootstrapFewShot optimization depend.
 
-## Implementation Snapshot (2026-02-19)
+## Implementation Snapshot (2026-02-20)
 
 | Section | Status | Runtime Evidence |
 |---|---|---|

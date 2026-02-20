@@ -2,7 +2,7 @@
 
 > Prevent context rot via externalized context variables
 
-**Status**: Partially implemented (M7-T08 closes root prompt and helper-surface contract drift; advanced size-policy APIs remain deferred)
+**Status**: Partially implemented (M7-T08 closes root prompt and helper-surface contract drift; deferred size-policy API refinements are tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-bw2

@@ -2,7 +2,7 @@
 
 > DSPy-style automatic prompt optimization
 
-**Status**: Partially implemented (bootstrap optimization core, metric suite, reasoning capture summaries, and save/load persistence are implemented; advanced metric trait/object-safety refinements remain deferred)
+**Status**: Partially implemented (bootstrap optimization core, metric suite, reasoning capture summaries, and save/load persistence are implemented; deferred metric trait/object-safety refinements are tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-o9r

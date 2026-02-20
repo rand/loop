@@ -20,7 +20,7 @@ Last updated: 2026-02-20
 | M4 Consumers | Complete | M4-T01 through M4-T04 complete; cross-repo pipeline script validated |
 | M5 Performance | Complete | M5-T01 through M5-T03 complete; no >10% regression observed in comparison report |
 | M6 Rollout/governance | Complete | M6-T01 through M6-T03 complete; steady-state cadence/ownership policy active |
-| M7 Spec completion | In progress | `M7-T01`..`M7-T09` complete; remaining governance reconciliation tracked in `M7-T10` |
+| M7 Spec completion | Complete | `M7-T01`..`M7-T10` complete with gate evidence captured under `evidence/2026-02-20/milestone-M7/` |
 
 ## Baseline Findings
 
@@ -38,7 +38,7 @@ Last updated: 2026-02-20
 | F10 | No executable performance gate harness for REPL startup/batch throughput | Resolved by M5-T01 (`run_m5_perf_harness.sh` + VG-PERF artifacts) | M5 |
 | F11 | Efficacy scenario suite lacked explicit mixed batch and fallback-non-submit coverage | Resolved by M5-T02 scenario matrix + targeted tests (`45 passed`) | M5 |
 | F12 | No baseline-vs-candidate performance/efficacy rollup report | Resolved by M5-T03 comparative analysis report with regression check | M5 |
-| F13 | Residual implementation gaps remain across SPEC-20..27 despite M0-M6 closure | M7 task cards (`M7-T01`..`M7-T10`) published with gate-level closure criteria and dp-codex decomposition evidence | M7 |
+| F13 | Residual implementation gaps remained across SPEC-20..27 after M0-M6 closure | M7 task cards (`M7-T01`..`M7-T10`) are complete; deferred post-M7 refinements are explicitly tracked in `loop-azq` with reconciled spec metadata | M7/post-M7 |
 
 ## Active Blockers
 
@@ -46,7 +46,6 @@ Last updated: 2026-02-20
 |---|---|---|---|
 | B5 | Memory safety risk under parallel heavy workloads | Can crash machine and lose session state | D-007 controls enforced + safe wrapper used for all heavy commands |
 | B8 | Canonical `loop-agent` working tree may drift from claim-grade tuple state during active development | Can produce non-reproducible compatibility claims if canonical working tree is used directly | Enforce D-017 clean-clone committed tuple policy until canonical working tree is clean or policy is explicitly updated |
-| B10 | M7 requires cross-cutting runtime updates while preserving consumer compatibility guarantees | Regression risk across `rlm-claude-code`, `loop-agent`, and `io-rflx` if sequencing/gates are skipped | Execute `M7-T01`..`M7-T10` in order with explicit gate evidence and D-017 tuple discipline for consumer claims |
 
 ## Resolved This Session
 
@@ -99,12 +98,13 @@ Last updated: 2026-02-20
 | R45 | Closed M7-T07 by implementing optimizer reasoning-capture summaries and persistence helpers (`OptimizedModule::save/load`), then validating optimizer/efficacy/perf guardrails | `evidence/2026-02-20/milestone-M7/M7-T07-validation-summary.md` |
 | R46 | Closed M7-T08 by enforcing SPEC-25 root prompt submit semantics, aligning helper-surface guidance with runtime helpers, and passing context/REPL/doc gates | `evidence/2026-02-20/milestone-M7/M7-T08-validation-summary.md` |
 | R47 | Closed M7-T09 by delivering `io_rflx_interop.v0` fixture/calibration artifacts, executable RFLX fixture gate coverage, and refreshed RFLX/contract/perf evidence | `evidence/2026-02-20/milestone-M7/M7-T09-validation-summary.md` |
+| R48 | Closed M7-T10 by reconciling SPEC-20..27 status/governance metadata, refreshing consumer claim evidence, and assigning deferred post-M7 gaps to `loop-azq` | `evidence/2026-02-20/milestone-M7/M7-T10-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | M7-T10 (`loop-bih.10`) | Reconcile SPEC/runtime/governance traceability and refresh support claims |
+| P0 | loop-azq | Decompose and execute deferred post-M7 spec refinements backlog |
 
 ## Consumer Readiness Snapshot
 
@@ -112,7 +112,7 @@ Last updated: 2026-02-20
 |---|---|---|---|
 | `rlm-claude-code` | Hard runtime + build-time vendoring | Medium | API drift and schema/locking behavior changes |
 | `loop-agent` | Architectural target with first seam contract defined | Medium | Canonical working-tree drift vs claim-grade tuple source while active development continues |
-| `io-rflx` | Contract-defined interoperability target | Medium | Fixture and calibration work is now explicitly scheduled under `M7-T09` |
+| `io-rflx` | Contract-defined interoperability target | Medium | Fixture/calibration schema can drift if corpus and policy are not refreshed with contract changes |
 
 ## Session Handoff Template
 
