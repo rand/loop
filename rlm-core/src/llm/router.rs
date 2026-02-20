@@ -168,6 +168,25 @@ pub enum SwitchStrategy {
         tokens: u64,
     },
 
+    /// Custom policy for fine-grained switching control.
+    ///
+    /// This variant is serializable and allows explicit query-type overrides
+    /// plus optional depth/token thresholds.
+    Custom {
+        /// Optional depth threshold for switching to recursive.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_root_depth: Option<u32>,
+        /// Optional token threshold for switching to recursive.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_root_tokens: Option<u64>,
+        /// Query types that should always use recursive model.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        force_recursive_for: Vec<QueryType>,
+        /// Query types that should always use root model.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        force_root_for: Vec<QueryType>,
+    },
+
     /// Always use the root model (no switching).
     ///
     /// Useful for quality-critical tasks where cost is not a concern.
@@ -202,6 +221,24 @@ impl SwitchStrategy {
             }
             SwitchStrategy::Hybrid { depth: switch_depth, tokens } => {
                 depth >= *switch_depth || tokens_used >= *tokens
+            }
+            SwitchStrategy::Custom {
+                max_root_depth,
+                max_root_tokens,
+                force_recursive_for,
+                force_root_for,
+            } => {
+                if let Some(query_type) = query_type {
+                    if force_root_for.contains(&query_type) {
+                        return false;
+                    }
+                    if force_recursive_for.contains(&query_type) {
+                        return true;
+                    }
+                }
+
+                max_root_depth.map_or(false, |limit| depth >= limit)
+                    || max_root_tokens.map_or(false, |limit| tokens_used >= limit)
             }
             SwitchStrategy::AlwaysRoot => false,
             SwitchStrategy::AlwaysRecursive => true,
@@ -266,6 +303,23 @@ impl DualModelConfig {
     /// Set the switch strategy.
     pub fn with_strategy(mut self, strategy: SwitchStrategy) -> Self {
         self.switch_strategy = strategy;
+        self
+    }
+
+    /// Configure a serializable custom switch strategy.
+    pub fn with_custom_strategy(
+        mut self,
+        max_root_depth: Option<u32>,
+        max_root_tokens: Option<u64>,
+        force_recursive_for: Vec<QueryType>,
+        force_root_for: Vec<QueryType>,
+    ) -> Self {
+        self.switch_strategy = SwitchStrategy::Custom {
+            max_root_depth,
+            max_root_tokens,
+            force_recursive_for,
+            force_root_for,
+        };
         self
     }
 
@@ -988,6 +1042,52 @@ mod tests {
 
         // Extraction queries use recursive
         assert!(strategy.should_use_recursive(0, 0, Some(QueryType::Extraction)));
+    }
+
+    #[test]
+    fn test_switch_strategy_custom_thresholds() {
+        let strategy = SwitchStrategy::Custom {
+            max_root_depth: Some(2),
+            max_root_tokens: Some(1000),
+            force_recursive_for: vec![],
+            force_root_for: vec![],
+        };
+
+        assert!(!strategy.should_use_recursive(1, 500, Some(QueryType::Architecture)));
+        assert!(strategy.should_use_recursive(2, 500, Some(QueryType::Architecture)));
+        assert!(strategy.should_use_recursive(1, 1000, Some(QueryType::Architecture)));
+    }
+
+    #[test]
+    fn test_switch_strategy_custom_query_type_overrides() {
+        let strategy = SwitchStrategy::Custom {
+            max_root_depth: Some(10),
+            max_root_tokens: Some(100_000),
+            force_recursive_for: vec![QueryType::Extraction],
+            force_root_for: vec![QueryType::Architecture],
+        };
+
+        assert!(strategy.should_use_recursive(0, 0, Some(QueryType::Extraction)));
+        assert!(!strategy.should_use_recursive(99, 999_999, Some(QueryType::Architecture)));
+    }
+
+    #[test]
+    fn test_route_rlm_with_custom_switch_strategy() {
+        let router = SmartRouter::new();
+        let config = DualModelConfig::new(ModelSpec::claude_opus(), ModelSpec::claude_haiku())
+            .with_custom_strategy(
+                Some(3),
+                Some(2_000),
+                vec![QueryType::Extraction],
+                vec![QueryType::Architecture],
+            );
+
+        let context = RoutingContext::new().with_depth(0);
+        let root_decision = router.route_rlm("Design the architecture", &context, &config, 0);
+        assert_eq!(root_decision.model.id, config.root_model.id);
+
+        let recursive_decision = router.route_rlm("Extract entities", &context, &config, 0);
+        assert_eq!(recursive_decision.model.id, config.recursive_model.id);
     }
 
     #[test]

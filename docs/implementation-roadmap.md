@@ -2,6 +2,9 @@
 
 > Intelligent sequencing for maximum efficacy and performance
 
+> Historical planning artifact. Last reconciled against Beads/`STATUS.md` on 2026-02-20.
+> Live issue state is tracked in `bd` and `docs/execution-plan/STATUS.md`; tables below are archival sequencing context.
+
 ## Executive Summary
 
 This roadmap sequences work across two major initiatives:
@@ -10,9 +13,18 @@ This roadmap sequences work across two major initiatives:
 
 The plan maximizes parallelization while respecting dependencies, targeting efficient resource utilization.
 
+## Current Authoritative State (2026-02-20)
+
+- Runtime/spec closure is tracked under `loop-azq` children in Beads.
+- M7 milestone cards are complete and archived under `docs/execution-plan/evidence/2026-02-20/milestone-M7/`.
+- For current execution order and status, use:
+  - `docs/execution-plan/STATUS.md`
+  - `docs/execution-plan/TASK-REGISTRY.md`
+  - `bd status` / `bd ready`
+
 ---
 
-## 1. Current State Analysis
+## 1. Historical State Analysis (Archived)
 
 ### 1.1 rlm-core Status
 
@@ -296,35 +308,15 @@ For maximum throughput, use **3 parallel agent sessions**:
 
 ---
 
-## 6. Recommended Immediate Actions
+## 6. Recommended Immediate Actions (Historical)
 
-### Today
+The action list below was valid for the original roadmap horizon and is retained only for archival context.
 
-1. **Unblock Lean FV work**: Remove epic blocker from src-726 and src-4sz
-2. **Verify rlm-core**: Run `cargo build` and `cargo test` to ensure code compiles
-3. **Start Wave 1**: Begin work on src-8ox (Go bindings) and src-726 (Lean REPL)
+For current work intake and execution:
 
-### This Week
-
-4. **Set up Lean environment**: Install Lean 4, elan, mathlib
-5. **Clone and test Topos**: Verify topos MCP server works
-6. **Complete observability track**: src-tzy, src-dt2, src-y7b (lower priority but parallelizable)
-
-### Command to Start
-
-```bash
-# Approve epic and remove blockers
-bd update src-vce --status in_progress
-
-# Start Lean REPL task
-bd update src-726 --status in_progress --assignee claude
-
-# Start Go Bindings task
-bd update src-8ox --status in_progress --assignee claude
-
-# Start Topos Integration task
-bd update src-4sz --status in_progress --assignee claude
-```
+1. Start with `bd ready` and `bd show loop-azq`.
+2. Follow `docs/execution-plan/STATUS.md` and `docs/execution-plan/TASK-REGISTRY.md`.
+3. Treat this roadmap's legacy issue IDs (`src-*`) as historical references, not active queue items.
 
 ---
 

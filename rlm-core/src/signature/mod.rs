@@ -804,6 +804,12 @@ I hope this helps!
             #[input(desc = "A list")]
             list_field: Vec<String>,
 
+            #[input(desc = "An optional list")]
+            optional_list_field: Option<Vec<i32>>,
+
+            #[input(desc = "A fixed array")]
+            array_field: [i32; 2],
+
             #[output(desc = "Output string")]
             output: String,
         }
@@ -817,6 +823,8 @@ I hope this helps!
             assert!(matches!(fields[2].field_type, FieldType::Float));
             assert!(matches!(fields[3].field_type, FieldType::Boolean));
             assert!(matches!(fields[4].field_type, FieldType::List(_)));
+            assert!(matches!(fields[5].field_type, FieldType::List(_)));
+            assert!(matches!(fields[6].field_type, FieldType::List(_)));
         }
 
         #[derive(rlm_core_derive::Signature)]

@@ -49,8 +49,59 @@ use crate::error::{Error, Result};
 use crate::llm::LLMClient;
 use crate::signature::Signature;
 
-/// A metric function for evaluating predictions against ground truth.
-pub type MetricFn<T> = Arc<dyn Fn(&T, &T) -> f64 + Send + Sync>;
+/// Object-safe metric trait for evaluating predictions against ground truth.
+pub trait Metric<T>: Send + Sync {
+    /// Score a predicted output against gold output (0.0..=1.0 expected).
+    fn score(&self, predicted: &T, gold: &T) -> f64;
+
+    /// Human-readable metric name for debugging/reporting.
+    fn name(&self) -> &str;
+}
+
+impl<T, F> Metric<T> for F
+where
+    F: Fn(&T, &T) -> f64 + Send + Sync,
+{
+    fn score(&self, predicted: &T, gold: &T) -> f64 {
+        self(predicted, gold)
+    }
+
+    fn name(&self) -> &str {
+        std::any::type_name::<F>()
+    }
+}
+
+/// Named wrapper for closure-backed metrics.
+pub struct NamedMetric<T> {
+    name: String,
+    scorer: Arc<dyn Fn(&T, &T) -> f64 + Send + Sync>,
+}
+
+impl<T> NamedMetric<T> {
+    /// Create a named metric from a closure.
+    pub fn new(
+        name: impl Into<String>,
+        scorer: impl Fn(&T, &T) -> f64 + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            scorer: Arc::new(scorer),
+        }
+    }
+}
+
+impl<T> Metric<T> for NamedMetric<T> {
+    fn score(&self, predicted: &T, gold: &T) -> f64 {
+        (self.scorer)(predicted, gold)
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+/// Shared metric trait-object type used by optimizers.
+pub type MetricFn<T> = Arc<dyn Metric<T>>;
 
 /// Trait for optimizers that compile modules with demonstrations.
 ///
@@ -231,7 +282,7 @@ impl Optimizer for BootstrapFewShot {
                 match module.forward(example.inputs.clone()).await {
                     Ok(predicted) => {
                         // Evaluate against ground truth
-                        let score = metric(&predicted, &example.outputs);
+                        let score = metric.score(&predicted, &example.outputs);
                         stats.record_evaluation(score);
 
                         // Check if it meets threshold
@@ -963,6 +1014,38 @@ mod tests {
         // No match: both return 0.0
         let score = metrics::combine_weighted(&metrics_list, &5, &10);
         assert!((score - 0.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_metric_trait_object_with_function_pointer() {
+        let metric: MetricFn<MockOutputs> = Arc::new(metrics::exact_match);
+        let predicted = MockOutputs {
+            result: "ok".to_string(),
+        };
+        let gold = MockOutputs {
+            result: "ok".to_string(),
+        };
+
+        assert_eq!(metric.score(&predicted, &gold), 1.0);
+        assert!(!metric.name().is_empty());
+    }
+
+    #[test]
+    fn test_named_metric_trait_object() {
+        let metric: MetricFn<MockOutputs> = Arc::new(NamedMetric::new(
+            "named_exact_match",
+            |predicted: &MockOutputs, gold: &MockOutputs| metrics::exact_match(predicted, gold),
+        ));
+
+        let predicted = MockOutputs {
+            result: "left".to_string(),
+        };
+        let gold = MockOutputs {
+            result: "right".to_string(),
+        };
+
+        assert_eq!(metric.name(), "named_exact_match");
+        assert_eq!(metric.score(&predicted, &gold), 0.0);
     }
 
     #[test]

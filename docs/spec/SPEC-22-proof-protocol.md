@@ -2,7 +2,7 @@
 
 > Numina-inspired focused proof strategy for Lean REPL
 
-**Status**: Partially implemented (session/protocol enforcement and proof-engine execution/persistence are implemented; remaining Lean diagnostic-feedback integration is up-next critical scope tracked in `loop-azq`)
+**Status**: Implemented in `rlm-core` runtime (single-target protocol + deterministic Lean diagnostic-feedback execution path)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-dzv
@@ -20,7 +20,7 @@ Implement Numina-lean-agent's single-target proof protocol to prevent combinator
 | SPEC-22.01 ProofSession and target model | Implemented | `rlm-core/src/proof/session.rs` (`ProofSession`, `SorryLocation`, `select_target`) |
 | SPEC-22.02 Session status and limits | Implemented | `rlm-core/src/proof/session.rs` (`ProofSessionStatus`, `LimitReason`, status tests) |
 | SPEC-22.03 Helper lemma attribution | Implemented | `rlm-core/src/proof/session.rs` (`HelperLemma` attribution/declaration + tests) |
-| SPEC-22.04 Protocol enforcement | Implemented | `ProtocolEnforcer` target/tactic enforcement tests in `rlm-core/src/proof/session.rs` |
+| SPEC-22.04 Protocol enforcement + diagnostic feedback | Implemented | `ProtocolEnforcer::validate_tactic`, `execute_tactic_with_feedback`, `execute_tactic_with_repl` and tests in `rlm-core/src/proof/session.rs` |
 | Proof-engine execution/persistence closure (`M7-T05`) | Implemented | `rlm-core/src/proof/engine.rs` (`try_ai_assisted`, `record_success`, `create_context`) with memory-backed tests |
 
 ## Background
@@ -276,9 +276,9 @@ pub enum ProtocolError {
 ```
 
 **Acceptance Criteria**:
-- [ ] select_target() enforces single selection
-- [ ] execute_tactic() rejects non-target work
-- [ ] Uses lean_diagnostic_messages (not lake build)
+- [x] select_target() enforces single selection
+- [x] execute_tactic() rejects non-target work
+- [x] Uses lean_diagnostic_messages (not lake build)
 
 ### SPEC-22.05: Natural Language Prohibition
 
@@ -404,7 +404,7 @@ pub struct LeanDiagnostic {
 | `test_nl_long_comment` | Rejects >42 line comments | SPEC-22.05 |
 | `test_nl_consecutive` | Rejects 5+ consecutive | SPEC-22.05 |
 | `test_session_status_transitions` | Valid status changes | SPEC-22.02 |
-| `test_diagnostic_feedback` | Uses diagnostics not build | SPEC-22.04 |
+| `proof::session::tests::test_execute_tactic_with_feedback_*` | Deterministic diagnostic-feedback tactic execution path (success, deterministic failures, missing proof-state, and execution-error mapping) | SPEC-22.04 |
 
 ---
 

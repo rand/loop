@@ -32,6 +32,6 @@ mod types;
 
 pub use externalize::{
     ContextSizeTracker, ContextVariable, ContextVarType, ExternalizedContext,
-    ExternalizationConfig, VariableAccessHelper,
+    ExternalizationConfig, SizeConfig, SizeWarning, VariableAccessHelper,
 };
 pub use types::{Message, Role, SessionContext, ToolOutput};

@@ -2,7 +2,7 @@
 
 > DSPy-inspired typed signatures for rlm-core
 
-**Status**: Partially implemented (typed runtime protocol and validation parity implemented through M7-T03; remaining composition/runtime-governance refinements are up-next critical scope tracked in `loop-azq`)
+**Status**: Implemented in `rlm-core` runtime (typed runtime protocol + deterministic composition validation + derive type-inference refinements)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Tasks**: loop-d75, loop-jqo, loop-9l6, loop-bzz
@@ -21,11 +21,11 @@ Implement DSPy-style typed signatures that enable composable modules, automatic 
 | SPEC-20.02 Field specification model | Implemented | `rlm-core/src/signature/types.rs` |
 | SPEC-20.03 Runtime validation | Implemented (input pre-validation + output validation path) | `validate_fields` in `rlm-core/src/signature/validation.rs`, `Predict::forward` in `rlm-core/src/module/predict.rs` |
 | SPEC-20.04 Derive macro attributes | Implemented (including explicit enum values) | `rlm-core-derive/src/lib.rs` |
-| SPEC-20.05 Type inference | Partially implemented | Primitive/List/Option inference in `rlm-core-derive/src/lib.rs`; explicit enum via `#[field(enum_values = \"...\")]` |
+| SPEC-20.05 Type inference | Implemented | Primitive/List/Option plus reference/slice/array inference in `rlm-core-derive/src/lib.rs`; explicit enum via `#[field(enum_values = \"...\")]` |
 | SPEC-20.07..20.10 SUBMIT + REPL protocol | Implemented | `rlm-core/python/rlm_repl/sandbox.py`, `rlm-core/python/rlm_repl/main.py`, `rlm-core/src/repl.rs` |
 | SPEC-20.11 Module trait | Implemented | `rlm-core/src/module/mod.rs` |
 | SPEC-20.12 Predict wrapper | Implemented (with deterministic pre-exec input validation) | `rlm-core/src/module/predict.rs` |
-| SPEC-20.13 Composition validation | Partially implemented | `rlm-core/src/module/compose.rs` |
+| SPEC-20.13 Composition validation | Implemented | Deterministic direct-field compatibility checks (`validate_direct_field_mapping`) + validation-backed decode path in `rlm-core/src/module/compose.rs` |
 
 ## Requirements
 
@@ -177,14 +177,16 @@ Automatic FieldType inference from Rust types.
 | `bool` | `FieldType::Boolean` |
 | `Vec<T>` | `FieldType::List(T)` |
 | `Option<T>` | Same as T, but `required = false` |
+| `&T` | Same as `T` |
+| `[T]`, `[T; N]` | `FieldType::List(T)` |
 | `String` + `#[field(enum_values = "...")]` | `FieldType::Enum(values)` |
 | Rust enum type without `enum_values` annotation | `FieldType::Custom(type_name)` (current behavior) |
 | Other | `FieldType::Custom(type_name)` |
 
 **Acceptance Criteria**:
-- [ ] All primitive types inferred correctly
-- [ ] Generic types (Vec, Option) handled
-- [ ] Custom types fall back to Custom variant
+- [x] All primitive types inferred correctly
+- [x] Generic types (Vec, Option, references/slices/arrays) handled
+- [x] Custom types fall back to Custom variant
 
 ### SPEC-20.06: Compile-Time Validation
 
@@ -454,9 +456,9 @@ where
 - Propagate LM to all sub-modules
 
 **Acceptance Criteria**:
-- [ ] Type-safe composition at compile time
-- [ ] Runtime validation for dynamic cases
-- [ ] LM propagation through composition
+- [x] Type-safe composition at compile time
+- [x] Runtime validation for dynamic cases
+- [x] LM propagation through composition
 
 ---
 
@@ -482,12 +484,12 @@ where
 
 | Test | Description | Spec |
 |------|-------------|------|
-| `signature::tests::derive_tests::*` | Derive macro and signature behavior | SPEC-20.04, SPEC-20.05 |
+| `signature::tests::derive_tests::*` | Derive macro and signature behavior (including optional-list/array type-inference coverage) | SPEC-20.04, SPEC-20.05 |
 | `signature::validation::tests::*` | Validation behavior and error paths | SPEC-20.03, SPEC-20.09 |
 | `signature::submit::tests::*` | SubmitResult/SubmitError serialization and semantics | SPEC-20.08, SPEC-20.09 |
 | `tests/test_repl.py::TestReplServer::test_submit_*` | Python SUBMIT scenarios (success + validation failures) | SPEC-20.07, SPEC-20.09, SPEC-20.10 |
 | `repl::tests::test_submit_result_roundtrip_*` (ignored) | Rust/Python end-to-end submit_result roundtrip scenarios | SPEC-20.08, SPEC-20.10 |
-| `module::compose::tests::*` | Module composition/name generation scaffolding | SPEC-20.13 |
+| `module::compose::tests::*` | Module composition runtime mapping validation + deterministic error behavior | SPEC-20.13 |
 | `module::predict::tests::*` | Predict wrapper behavior and prompt/input formatting | SPEC-20.12 |
 
 ---

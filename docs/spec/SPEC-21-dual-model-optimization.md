@@ -2,7 +2,7 @@
 
 > Cost-optimized model selection for RLM orchestration
 
-**Status**: Partially implemented (router and orchestrator-boundary dual-model routing are implemented; remaining dual-model strategy refinements are up-next critical scope tracked in `loop-azq`)
+**Status**: Implemented in `rlm-core` runtime (router + orchestrator-boundary dual-model routing, including serializable custom switch strategy support)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-z6x
@@ -17,7 +17,7 @@ Implement explicit dual-model configuration for RLM orchestration, enabling 30-5
 
 | Section | Status | Runtime Evidence |
 |---|---|---|
-| SPEC-21.01 DualModelConfig | Implemented (without custom function strategy) | `rlm-core/src/llm/router.rs` |
+| SPEC-21.01 DualModelConfig | Implemented (including serializable custom strategy variant) | `DualModelConfig`, `SwitchStrategy::Custom`, `DualModelConfig::with_custom_strategy` in `rlm-core/src/llm/router.rs` |
 | SPEC-21.02 SmartRouter integration | Implemented | `SmartRouter::route_rlm`, `route_rlm_for_tier`, `route_with_config` in `rlm-core/src/llm/router.rs` |
 | SPEC-21.03 Tiered cost tracking | Implemented | `CostTracker::record_tiered` + `TierBreakdown` in `rlm-core/src/llm/types.rs` |
 | SPEC-21.04 Default configurations | Implemented | `DualModelConfig::{aggressive,balanced,quality_first,budget,token_limited}` |
@@ -75,9 +75,9 @@ pub enum SwitchStrategy {
 ```
 
 **Acceptance Criteria**:
-- [ ] DualModelConfig serializable to/from JSON
-- [ ] SwitchStrategy covers common use cases
-- [ ] Custom strategy allows user flexibility (up-next critical scope)
+- [x] DualModelConfig serializable to/from JSON
+- [x] SwitchStrategy covers common use cases
+- [x] Custom strategy allows user flexibility
 
 ### SPEC-21.02: SmartRouter Integration
 
@@ -288,7 +288,9 @@ impl ExecutionMode {
 | `llm::router::tests::test_switch_strategy_depth` | Switch at correct depth | SPEC-21.01 |
 | `llm::router::tests::test_switch_strategy_token_budget` | Switch after token budget | SPEC-21.01 |
 | `llm::router::tests::test_switch_strategy_hybrid` | Hybrid strategy | SPEC-21.01 |
+| `llm::router::tests::test_switch_strategy_custom_thresholds` + `test_switch_strategy_custom_query_type_overrides` | Custom strategy threshold and query-type override behavior | SPEC-21.01 |
 | `llm::router::tests::test_route_rlm` + `test_route_rlm_for_extraction_tier` | SmartRouter integration | SPEC-21.02 |
+| `llm::router::tests::test_route_rlm_with_custom_switch_strategy` | SmartRouter dual-model routing with custom strategy | SPEC-21.02 |
 | `llm::router::tests::test_route_rlm_tiered_cost_accounting` + `llm::types::tests::test_cost_tracker_record_tiered_includes_extraction` | Tier cost tracking | SPEC-21.03 |
 | `orchestrator::tests::test_orchestration_routing_runtime_tracks_root_recursive_extraction` | Orchestrator boundary routing + accounting integration | SPEC-21.02, SPEC-21.03 |
 | `llm::router::tests::test_dual_model_config_aggressive` | Aggressive config | SPEC-21.04 |

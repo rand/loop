@@ -4,6 +4,8 @@ This package turns the evaluation findings into an execution-ready program for `
 
 Safe mode is the default operating profile on this machine due prior memory exhaustion.
 
+Last reconciled: 2026-02-20 (live state source: `docs/execution-plan/STATUS.md` + Beads).
+
 ## Execution Principles
 
 - Contract-first: lock cross-repo behavior before changing implementation.
@@ -13,14 +15,16 @@ Safe mode is the default operating profile on this machine due prior memory exha
 - Small-batch: execute one task card at a time, not one milestone at a time.
 - Reproducibility: every gate has a deterministic command and pass criteria.
 
-## Current Reality (2026-02-19 Post-M6 + M7 Planning)
+## Current Reality (Historical Snapshot: 2026-02-19 Post-M6 + M7 Planning)
+
+Use `docs/execution-plan/STATUS.md` for live status before acting on any item below.
 
 - M0-M6 remediation/governance milestones are complete with evidence.
 - SPEC-20..27 still contain implementation gaps or partial integrations requiring runtime closure.
 - Open gap IDs from traceability artifact: `G-001` (`LLM_BATCH` end-to-end runtime integration) and `G-002` (orchestrator fallback wiring).
 - `loop-agent` and `io-rflx` remain active integration targets; compatibility claims must follow D-017 clean-clone committed-tuple policy.
 - Safe mode remains mandatory due prior OOM history; heavy command concurrency stays at 1.
-- M7 is the active completion tranche, with task-level gate definitions in `VALIDATION-MATRIX.md`.
+- M7 is complete; post-M7 critical refinements are tracked in `loop-azq` and child tasks.
 
 ## File Map
 

@@ -394,6 +394,19 @@ fn generate_field_spec(field: &ParsedField) -> TokenStream2 {
 /// Infer FieldType from a Rust type.
 fn infer_field_type(ty: &Type) -> TokenStream2 {
     match ty {
+        Type::Reference(type_ref) => infer_field_type(&type_ref.elem),
+        Type::Slice(type_slice) => {
+            let inner = infer_field_type(&type_slice.elem);
+            quote! {
+                ::rlm_core::signature::FieldType::List(Box::new(#inner))
+            }
+        }
+        Type::Array(type_array) => {
+            let inner = infer_field_type(&type_array.elem);
+            quote! {
+                ::rlm_core::signature::FieldType::List(Box::new(#inner))
+            }
+        }
         Type::Path(type_path) => {
             let path = &type_path.path;
 

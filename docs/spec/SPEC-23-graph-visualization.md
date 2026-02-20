@@ -2,7 +2,7 @@
 
 > Interactive debugging visualization for reasoning traces
 
-**Status**: Partially implemented (core exports + TUI/MCP integration endpoints are implemented; remaining CLI/advanced HTML controls are up-next critical scope tracked in `loop-azq`)
+**Status**: Implemented in `rlm-core` runtime (graph exports + advanced HTML controls + CLI/TUI/MCP integration surfaces)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-wve
@@ -19,8 +19,8 @@ Add interactive graph visualization for ReasoningTrace to enable debugging of co
 |---|---|---|
 | SPEC-23.01 Graph export formats | Implemented (NetworkX JSON, DOT, HTML, enhanced Mermaid) | `rlm-core/src/reasoning/visualize.rs` |
 | SPEC-23.02 NetworkX schema | Implemented (runtime node-link schema) | `NetworkXGraph` types and export tests in `rlm-core/src/reasoning/visualize.rs` |
-| SPEC-23.03 HTML visualization | Partially implemented | `ReasoningTrace::to_html` + `test_html_export` in `rlm-core/src/reasoning/visualize.rs` |
-| SPEC-23.04 Integration points | Partially implemented (TUI + MCP, CLI queued as up-next critical) | `TUIAdapter::render_trace_panel` and `trace_visualize` in `rlm-core/src/adapters/` |
+| SPEC-23.03 HTML visualization | Implemented | Advanced controls (fit-to-view, details panel, PNG/SVG/JSON export, theme + metadata badges) in `ReasoningTrace::to_html` (`rlm-core/src/reasoning/visualize.rs`) |
+| SPEC-23.04 Integration points | Implemented | CLI `trace_visualize` command surface in `rlm-core/src/adapters/cli.rs`, plus TUI and MCP endpoints in `rlm-core/src/adapters/` |
 
 ## Requirements
 
@@ -200,10 +200,10 @@ Interactive HTML visualization requirements.
 - JSON data download
 
 **Acceptance Criteria**:
-- [ ] All canvas features work
-- [ ] Node details panel complete
-- [ ] Export functions work
-- [ ] Responsive design (mobile-friendly)
+- [x] All canvas features work
+- [x] Node details panel complete
+- [x] Export functions work
+- [x] Responsive design (mobile-friendly)
 
 ### SPEC-23.04: Integration Points
 
@@ -243,9 +243,9 @@ impl ClaudeCodeAdapter {
 ```
 
 **Acceptance Criteria**:
-- [ ] CLI command works
-- [ ] TUI panel renders
-- [ ] MCP resource accessible
+- [x] CLI command works
+- [x] TUI panel renders
+- [x] MCP resource accessible
 
 ---
 
@@ -282,6 +282,7 @@ The HTML visualization should use D3.js for graph rendering:
 |-----------|----------|
 | Graph export | `rlm-core/src/reasoning/visualize.rs` |
 | Mermaid base export | `rlm-core/src/reasoning/trace.rs` |
+| CLI integration surface | `rlm-core/src/adapters/cli.rs` |
 | TUI integration surface | `rlm-core/src/adapters/tui/adapter.rs` |
 | Claude Code MCP integration surface | `rlm-core/src/adapters/claude_code/mcp.rs` |
 
@@ -297,6 +298,9 @@ The HTML visualization should use D3.js for graph rendering:
 | `test_node_colors` | Correct color by type | SPEC-23.03 |
 | `test_mermaid_enhanced_export` | Enhanced Mermaid includes metadata and valid graph body | SPEC-23.01 |
 | `test_trace_visualize_mermaid_export` | MCP visualization endpoint exports Mermaid artifact | SPEC-23.04 |
+| `test_trace_visualize_html_supports_advanced_controls` | MCP visualization endpoint exposes advanced HTML control options | SPEC-23.03, SPEC-23.04 |
+| `adapters::cli::tests::test_trace_visualize_writes_html_with_advanced_controls` | CLI visualization surface writes HTML artifacts with advanced controls | SPEC-23.04 |
+| `adapters::cli::tests::test_trace_visualize_from_json_mermaid` | CLI visualization surface supports JSON payload import and deterministic export | SPEC-23.04 |
 | `test_render_trace_panel_contains_mermaid` | TUI integration surface renders deterministic Mermaid panel payload | SPEC-23.04 |
 
 ---

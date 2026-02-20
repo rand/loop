@@ -56,7 +56,8 @@ pub mod trajectory;
 pub use complexity::{ActivationDecision, PatternClassifier, TaskComplexitySignals};
 pub use context::{
     ContextSizeTracker, ContextVarType, ContextVariable, ExternalizedContext,
-    ExternalizationConfig, Message, Role, SessionContext, ToolOutput, VariableAccessHelper,
+    ExternalizationConfig, Message, Role, SessionContext, SizeConfig, SizeWarning, ToolOutput,
+    VariableAccessHelper,
 };
 pub use error::{Error, Result};
 pub use llm::{
@@ -68,7 +69,8 @@ pub use llm::{
 pub use memory::{Node, NodeId, NodeType, SqliteMemoryStore, Tier};
 pub use module::{
     chain_direct, BootstrapFewShot, Chain, Demonstration, Example, Module, ModuleConfig,
-    OptimizationStats, OptimizedModule, Optimizer, ParallelVec, Predict, PredictConfig, Predictor,
+    Metric, NamedMetric, OptimizationStats, OptimizedModule, Optimizer, ParallelVec, Predict,
+    PredictConfig, Predictor,
 };
 pub use orchestrator::{FallbackLoop, FallbackLoopStep, OrchestrationRoutingRuntime, Orchestrator};
 pub use repl::{ExecuteResult, ReplConfig, ReplHandle, ReplPool};
@@ -87,7 +89,7 @@ pub use sync::{
 pub use trajectory::{TrajectoryEvent, TrajectoryEventType};
 pub use reasoning::{
     DecisionNode, DecisionNodeId, DecisionNodeType, DecisionPath, DecisionPoint, DecisionTree,
-    DotConfig, HtmlConfig, NetworkXGraph, NetworkXGraphAttrs, NetworkXLink, NetworkXNode,
+    DotConfig, HtmlConfig, HtmlTheme, NetworkXGraph, NetworkXGraphAttrs, NetworkXLink, NetworkXNode,
     OptionStatus, ReasoningTrace, ReasoningTraceStore, TraceAnalyzer, TraceComparison,
     TraceEdge, TraceEdgeLabel, TraceId, TraceQuery, TraceStats, TraceStoreStats,
 };
@@ -104,9 +106,11 @@ pub use epistemic::{
     VerificationResult, VerificationStats, VerificationVerdict,
 };
 pub use adapters::{
-    AdapterConfig, AdapterStatus, ClaudeCodeAdapter, CompactData, HookContext, HookHandler,
-    HookResult, HookTrigger, McpTool, McpToolRegistry, PromptEnhancement, RlmRequest, RlmResponse,
-    RlmSkill, AdapterSessionContext,
+    suggested_output_path, trace_visualize, trace_visualize_from_json, AdapterConfig,
+    AdapterSessionContext, AdapterStatus, ClaudeCodeAdapter, CompactData, HookContext,
+    HookHandler, HookResult, HookTrigger, HtmlPreset, McpTool, McpToolRegistry,
+    PromptEnhancement, RlmRequest, RlmResponse, RlmSkill, TraceVisualizeFormat,
+    TraceVisualizeOptions, TraceVisualizeResult,
 };
 pub use signature::{
     apply_defaults, validate_fields, validate_value, ExecutionLimits, ExecutionResult,

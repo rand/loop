@@ -29,6 +29,8 @@
 //! session.add_helper(HelperLemma::new("nat_zero_add", "∀ n, 0 + n = n"));
 //! ```
 
+use crate::error::Error;
+use crate::lean::types::{LeanMessage, LeanResponse, MessageSeverity};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::Duration;
@@ -532,6 +534,10 @@ pub enum ProtocolError {
     TooManyComments { count: u32, max_count: u32 },
     /// Session is not active.
     SessionNotActive { status: ProofSessionStatus },
+    /// No proof state ID was available for diagnostic execution.
+    MissingProofState { location: String },
+    /// Lean diagnostic execution failed before response parsing.
+    DiagnosticExecutionFailed { message: String },
 }
 
 impl std::fmt::Display for ProtocolError {
@@ -561,6 +567,12 @@ impl std::fmt::Display for ProtocolError {
             }
             Self::SessionNotActive { status } => {
                 write!(f, "Session is not active (status: {})", status)
+            }
+            Self::MissingProofState { location } => {
+                write!(f, "No proof state available for target {}", location)
+            }
+            Self::DiagnosticExecutionFailed { message } => {
+                write!(f, "Lean diagnostic execution failed: {}", message)
             }
         }
     }
@@ -713,6 +725,68 @@ impl ProtocolEnforcer {
 
         Ok(())
     }
+
+    /// Execute a validated tactic through Lean diagnostic feedback.
+    ///
+    /// This runs target/NL protocol validation, executes the tactic against a
+    /// proof state, then records a deterministic `TacticAttempt` in the session.
+    pub fn execute_tactic_with_feedback<F>(
+        &self,
+        session: &mut ProofSession,
+        tactic: &str,
+        target_location: &SorryLocation,
+        mut execute: F,
+    ) -> Result<TacticAttempt, ProtocolError>
+    where
+        F: FnMut(&str, u64) -> std::result::Result<LeanResponse, Error>,
+    {
+        self.validate_tactic(session, tactic, target_location)?;
+
+        let proof_state = target_location
+            .proof_state_id
+            .or(session.target.proof_state_id)
+            .ok_or_else(|| ProtocolError::MissingProofState {
+                location: target_location.format_location(),
+            })?;
+
+        let start = std::time::Instant::now();
+        let response = execute(tactic, proof_state).map_err(|error| {
+            ProtocolError::DiagnosticExecutionFailed {
+                message: error.to_string(),
+            }
+        })?;
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+
+        let outcome = outcome_from_diagnostics(&response);
+        let mut attempt =
+            TacticAttempt::new(tactic, outcome.clone(), elapsed_ms).with_pre_state(proof_state);
+
+        if let Some(post_state) = response.proof_state {
+            session.target.proof_state_id = Some(post_state);
+            attempt = attempt.with_post_state(post_state);
+        }
+
+        session.record_tactic(attempt.clone());
+        if outcome.is_complete() {
+            // Completion takes precedence over tactic-limit side-effects.
+            session.mark_target_complete();
+        }
+
+        Ok(attempt)
+    }
+
+    /// Execute a tactic directly via `LeanRepl` using diagnostic feedback.
+    pub fn execute_tactic_with_repl(
+        &self,
+        session: &mut ProofSession,
+        repl: &mut crate::lean::repl::LeanRepl,
+        tactic: &str,
+        target_location: &SorryLocation,
+    ) -> Result<TacticAttempt, ProtocolError> {
+        self.execute_tactic_with_feedback(session, tactic, target_location, |candidate, state_id| {
+            repl.apply_tactic(candidate, state_id)
+        })
+    }
 }
 
 impl Default for ProtocolEnforcer {
@@ -752,9 +826,59 @@ pub fn select_target(sorries: &[SorryLocation]) -> Option<&SorryLocation> {
     candidates.first().copied()
 }
 
+fn outcome_from_diagnostics(response: &LeanResponse) -> TacticOutcome {
+    if response.has_errors() {
+        return TacticOutcome::Failed {
+            error: deterministic_error_message(response),
+        };
+    }
+
+    let remaining_goals = response
+        .goals
+        .as_ref()
+        .map(|goals| goals.len() as u32)
+        .unwrap_or(response.sorries.len() as u32);
+
+    if remaining_goals == 0 {
+        TacticOutcome::Complete
+    } else {
+        TacticOutcome::Progress { remaining_goals }
+    }
+}
+
+fn deterministic_error_message(response: &LeanResponse) -> String {
+    let mut rendered: Vec<String> = response
+        .messages
+        .iter()
+        .filter(|message| message.severity == MessageSeverity::Error)
+        .map(render_message)
+        .collect();
+    rendered.sort();
+
+    if rendered.is_empty() {
+        "lean diagnostic reported an unknown error".to_string()
+    } else {
+        rendered.join(" | ")
+    }
+}
+
+fn render_message(message: &LeanMessage) -> String {
+    let location = if let (Some(start), Some(end)) = (&message.pos, &message.end_pos) {
+        format!("{}:{}-{}:{}: ", start.line, start.column, end.line, end.column)
+    } else if let Some(start) = &message.pos {
+        format!("{}:{}: ", start.line, start.column)
+    } else {
+        String::new()
+    };
+
+    format!("{}{}", location, message.data.trim())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::Error;
+    use crate::lean::types::{LeanMessage, LeanResponse, MessageSeverity, Position};
 
     #[test]
     fn test_sorry_location() {
@@ -868,6 +992,107 @@ mod tests {
             .join("\n");
         let result = enforcer.check_nl_prohibition(&many_comments);
         assert!(matches!(result, Err(ProtocolError::TooManyComments { .. })));
+    }
+
+    #[test]
+    fn test_execute_tactic_with_feedback_marks_target_complete() {
+        let enforcer = ProtocolEnforcer::new();
+        let target = SorryLocation::new("Foo.lean", 10, 0).with_proof_state(41);
+        let mut session = ProofSession::new(target.clone());
+
+        let attempt = enforcer
+            .execute_tactic_with_feedback(&mut session, "simp", &target, |_, _| {
+                Ok(LeanResponse {
+                    env: Some(2),
+                    messages: vec![],
+                    sorries: vec![],
+                    goals: Some(vec![]),
+                    proof_state: Some(42),
+                })
+            })
+            .expect("diagnostic execution should succeed");
+
+        assert!(matches!(attempt.outcome, TacticOutcome::Complete));
+        assert_eq!(attempt.pre_state_id, Some(41));
+        assert_eq!(attempt.post_state_id, Some(42));
+        assert_eq!(session.target.proof_state_id, Some(42));
+        assert!(matches!(session.status, ProofSessionStatus::TargetComplete));
+        assert_eq!(session.tactic_history.len(), 1);
+    }
+
+    #[test]
+    fn test_execute_tactic_with_feedback_produces_deterministic_errors() {
+        let enforcer = ProtocolEnforcer::new();
+        let target = SorryLocation::new("Foo.lean", 10, 0).with_proof_state(11);
+        let mut session = ProofSession::new(target.clone());
+
+        let attempt = enforcer
+            .execute_tactic_with_feedback(&mut session, "aesop", &target, |_, _| {
+                Ok(LeanResponse {
+                    env: Some(2),
+                    messages: vec![
+                        LeanMessage {
+                            severity: MessageSeverity::Error,
+                            pos: Some(Position { line: 9, column: 1 }),
+                            end_pos: None,
+                            data: "second failure".to_string(),
+                        },
+                        LeanMessage {
+                            severity: MessageSeverity::Error,
+                            pos: Some(Position { line: 3, column: 5 }),
+                            end_pos: None,
+                            data: "first failure".to_string(),
+                        },
+                    ],
+                    sorries: vec![],
+                    goals: Some(vec!["goal".to_string()]),
+                    proof_state: Some(11),
+                })
+            })
+            .expect("execution should return a failed tactic attempt");
+
+        let error = match attempt.outcome {
+            TacticOutcome::Failed { error } => error,
+            outcome => panic!("expected failed outcome, got {:?}", outcome),
+        };
+        assert_eq!(error, "3:5: first failure | 9:1: second failure");
+        assert!(session.status.is_active());
+        assert_eq!(session.tactic_history.len(), 1);
+    }
+
+    #[test]
+    fn test_execute_tactic_with_feedback_requires_proof_state() {
+        let enforcer = ProtocolEnforcer::new();
+        let target = SorryLocation::new("Foo.lean", 10, 0);
+        let mut session = ProofSession::new(target.clone());
+
+        let err = enforcer
+            .execute_tactic_with_feedback(&mut session, "simp", &target, |_, _| {
+                panic!("executor should not run without proof state")
+            })
+            .expect_err("missing proof state should fail deterministically");
+
+        assert!(matches!(err, ProtocolError::MissingProofState { .. }));
+        assert_eq!(session.tactic_history.len(), 0);
+    }
+
+    #[test]
+    fn test_execute_tactic_with_feedback_maps_execution_error() {
+        let enforcer = ProtocolEnforcer::new();
+        let target = SorryLocation::new("Foo.lean", 10, 0).with_proof_state(7);
+        let mut session = ProofSession::new(target.clone());
+
+        let err = enforcer
+            .execute_tactic_with_feedback(&mut session, "simp", &target, |_, _| {
+                Err(Error::repl_execution("simulated diagnostic failure"))
+            })
+            .expect_err("executor failures should map to protocol error");
+
+        assert!(matches!(
+            err,
+            ProtocolError::DiagnosticExecutionFailed { .. }
+        ));
+        assert_eq!(session.tactic_history.len(), 0);
     }
 
     #[test]

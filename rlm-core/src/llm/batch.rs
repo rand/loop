@@ -23,18 +23,123 @@
 //! // Results are in original order, with errors for failed queries
 //! ```
 
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Semaphore;
+use tokio::sync::{Mutex, Semaphore};
+use tokio::time::sleep;
 
-use super::types::{ChatMessage, CompletionRequest};
+use super::types::{ChatMessage, CompletionRequest, Provider};
 use super::LLMClient;
-use crate::error::Result;
+use crate::error::{Error, Result};
 
 /// Default maximum parallel queries.
 pub const DEFAULT_MAX_PARALLEL: usize = 5;
+/// Default rate-limit window for provider throttling.
+pub const DEFAULT_RATE_LIMIT_WINDOW_MS: u64 = 60_000;
+
+fn default_provider_rate_limits() -> HashMap<Provider, u32> {
+    #[allow(unused_mut)]
+    let mut limits = HashMap::from([
+        (Provider::Anthropic, 60),
+        (Provider::OpenAI, 60),
+        (Provider::OpenRouter, 100),
+    ]);
+    #[cfg(feature = "gemini")]
+    limits.insert(Provider::Google, 60);
+    limits
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ProviderWindowState {
+    window_start: Instant,
+    used: u32,
+}
+
+#[derive(Debug)]
+struct ProviderRateLimiter {
+    limits: HashMap<Provider, u32>,
+    window: Duration,
+    state: Mutex<HashMap<Provider, ProviderWindowState>>,
+}
+
+impl ProviderRateLimiter {
+    fn new(limits: HashMap<Provider, u32>, window: Duration) -> Self {
+        Self {
+            limits,
+            window,
+            state: Mutex::new(HashMap::new()),
+        }
+    }
+
+    async fn acquire(&self, provider: Provider) {
+        let limit = match self.limits.get(&provider).copied() {
+            Some(limit) if limit > 0 => limit,
+            _ => return,
+        };
+
+        loop {
+            let wait = {
+                let mut state = self.state.lock().await;
+                let entry = state.entry(provider).or_insert(ProviderWindowState {
+                    window_start: Instant::now(),
+                    used: 0,
+                });
+
+                let elapsed = entry.window_start.elapsed();
+                if elapsed >= self.window {
+                    entry.window_start = Instant::now();
+                    entry.used = 0;
+                }
+
+                if entry.used < limit {
+                    entry.used += 1;
+                    None
+                } else {
+                    Some(self.window.saturating_sub(elapsed))
+                }
+            };
+
+            if let Some(wait) = wait {
+                sleep(wait).await;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+/// Retry configuration for batched requests.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetryConfig {
+    /// Maximum retries for a single query.
+    pub max_retries: u32,
+    /// Base delay used for exponential backoff.
+    pub base_delay_ms: u64,
+    /// Backoff multiplier applied per retry attempt.
+    pub backoff_factor: f64,
+}
+
+impl RetryConfig {
+    fn delay_for_attempt(&self, attempt: u32) -> Duration {
+        let factor = self.backoff_factor.max(1.0).powi(attempt as i32);
+        let millis = (self.base_delay_ms as f64 * factor).round().max(0.0) as u64;
+        Duration::from_millis(millis)
+    }
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        Self {
+            max_retries: 2,
+            base_delay_ms: 200,
+            backoff_factor: 2.0,
+        }
+    }
+}
 
 /// A batched LLM query request (SPEC-26.01, SPEC-26.02).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -257,6 +362,10 @@ impl BatchedQueryResults {
 pub struct BatchExecutor<C: LLMClient> {
     client: Arc<C>,
     max_parallel: usize,
+    retry_config: RetryConfig,
+    retry_failures: bool,
+    provider_rate_limits: HashMap<Provider, u32>,
+    rate_limit_window: Duration,
 }
 
 impl<C: LLMClient + 'static> BatchExecutor<C> {
@@ -265,6 +374,10 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
         Self {
             client: Arc::new(client),
             max_parallel: DEFAULT_MAX_PARALLEL,
+            retry_config: RetryConfig::default(),
+            retry_failures: true,
+            provider_rate_limits: default_provider_rate_limits(),
+            rate_limit_window: Duration::from_millis(DEFAULT_RATE_LIMIT_WINDOW_MS),
         }
     }
 
@@ -273,6 +386,10 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
         Self {
             client,
             max_parallel: DEFAULT_MAX_PARALLEL,
+            retry_config: RetryConfig::default(),
+            retry_failures: true,
+            provider_rate_limits: default_provider_rate_limits(),
+            rate_limit_window: Duration::from_millis(DEFAULT_RATE_LIMIT_WINDOW_MS),
         }
     }
 
@@ -280,6 +397,87 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
     pub fn with_max_parallel(mut self, max: usize) -> Self {
         self.max_parallel = max.max(1);
         self
+    }
+
+    /// Set retry policy for retryable failures.
+    pub fn with_retry_config(mut self, retry_config: RetryConfig) -> Self {
+        self.retry_config = retry_config;
+        self
+    }
+
+    /// Enable or disable retry behavior.
+    pub fn with_retry_failures(mut self, retry_failures: bool) -> Self {
+        self.retry_failures = retry_failures;
+        self
+    }
+
+    /// Override the configured rate limit for one provider.
+    pub fn with_provider_rate_limit(mut self, provider: Provider, requests_per_minute: u32) -> Self {
+        self.provider_rate_limits.insert(provider, requests_per_minute);
+        self
+    }
+
+    /// Set the rate-limit window duration.
+    ///
+    /// The default is one minute. This is primarily useful for tests.
+    pub fn with_rate_limit_window(mut self, window: Duration) -> Self {
+        self.rate_limit_window = window;
+        self
+    }
+
+    /// Apply a complete batch configuration.
+    pub fn with_config(mut self, config: BatchConfig) -> Self {
+        self.max_parallel = config.max_parallel.max(1);
+        self.retry_failures = config.retry_failures;
+        self.retry_config = config.retry_config;
+        self.provider_rate_limits = config.provider_rate_limits;
+        self.rate_limit_window = Duration::from_millis(config.rate_limit_window_ms.max(1));
+        self
+    }
+
+    fn is_retryable_error(error: &Error) -> bool {
+        match error {
+            Error::Timeout { .. } => true,
+            Error::LLM(message) => Self::is_retryable_message(message),
+            Error::LlmApi { message, .. } => Self::is_retryable_message(message),
+            _ => false,
+        }
+    }
+
+    fn is_retryable_message(message: &str) -> bool {
+        let lower = message.to_ascii_lowercase();
+        lower.contains("429")
+            || lower.contains("rate limit")
+            || lower.contains("rate_limit")
+            || lower.contains("too many requests")
+            || lower.contains("temporarily unavailable")
+            || lower.contains("timeout")
+    }
+
+    async fn complete_with_retry(
+        client: Arc<C>,
+        request: CompletionRequest,
+        retry_config: RetryConfig,
+        retry_failures: bool,
+    ) -> Result<super::types::CompletionResponse> {
+        let mut attempt = 0;
+        loop {
+            match client.complete(request.clone()).await {
+                Ok(response) => return Ok(response),
+                Err(error) => {
+                    let should_retry = retry_failures
+                        && attempt < retry_config.max_retries
+                        && Self::is_retryable_error(&error);
+                    if !should_retry {
+                        return Err(error);
+                    }
+
+                    let delay = retry_config.delay_for_attempt(attempt);
+                    sleep(delay).await;
+                    attempt += 1;
+                }
+            }
+        }
     }
 
     /// Execute a batched query with concurrency control (SPEC-26.03, SPEC-26.04).
@@ -293,6 +491,11 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
         // Use the smaller of batch config and executor config for max parallel
         let max_parallel = batch.max_parallel.min(self.max_parallel);
         let semaphore = Arc::new(Semaphore::new(max_parallel));
+        let provider = self.client.provider();
+        let rate_limiter = Arc::new(ProviderRateLimiter::new(
+            self.provider_rate_limits.clone(),
+            self.rate_limit_window,
+        ));
 
         // Create tasks for each prompt
         let tasks: Vec<_> = batch
@@ -310,6 +513,10 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
                 let model = batch.model.clone();
                 let temperature = batch.temperature;
                 let max_tokens = batch.max_tokens;
+                let provider = provider;
+                let rate_limiter = Arc::clone(&rate_limiter);
+                let retry_config = self.retry_config.clone();
+                let retry_failures = self.retry_failures;
 
                 async move {
                     // Acquire semaphore permit
@@ -339,8 +546,18 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
                     // Add the prompt
                     request = request.with_message(ChatMessage::user(&prompt));
 
-                    // Execute query
-                    match client.complete(request).await {
+                    // Respect provider-specific rate-limit policy before calling the provider.
+                    rate_limiter.acquire(provider).await;
+
+                    // Execute query with bounded exponential-backoff retries.
+                    match Self::complete_with_retry(
+                        Arc::clone(&client),
+                        request,
+                        retry_config,
+                        retry_failures,
+                    )
+                    .await
+                    {
                         Ok(response) => {
                             let text = response.content.clone();
                             let tokens = Some(response.usage.total() as u32);
@@ -366,25 +583,42 @@ impl<C: LLMClient + 'static> BatchExecutor<C> {
 pub struct BatchConfig {
     /// Maximum parallel queries (default: 5).
     pub max_parallel: usize,
-    /// Whether to retry failed queries once.
+    /// Whether retry behavior is enabled for retryable provider failures.
     pub retry_failures: bool,
     /// Timeout per query in milliseconds.
     pub query_timeout_ms: Option<u64>,
+    /// Provider-specific requests-per-minute budget.
+    pub provider_rate_limits: HashMap<Provider, u32>,
+    /// Exponential backoff retry policy.
+    pub retry_config: RetryConfig,
+    /// Window duration used by provider rate limiting.
+    pub rate_limit_window_ms: u64,
 }
 
 impl Default for BatchConfig {
     fn default() -> Self {
         Self {
             max_parallel: DEFAULT_MAX_PARALLEL,
-            retry_failures: false,
+            retry_failures: true,
             query_timeout_ms: None,
+            provider_rate_limits: default_provider_rate_limits(),
+            retry_config: RetryConfig::default(),
+            rate_limit_window_ms: DEFAULT_RATE_LIMIT_WINDOW_MS,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::Instant;
+
+    use async_trait::async_trait;
+
     use super::*;
+    use crate::llm::{
+        CompletionResponse, EmbeddingRequest, EmbeddingResponse, ModelSpec, TokenUsage,
+    };
 
     #[test]
     fn test_batched_query_creation() {
@@ -510,5 +744,139 @@ mod tests {
             .with_max_parallel(0); // Should be clamped to 1
 
         assert_eq!(batch.max_parallel, 1);
+    }
+
+    struct FlakyBatchClient {
+        provider: Provider,
+        fail_until: usize,
+        calls: Arc<AtomicUsize>,
+        call_times: Arc<Mutex<Vec<Instant>>>,
+    }
+
+    impl FlakyBatchClient {
+        fn new(provider: Provider, fail_until: usize) -> Self {
+            Self {
+                provider,
+                fail_until,
+                calls: Arc::new(AtomicUsize::new(0)),
+                call_times: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl LLMClient for FlakyBatchClient {
+        async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {
+            let mut call_times = self.call_times.lock().await;
+            call_times.push(Instant::now());
+            drop(call_times);
+
+            let call = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
+            if call <= self.fail_until {
+                return Err(Error::LLM("429 rate limit exceeded".to_string()));
+            }
+
+            Ok(CompletionResponse {
+                id: format!("mock-{call}"),
+                model: request.model.unwrap_or_else(|| "mock-model".to_string()),
+                content: "ok".to_string(),
+                stop_reason: None,
+                usage: TokenUsage {
+                    input_tokens: 10,
+                    output_tokens: 5,
+                    cache_read_tokens: None,
+                    cache_creation_tokens: None,
+                },
+                timestamp: chrono::Utc::now(),
+                cost: Some(0.0),
+            })
+        }
+
+        async fn embed(&self, _request: EmbeddingRequest) -> Result<EmbeddingResponse> {
+            Err(Error::LLM("embedding not implemented in test mock".to_string()))
+        }
+
+        fn provider(&self) -> Provider {
+            self.provider
+        }
+
+        fn available_models(&self) -> Vec<ModelSpec> {
+            vec![]
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retry_with_exponential_backoff_for_rate_limited_query() {
+        let client = FlakyBatchClient::new(Provider::OpenAI, 2);
+        let calls = Arc::clone(&client.calls);
+        let executor = BatchExecutor::new(client).with_retry_config(RetryConfig {
+            max_retries: 2,
+            base_delay_ms: 1,
+            backoff_factor: 2.0,
+        });
+
+        let results = executor
+            .execute(BatchedLLMQuery::new().add_prompt("q1"))
+            .await
+            .expect("batch execution should succeed");
+
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert_eq!(results.success_count, 1);
+        assert_eq!(results.failure_count, 0);
+    }
+
+    #[tokio::test]
+    async fn test_retry_stops_after_bounded_attempts() {
+        let client = FlakyBatchClient::new(Provider::Anthropic, usize::MAX);
+        let calls = Arc::clone(&client.calls);
+        let executor = BatchExecutor::new(client)
+            .with_retry_config(RetryConfig {
+                max_retries: 1,
+                base_delay_ms: 1,
+                backoff_factor: 2.0,
+            })
+            .with_retry_failures(true);
+
+        let results = executor
+            .execute(BatchedLLMQuery::new().add_prompt("q1"))
+            .await
+            .expect("batch execution should return partial results");
+
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(results.success_count, 0);
+        assert_eq!(results.failure_count, 1);
+        assert!(results.results[0]
+            .error
+            .as_deref()
+            .unwrap_or_default()
+            .contains("429"));
+    }
+
+    #[tokio::test]
+    async fn test_provider_aware_rate_limit_is_enforced() {
+        let client = FlakyBatchClient::new(Provider::OpenAI, 0);
+        let call_times = Arc::clone(&client.call_times);
+        let executor = BatchExecutor::new(client)
+            .with_provider_rate_limit(Provider::OpenAI, 1)
+            .with_rate_limit_window(Duration::from_millis(20))
+            .with_max_parallel(2)
+            .with_retry_failures(false);
+
+        let started = Instant::now();
+        let results = executor
+            .execute(
+                BatchedLLMQuery::new()
+                    .add_prompt("q1")
+                    .add_prompt("q2")
+                    .with_max_parallel(2),
+            )
+            .await
+            .expect("batch execution should succeed");
+        let elapsed = started.elapsed();
+
+        let call_times = call_times.lock().await;
+        assert_eq!(results.success_count, 2);
+        assert_eq!(call_times.len(), 2);
+        assert!(elapsed >= Duration::from_millis(15));
     }
 }

@@ -2,7 +2,7 @@
 
 > Parallel LLM query execution in REPL
 
-**Status**: Partially implemented (end-to-end `llm_batch` REPL-host runtime path implemented; remaining provider-aware rate-limit/backoff policy is up-next critical scope tracked in `loop-azq`)
+**Status**: Implemented in `rlm-core` runtime (`BatchExecutor` provider-aware rate-limit + exponential backoff retry policy, plus REPL-host integration)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-1d2
@@ -19,7 +19,7 @@ Implement parallel batched LLM queries in the REPL, enabling efficient processin
 |---|---|---|
 | SPEC-26.01 Batched helper naming/shape | Implemented | `rlm-core/python/rlm_repl/helpers.py`, `rlm-core/python/rlm_repl/sandbox.py` |
 | SPEC-26.02 Rust batch execution primitives | Implemented | `rlm-core/src/llm/batch.rs` |
-| SPEC-26.03 Advanced rate-limit/retry policy | Planned | No provider-specific rate-limit/backoff implementation in `rlm-core/src/llm/batch.rs` |
+| SPEC-26.03 Advanced rate-limit/retry policy | Implemented | Provider-aware limits + bounded exponential backoff in `rlm-core/src/llm/batch.rs` (`BatchExecutor`, `RetryConfig`) |
 | SPEC-26.04 Partial-failure result handling | Implemented (data model level) | `BatchQueryResult`, `BatchedQueryResults` helpers + tests in `rlm-core/src/llm/batch.rs` |
 | REPL-host orchestration wiring (`M7-T01`) | Implemented | `ReplHandle::resolve_pending_llm_batches` + pending-operation protocol wiring in `rlm-core/src/repl.rs` and `rlm-core/python/rlm_repl/main.py` |
 
@@ -215,8 +215,8 @@ pub struct RetryConfig {
 - Distribute requests over time if needed
 
 **Acceptance Criteria**:
-- [ ] Rate limits respected (planned)
-- [ ] Exponential backoff on errors (planned)
+- [x] Rate limits respected
+- [x] Exponential backoff on retryable errors
 - [x] Basic max-parallel clamping present
 
 ### SPEC-26.04: Error Handling
@@ -328,6 +328,9 @@ if errors:
 | `llm::batch::tests::test_batched_results_ordering` | Results preserved in index order | SPEC-26.02 |
 | `llm::batch::tests::test_batched_results_errors` | Partial-failure/error detail handling | SPEC-26.04 |
 | `llm::batch::tests::test_max_parallel_bounds` | Basic parallelism clamping | SPEC-26.03 |
+| `llm::batch::tests::test_provider_aware_rate_limit_is_enforced` | Provider-specific throttle window enforcement | SPEC-26.03 |
+| `llm::batch::tests::test_retry_with_exponential_backoff_for_rate_limited_query` | Bounded exponential-backoff retry on retryable provider failure | SPEC-26.03 |
+| `llm::batch::tests::test_retry_stops_after_bounded_attempts` | Retry ceiling enforcement on persistent failures | SPEC-26.03 |
 | `repl::tests::test_llm_batch_operation_to_query` | Rust host parses deferred `llm_batch` operation params into batch query primitives | SPEC-26.02 |
 | `repl::tests::test_llm_batch_results_payload_mixed_success_failure` | Rust host preserves mixed success/failure payload semantics when resolving deferred batch ops | SPEC-26.04 |
 | `repl::tests::test_llm_batch_host_resolution_roundtrip` (ignored integration) + `python/tests/test_repl.py::test_llm_batch_mixed_success_failure_resolution` | End-to-end REPL-host batch execution and resolution path | SPEC-26.01, SPEC-26.02 |

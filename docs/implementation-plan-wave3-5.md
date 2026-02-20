@@ -2,16 +2,19 @@
 
 > Current state assessment and path to completion
 
+> Reconciled on 2026-02-20 against Beads and `docs/execution-plan/STATUS.md`.
+> This file is historical wave-planning context, not the live execution tracker.
+
 ## Executive Summary
 
-**Implementation is substantially complete.** Both major epics have all their component tasks closed:
+**Wave 3-5 scope is complete.** Both major epics and migration tasks referenced by this plan are closed:
 
 - **rlm-core Epic (loop-uci)**: 12/12 implementation phases closed
 - **Lean FV Epic (loop-vce)**: 4/4 implementation phases closed
 
-**Remaining Work**:
-- 2 migration tasks (open)
-- Testing, validation, and publishing
+**Current Follow-on Work**:
+- Post-M7 critical refinements are tracked in `loop-azq` and child tasks.
+- Live state is maintained in `docs/execution-plan/STATUS.md`, `docs/execution-plan/TASK-REGISTRY.md`, and `bd status`.
 
 ---
 
@@ -42,11 +45,12 @@
 
 ### 1.2 Beads Issue Status
 
-| Status | Count | Issues |
-|--------|-------|--------|
-| **Closed** | 20 | All implementation phases |
-| **In Progress** | 2 | `loop-uci` (epic), `loop-vce` (epic) |
-| **Open** | 2 | `loop-cyl` (migration), `loop-m0c` (migration) |
+| Issue | Scope | Status |
+|-------|-------|--------|
+| `loop-uci` | Unified RLM epic | Closed |
+| `loop-vce` | Lean FV epic | Closed |
+| `loop-cyl` | `rlm-claude-code` migration | Closed |
+| `loop-m0c` | `recurse` migration | Closed |
 
 ### 1.3 Code Statistics
 
@@ -56,14 +60,14 @@
 
 ---
 
-## 2. Remaining Work
+## 2. Remaining Work (Historical Wave Scope)
 
 ### 2.1 Migration Tasks (Wave 5)
 
 | Issue | Title | Status | Description |
 |-------|-------|--------|-------------|
-| `loop-cyl` | Migration: rlm-claude-code to rlm-core | Open | Replace Python implementation with rlm-core bindings |
-| `loop-m0c` | Migration: recurse to rlm-core | Open | Replace Go implementation with rlm-core CGO bindings |
+| `loop-cyl` | Migration: rlm-claude-code to rlm-core | Closed | Replaced legacy Python implementation with rlm-core delegation/runtime |
+| `loop-m0c` | Migration: recurse to rlm-core | Closed | Replaced legacy Go implementation with rlm-core CGO bridges |
 
 **Migration Strategy (from specs):**
 
@@ -83,19 +87,17 @@
 
 ### 2.2 Epic Closure
 
-Once migrations are complete, the epics can be closed:
-
 | Epic | Issue | Acceptance Criteria Status |
 |------|-------|---------------------------|
-| Unified RLM Library | `loop-uci` | All criteria met except migrations |
-| Lean Formal Verification | `loop-vce` | All implementation phases complete |
+| Unified RLM Library | `loop-uci` | Closed |
+| Lean Formal Verification | `loop-vce` | Closed |
 
 **loop-uci Acceptance Criteria:**
 - [x] rlm-core Rust crate compiles
 - [x] Python bindings (PyO3) available
 - [x] Go bindings working with CGO
-- [ ] **recurse migrated to use rlm-core** ← `loop-m0c`
-- [ ] **rlm-claude-code migrated to use rlm-core** ← `loop-cyl`
+- [x] recurse migrated to use rlm-core (`loop-m0c`)
+- [x] rlm-claude-code migrated to use rlm-core (`loop-cyl`)
 - [x] >80% test coverage on core crate
 - [x] All public APIs documented
 
@@ -107,7 +109,7 @@ Once migrations are complete, the epics can be closed:
 - [x] Progressive proof automation implemented
 - [x] DP integration tracks formal spec coverage
 
-### 2.3 Publishing Tasks (Post-Migration)
+### 2.3 Publishing Tasks (Still Program-Level Backlog)
 
 | Task | Description | Status |
 |------|-------------|--------|
@@ -118,50 +120,22 @@ Once migrations are complete, the epics can be closed:
 
 ---
 
-## 3. Execution Plan
+## 3. Historical Execution Plan
 
-### Phase 1: Migrations (Current Focus)
+This wave execution plan has already been completed.  
+For current execution sequencing, use:
 
-Both migrations can proceed in parallel:
-
-```bash
-# Track A: rlm-claude-code migration
-bd update loop-cyl --status in_progress --assignee claude
-
-# Track B: recurse migration
-bd update loop-m0c --status in_progress --assignee claude
-```
-
-**Duration**: 1-2 weeks per migration
-
-### Phase 2: Validation
-
-After migrations:
-- Run full test suite (incrementally, not all at once)
-- Verify no regressions in existing functionality
-- Performance benchmarks
-
-### Phase 3: Epic Closure
-
-```bash
-# Close epics
-bd close loop-uci --reason "All acceptance criteria met"
-bd close loop-vce --reason "All implementation phases complete"
-```
-
-### Phase 4: Publishing
-
-- Tag release
-- Publish packages
-- Update documentation
+- `docs/execution-plan/STATUS.md`
+- `docs/execution-plan/TASK-REGISTRY.md`
+- `bd ready` / `bd status`
 
 ---
 
 ## 4. Dependency Summary
 
 ```
-                          COMPLETE                                    REMAINING
-                          ════════                                    ═════════
+                          COMPLETE                                 CURRENT TRACK
+                          ════════                                 ═════════════
 
     ┌─────────────────────────────────────────────────────────┐
     │              All Implementation Phases                   │
@@ -174,16 +148,24 @@ bd close loop-vce --reason "All implementation phases complete"
               ┌──────────────────────────────────────┐
               │         Migration Tasks              │
               │                                      │
-              │  loop-cyl: rlm-claude-code  ❌ OPEN │
-              │  loop-m0c: recurse          ❌ OPEN │
+              │  loop-cyl: rlm-claude-code  ✅ CLOSED |
+              │  loop-m0c: recurse          ✅ CLOSED |
               └─────────────────┬────────────────────┘
                                 │
                                 ▼
               ┌──────────────────────────────────────┐
               │         Epic Closure                 │
               │                                      │
-              │  loop-uci: Unified RLM    ◐ IN_PROG │
-              │  loop-vce: Lean FV        ◐ IN_PROG │
+              │  loop-uci: Unified RLM     ✅ CLOSED |
+              │  loop-vce: Lean FV         ✅ CLOSED |
+              └─────────────────┬────────────────────┘
+                                │
+                                ▼
+              ┌──────────────────────────────────────┐
+              │      Active Follow-on Backlog        │
+              │                                      │
+              │  loop-azq child tasks (SPEC gaps)   │
+              │  tracked in execution-plan docs      │
               └──────────────────────────────────────┘
 ```
 
@@ -200,27 +182,22 @@ bd close loop-vce --reason "All implementation phases complete"
 - [ADR-002: Lean Formal Verification](./adr/ADR-002-lean-formal-verification.md)
 
 ### Implementation Roadmap
-- [Implementation Roadmap](./implementation-roadmap.md) (historical, superseded by this doc)
+- [Implementation Roadmap](./implementation-roadmap.md) (historical)
+- `docs/execution-plan/STATUS.md` (authoritative live tracker)
 
 ---
 
 ## 6. Commands Reference
 
 ```bash
-# View current status
+# View live status
 bd ready                    # Show ready-to-work issues
 bd list --status open       # Show open issues
 bd stats                    # Project statistics
 
-# Work on migrations
-bd update loop-cyl --status in_progress
-bd update loop-m0c --status in_progress
-
-# Close when complete
-bd close loop-cyl --reason "Migration complete"
-bd close loop-m0c --reason "Migration complete"
-bd close loop-uci --reason "All acceptance criteria met"
-bd close loop-vce --reason "All phases complete"
+# Inspect current post-M7 backlog
+bd show loop-azq
+bd children loop-azq
 
 # Sync at session end
 bd sync --from-main

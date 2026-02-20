@@ -9,7 +9,7 @@
 //! - **trace_visualize**: Export ReasoningTrace artifacts (HTML/DOT/NetworkX/Mermaid)
 
 use crate::error::{Error, Result};
-use crate::reasoning::{HtmlConfig, ReasoningTrace};
+use crate::reasoning::{HtmlConfig, HtmlTheme, ReasoningTrace};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -443,9 +443,30 @@ impl McpToolRegistry {
                 },
                 "html_preset": {
                     "type": "string",
-                    "enum": ["default", "minimal", "presentation"],
+                    "enum": ["default", "minimal", "presentation", "analyst"],
                     "description": "Preset used when format=html",
                     "default": "default"
+                },
+                "theme": {
+                    "type": "string",
+                    "enum": ["dark", "light", "high_contrast"],
+                    "description": "Optional theme override when format=html"
+                },
+                "show_details_panel": {
+                    "type": "boolean",
+                    "description": "Show node details panel in HTML exports"
+                },
+                "show_export_controls": {
+                    "type": "boolean",
+                    "description": "Show PNG/SVG/JSON export controls in HTML exports"
+                },
+                "fit_to_view_on_load": {
+                    "type": "boolean",
+                    "description": "Fit graph to viewport on initial HTML render"
+                },
+                "expand_repl_history": {
+                    "type": "boolean",
+                    "description": "Expand REPL history blocks by default in details panel"
                 }
             },
             "required": ["trace_json"]
@@ -484,6 +505,12 @@ impl McpToolRegistry {
                         "default" => HtmlConfig::default(),
                         "minimal" => HtmlConfig::minimal(),
                         "presentation" => HtmlConfig::presentation(),
+                        "analyst" => HtmlConfig::default()
+                            .with_theme(HtmlTheme::Light)
+                            .with_details_panel(true)
+                            .with_export_controls(true)
+                            .with_fit_to_view(true)
+                            .with_expand_repl_history(true),
                         other => {
                             return Err(Error::Config(format!(
                                 "Unsupported html_preset: {}",
@@ -491,6 +518,56 @@ impl McpToolRegistry {
                             )))
                         }
                     };
+
+                    let config = if let Some(theme) = input.get("theme").and_then(Value::as_str) {
+                        let theme = match theme {
+                            "dark" => HtmlTheme::Dark,
+                            "light" => HtmlTheme::Light,
+                            "high_contrast" => HtmlTheme::HighContrast,
+                            other => {
+                                return Err(Error::Config(format!(
+                                    "Unsupported theme: {}",
+                                    other
+                                )))
+                            }
+                        };
+                        config.with_theme(theme)
+                    } else {
+                        config
+                    };
+
+                    let config = if let Some(show_details) =
+                        input.get("show_details_panel").and_then(Value::as_bool)
+                    {
+                        config.with_details_panel(show_details)
+                    } else {
+                        config
+                    };
+
+                    let config = if let Some(show_export_controls) =
+                        input.get("show_export_controls").and_then(Value::as_bool)
+                    {
+                        config.with_export_controls(show_export_controls)
+                    } else {
+                        config
+                    };
+
+                    let config = if let Some(fit_to_view) =
+                        input.get("fit_to_view_on_load").and_then(Value::as_bool)
+                    {
+                        config.with_fit_to_view(fit_to_view)
+                    } else {
+                        config
+                    };
+
+                    let config = if let Some(expand_repl_history) =
+                        input.get("expand_repl_history").and_then(Value::as_bool)
+                    {
+                        config.with_expand_repl_history(expand_repl_history)
+                    } else {
+                        config
+                    };
+
                     trace.to_html(config)
                 }
                 "dot" => trace.to_dot(),
@@ -557,6 +634,11 @@ pub struct TraceVisualizeInput {
     pub trace_json: String,
     pub format: Option<String>,
     pub html_preset: Option<String>,
+    pub theme: Option<String>,
+    pub show_details_panel: Option<bool>,
+    pub show_export_controls: Option<bool>,
+    pub fit_to_view_on_load: Option<bool>,
+    pub expand_repl_history: Option<bool>,
 }
 
 #[cfg(test)]
@@ -647,6 +729,37 @@ mod tests {
             .expect("artifact must be string");
         assert!(artifact.contains("%% ReasoningTrace (enhanced)"));
         assert!(artifact.contains("graph TD"));
+    }
+
+    #[test]
+    fn test_trace_visualize_html_supports_advanced_controls() {
+        let registry = McpToolRegistry::with_defaults();
+        let trace = ReasoningTrace::new("HTML controls", "mcp-html");
+        let trace_json = serde_json::to_string(&trace).expect("trace should serialize");
+
+        let result = registry
+            .execute(
+                "trace_visualize",
+                serde_json::json!({
+                    "trace_json": trace_json,
+                    "format": "html",
+                    "html_preset": "analyst",
+                    "theme": "high_contrast",
+                    "show_details_panel": true,
+                    "show_export_controls": true,
+                    "fit_to_view_on_load": true
+                }),
+            )
+            .expect("html visualization should succeed");
+
+        assert_eq!(result.get("format").and_then(Value::as_str), Some("html"));
+        let artifact = result
+            .get("artifact")
+            .and_then(Value::as_str)
+            .expect("artifact must be string");
+        assert!(artifact.contains("Fit to View"));
+        assert!(artifact.contains("Export PNG"));
+        assert!(artifact.contains("details-panel"));
     }
 
     #[test]

@@ -27,6 +27,17 @@ use crate::reasoning::types::{DecisionNodeType, TraceEdgeLabel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Theme presets for HTML visualization.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HtmlTheme {
+    /// Dark background with light text.
+    Dark,
+    /// Light background with dark text.
+    Light,
+    /// High-contrast palette for accessibility.
+    HighContrast,
+}
+
 /// Configuration for HTML visualization export.
 #[derive(Debug, Clone)]
 pub struct HtmlConfig {
@@ -44,6 +55,20 @@ pub struct HtmlConfig {
     pub show_edge_labels: bool,
     /// Whether to animate transitions.
     pub animate: bool,
+    /// Render a node details side panel.
+    pub show_details_panel: bool,
+    /// Include export buttons (PNG/SVG/JSON).
+    pub show_export_controls: bool,
+    /// Show cost badges when metadata is present.
+    pub show_cost_badges: bool,
+    /// Show timing badges when metadata is present.
+    pub show_timing_badges: bool,
+    /// Expand REPL history blocks by default.
+    pub expand_repl_history: bool,
+    /// Apply fit-to-view after layout settles.
+    pub fit_to_view_on_load: bool,
+    /// Theme preset.
+    pub theme: HtmlTheme,
     /// Node colors by type.
     pub node_colors: HashMap<DecisionNodeType, String>,
     /// Custom CSS to inject.
@@ -68,6 +93,13 @@ impl Default for HtmlConfig {
             show_labels: true,
             show_edge_labels: true,
             animate: true,
+            show_details_panel: true,
+            show_export_controls: true,
+            show_cost_badges: true,
+            show_timing_badges: true,
+            expand_repl_history: false,
+            fit_to_view_on_load: true,
+            theme: HtmlTheme::Dark,
             node_colors,
             custom_css: None,
         }
@@ -85,6 +117,13 @@ impl HtmlConfig {
             show_labels: true,
             show_edge_labels: false,
             animate: false,
+            show_details_panel: false,
+            show_export_controls: false,
+            show_cost_badges: false,
+            show_timing_badges: false,
+            expand_repl_history: false,
+            fit_to_view_on_load: false,
+            theme: HtmlTheme::Light,
             ..Default::default()
         }
     }
@@ -99,6 +138,13 @@ impl HtmlConfig {
             show_labels: true,
             show_edge_labels: true,
             animate: true,
+            show_details_panel: true,
+            show_export_controls: true,
+            show_cost_badges: true,
+            show_timing_badges: true,
+            expand_repl_history: true,
+            fit_to_view_on_load: true,
+            theme: HtmlTheme::Dark,
             ..Default::default()
         }
     }
@@ -118,6 +164,36 @@ impl HtmlConfig {
     /// Set title.
     pub fn with_title(mut self, title: impl Into<String>) -> Self {
         self.title = title.into();
+        self
+    }
+
+    /// Set visualization theme.
+    pub fn with_theme(mut self, theme: HtmlTheme) -> Self {
+        self.theme = theme;
+        self
+    }
+
+    /// Toggle node details side panel.
+    pub fn with_details_panel(mut self, enabled: bool) -> Self {
+        self.show_details_panel = enabled;
+        self
+    }
+
+    /// Toggle export controls.
+    pub fn with_export_controls(mut self, enabled: bool) -> Self {
+        self.show_export_controls = enabled;
+        self
+    }
+
+    /// Toggle fit-to-view on initial render.
+    pub fn with_fit_to_view(mut self, enabled: bool) -> Self {
+        self.fit_to_view_on_load = enabled;
+        self
+    }
+
+    /// Expand or collapse REPL history by default.
+    pub fn with_expand_repl_history(mut self, expand: bool) -> Self {
+        self.expand_repl_history = expand;
         self
     }
 
@@ -499,6 +575,46 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
     .unwrap_or_else(|_| "{}".to_string());
 
     let custom_css = config.custom_css.as_deref().unwrap_or("");
+    let (bg_color, text_color, panel_bg, panel_border, panel_shadow, tooltip_bg, tooltip_text) =
+        match config.theme {
+            HtmlTheme::Dark => (
+                "#0f172a",
+                "#e2e8f0",
+                "rgba(15, 23, 42, 0.88)",
+                "#334155",
+                "rgba(15, 23, 42, 0.45)",
+                "rgba(2, 6, 23, 0.94)",
+                "#e2e8f0",
+            ),
+            HtmlTheme::Light => (
+                "#f8fafc",
+                "#0f172a",
+                "rgba(255, 255, 255, 0.94)",
+                "#cbd5e1",
+                "rgba(148, 163, 184, 0.35)",
+                "rgba(255, 255, 255, 0.98)",
+                "#0f172a",
+            ),
+            HtmlTheme::HighContrast => (
+                "#000000",
+                "#ffffff",
+                "rgba(0, 0, 0, 0.96)",
+                "#ffffff",
+                "rgba(255, 255, 255, 0.40)",
+                "rgba(0, 0, 0, 0.98)",
+                "#ffffff",
+            ),
+        };
+    let details_panel_display = if config.show_details_panel {
+        "block"
+    } else {
+        "none"
+    };
+    let export_controls_display = if config.show_export_controls {
+        "inline-flex"
+    } else {
+        "none"
+    };
 
     format!(
         r##"<!DOCTYPE html>
@@ -516,9 +632,9 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
         }}
 
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
+            font-family: "IBM Plex Sans", "Helvetica Neue", "Segoe UI", sans-serif;
+            background: {bg_color};
+            color: {text_color};
             overflow: hidden;
         }}
 
@@ -549,12 +665,12 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
 
         .node.root circle {{
             stroke-width: 4px;
-            stroke: #ffd700;
+            stroke: #f59e0b;
         }}
 
         .node text {{
             font-size: 11px;
-            fill: #333;
+            fill: {text_color};
             text-anchor: middle;
             pointer-events: none;
         }}
@@ -581,14 +697,16 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
 
         .link-label {{
             font-size: 10px;
-            fill: #888;
+            fill: {text_color};
+            opacity: 0.75;
             pointer-events: none;
         }}
 
         .tooltip {{
             position: absolute;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid #444;
+            background: {tooltip_bg};
+            color: {tooltip_text};
+            border: 1px solid {panel_border};
             border-radius: 8px;
             padding: 12px;
             font-size: 13px;
@@ -597,6 +715,7 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             opacity: 0;
             transition: opacity 0.2s;
             z-index: 1000;
+            box-shadow: 0 12px 26px -14px {panel_shadow};
         }}
 
         .tooltip.visible {{
@@ -605,13 +724,13 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
 
         .tooltip h3 {{
             margin-bottom: 8px;
-            color: #ffd700;
+            color: inherit;
             font-size: 14px;
         }}
 
         .tooltip p {{
             margin: 4px 0;
-            color: #ccc;
+            color: inherit;
         }}
 
         .tooltip .type {{
@@ -627,15 +746,16 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #444;
+            background: {panel_bg};
+            border: 1px solid {panel_border};
             border-radius: 8px;
             padding: 16px;
+            box-shadow: 0 14px 30px -20px {panel_shadow};
         }}
 
         .legend h4 {{
             margin-bottom: 12px;
-            color: #ffd700;
+            color: inherit;
         }}
 
         .legend-item {{
@@ -656,10 +776,11 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #444;
+            background: {panel_bg};
+            border: 1px solid {panel_border};
             border-radius: 8px;
             padding: 12px;
+            box-shadow: 0 14px 30px -20px {panel_shadow};
         }}
 
         .controls button {{
@@ -667,32 +788,145 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             width: 100%;
             margin: 4px 0;
             padding: 8px 16px;
-            background: #333;
-            border: 1px solid #555;
+            background: transparent;
+            border: 1px solid {panel_border};
             border-radius: 4px;
-            color: #fff;
+            color: {text_color};
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.15s;
         }}
 
         .controls button:hover {{
-            background: #444;
+            background: rgba(148, 163, 184, 0.2);
+            transform: translateY(-1px);
+        }}
+
+        .controls .export-group {{
+            display: {export_controls_display};
+            width: 100%;
+            margin-top: 6px;
+            flex-direction: column;
+            gap: 4px;
         }}
 
         .stats {{
             position: absolute;
             bottom: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #444;
+            background: {panel_bg};
+            border: 1px solid {panel_border};
             border-radius: 8px;
             padding: 12px;
             font-size: 12px;
+            box-shadow: 0 14px 30px -20px {panel_shadow};
         }}
 
         .stats span {{
             display: block;
             margin: 4px 0;
+        }}
+
+        .details-panel {{
+            display: {details_panel_display};
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: min(420px, calc(100vw - 40px));
+            max-height: min(48vh, 440px);
+            overflow: auto;
+            background: {panel_bg};
+            border: 1px solid {panel_border};
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 14px 30px -20px {panel_shadow};
+        }}
+
+        .details-panel h4 {{
+            margin-bottom: 8px;
+        }}
+
+        .details-empty {{
+            opacity: 0.75;
+            font-size: 13px;
+        }}
+
+        .details-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }}
+
+        .details-table td {{
+            border-bottom: 1px solid {panel_border};
+            padding: 5px 0;
+            vertical-align: top;
+        }}
+
+        .details-table td:first-child {{
+            width: 36%;
+            font-weight: 600;
+            opacity: 0.85;
+        }}
+
+        .details-panel pre {{
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-top: 8px;
+            background: rgba(148, 163, 184, 0.16);
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 12px;
+        }}
+
+        .details-panel details {{
+            margin-top: 8px;
+        }}
+
+        .details-panel summary {{
+            cursor: pointer;
+            font-weight: 600;
+        }}
+
+        .copy-content {{
+            margin-top: 10px;
+            width: 100%;
+            padding: 7px 10px;
+            border-radius: 6px;
+            border: 1px solid {panel_border};
+            background: transparent;
+            color: {text_color};
+            cursor: pointer;
+        }}
+
+        .copy-content:hover {{
+            background: rgba(148, 163, 184, 0.2);
+        }}
+
+        @media (max-width: 900px) {{
+            .legend {{
+                right: 12px;
+                top: 12px;
+                max-width: 42vw;
+            }}
+
+            .controls {{
+                left: 12px;
+                top: 12px;
+                max-width: 42vw;
+            }}
+
+            .stats {{
+                left: 12px;
+                bottom: 12px;
+                max-width: 42vw;
+            }}
+
+            .details-panel {{
+                right: 12px;
+                bottom: 12px;
+                width: 46vw;
+            }}
         }}
 
         {custom_css}
@@ -705,8 +939,14 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
 
         <div class="controls">
             <button onclick="resetZoom()">Reset View</button>
+            <button onclick="fitToView()">Fit to View</button>
             <button onclick="toggleLabels()">Toggle Labels</button>
             <button onclick="toggleEdgeLabels()">Toggle Edge Labels</button>
+            <div class="export-group">
+                <button onclick="exportPng()">Export PNG</button>
+                <button onclick="exportSvg()">Export SVG</button>
+                <button onclick="downloadJson()">Download JSON</button>
+            </div>
         </div>
 
         <div class="legend">
@@ -715,6 +955,12 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
         </div>
 
         <div class="stats" id="stats"></div>
+
+        <aside class="details-panel" id="details-panel">
+            <h4>Node Details</h4>
+            <div id="details-content" class="details-empty">Click a node to inspect full content, metadata, and REPL history.</div>
+            <button id="copy-content" class="copy-content" type="button">Copy Content</button>
+        </aside>
     </div>
 
     <script>
@@ -727,12 +973,19 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             showLabels: {show_labels},
             showEdgeLabels: {show_edge_labels},
             animate: {animate},
-            enablePanZoom: {enable_pan_zoom}
+            enablePanZoom: {enable_pan_zoom},
+            showCostBadges: {show_cost_badges},
+            showTimingBadges: {show_timing_badges},
+            expandReplHistory: {expand_repl_history},
+            fitToViewOnLoad: {fit_to_view_on_load},
+            showDetailsPanel: {show_details_panel},
+            showExportControls: {show_export_controls}
         }};
 
         // State
         let showLabels = config.showLabels;
         let showEdgeLabels = config.showEdgeLabels;
+        let selectedNodeContent = "";
 
         // Setup SVG
         const svg = d3.select("svg");
@@ -832,6 +1085,8 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
                 <h3>${{escapeHtml(d.content)}}</h3>
                 ${{d.reason ? `<p><strong>Reason:</strong> ${{escapeHtml(d.reason)}}</p>` : ''}}
                 <p><strong>Confidence:</strong> ${{(d.confidence * 100).toFixed(0)}}%</p>
+                ${{config.showCostBadges && d.metadata && d.metadata.cost_usd !== undefined ? `<p><strong>Cost:</strong> $${{Number(d.metadata.cost_usd).toFixed(4)}}</p>` : ''}}
+                ${{config.showTimingBadges && d.metadata && d.metadata.timing_ms !== undefined ? `<p><strong>Timing:</strong> ${{d.metadata.timing_ms}} ms</p>` : ''}}
                 <p><strong>Created:</strong> ${{new Date(d.created_at).toLocaleString()}}</p>
             `;
             tooltip.html(html)
@@ -841,6 +1096,11 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
         }})
         .on("mouseleave", () => {{
             tooltip.classed("visible", false);
+        }})
+        .on("click", (_, d) => {{
+            if (config.showDetailsPanel) {{
+                renderDetails(d);
+            }}
         }});
 
         // Simulation tick
@@ -871,6 +1131,27 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             <span><strong>Edges:</strong> ${{links.length}}</span>
             <span><strong>Session:</strong> ${{graphData.graph.session_id}}</span>
         `);
+
+        const copyButton = document.getElementById("copy-content");
+        if (copyButton) {{
+            copyButton.addEventListener("click", async () => {{
+                if (!selectedNodeContent) {{
+                    return;
+                }}
+                try {{
+                    await navigator.clipboard.writeText(selectedNodeContent);
+                    copyButton.textContent = "Copied";
+                    setTimeout(() => {{
+                        copyButton.textContent = "Copy Content";
+                    }}, 1200);
+                }} catch (_) {{
+                    copyButton.textContent = "Copy Failed";
+                    setTimeout(() => {{
+                        copyButton.textContent = "Copy Content";
+                    }}, 1400);
+                }}
+            }});
+        }}
 
         // Helper functions
         function linkArc(d) {{
@@ -953,6 +1234,113 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
             showEdgeLabels = !showEdgeLabels;
             linkLabel.style("opacity", showEdgeLabels ? 1 : 0);
         }}
+
+        function fitToView() {{
+            const bounds = container.node().getBBox();
+            const fullWidth = svg.node().clientWidth;
+            const fullHeight = svg.node().clientHeight;
+            if (!bounds.width || !bounds.height) {{
+                return;
+            }}
+
+            const widthScale = fullWidth / bounds.width;
+            const heightScale = fullHeight / bounds.height;
+            const scale = Math.max(0.1, Math.min(4, Math.min(widthScale, heightScale) * 0.86));
+            const translateX = fullWidth / 2 - scale * (bounds.x + bounds.width / 2);
+            const translateY = fullHeight / 2 - scale * (bounds.y + bounds.height / 2);
+
+            svg.transition().duration(550).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(translateX, translateY).scale(scale)
+            );
+        }}
+
+        function renderDetails(node) {{
+            const detailsRoot = document.getElementById("details-content");
+            if (!detailsRoot) {{
+                return;
+            }}
+
+            selectedNodeContent = node.content || "";
+            const metadata = node.metadata && typeof node.metadata === "object" ? node.metadata : null;
+            const metadataRows = metadata
+                ? Object.entries(metadata)
+                    .filter(([k]) => k !== "repl_history")
+                    .map(([k, v]) => `<tr><td>${{escapeHtml(k)}}</td><td>${{escapeHtml(JSON.stringify(v))}}</td></tr>`)
+                    .join("")
+                : "";
+
+            const replEntries = metadata && Array.isArray(metadata.repl_history) ? metadata.repl_history : [];
+            const replOpen = config.expandReplHistory ? "open" : "";
+            const replHtml = replEntries.length === 0
+                ? "<p>No REPL history captured.</p>"
+                : replEntries.map((entry, index) => `
+                    <details ${{replOpen}}>
+                        <summary>REPL step ${{index + 1}}</summary>
+                        <pre><strong>code</strong>\n${{escapeHtml(entry.code || "")}}</pre>
+                        <pre><strong>output</strong>\n${{escapeHtml(entry.output || "")}}</pre>
+                        ${{entry.error ? `<pre><strong>error</strong>\n${{escapeHtml(entry.error)}}</pre>` : ""}}
+                    </details>
+                `).join("");
+
+            detailsRoot.innerHTML = `
+                <p><strong>Type:</strong> ${{escapeHtml(node.node_type || "unknown")}}</p>
+                <p><strong>Confidence:</strong> ${{(Number(node.confidence || 0) * 100).toFixed(0)}}%</p>
+                <pre>${{escapeHtml(node.content || "")}}</pre>
+                ${{metadataRows ? `<table class="details-table">${{metadataRows}}</table>` : "<p>No metadata fields.</p>"}}
+                <h4 style="margin-top:10px;">REPL History</h4>
+                ${{replHtml}}
+            `;
+        }}
+
+        function exportSvg() {{
+            const serializer = new XMLSerializer();
+            const source = serializer.serializeToString(svg.node());
+            const blob = new Blob([source], {{ type: "image/svg+xml;charset=utf-8" }});
+            downloadBlob(blob, `${{graphData.graph.trace_id || "trace"}}.svg`);
+        }}
+
+        function exportPng() {{
+            const serializer = new XMLSerializer();
+            const source = serializer.serializeToString(svg.node());
+            const svgBlob = new Blob([source], {{ type: "image/svg+xml;charset=utf-8" }});
+            const url = URL.createObjectURL(svgBlob);
+            const image = new Image();
+            image.onload = () => {{
+                const canvas = document.createElement("canvas");
+                canvas.width = svg.node().clientWidth;
+                canvas.height = svg.node().clientHeight;
+                const ctx = canvas.getContext("2d");
+                ctx.fillStyle = getComputedStyle(document.body).backgroundColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(image, 0, 0);
+                canvas.toBlob((blob) => {{
+                    if (blob) {{
+                        downloadBlob(blob, `${{graphData.graph.trace_id || "trace"}}.png`);
+                    }}
+                    URL.revokeObjectURL(url);
+                }});
+            }};
+            image.src = url;
+        }}
+
+        function downloadJson() {{
+            const blob = new Blob([JSON.stringify(graphData, null, 2)], {{ type: "application/json" }});
+            downloadBlob(blob, `${{graphData.graph.trace_id || "trace"}}.json`);
+        }}
+
+        function downloadBlob(blob, fileName) {{
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = fileName;
+            anchor.click();
+            URL.revokeObjectURL(url);
+        }}
+
+        if (config.fitToViewOnLoad) {{
+            setTimeout(() => fitToView(), 400);
+        }}
     </script>
 </body>
 </html>"##,
@@ -961,10 +1349,33 @@ fn generate_html(graph_json: &str, config: &HtmlConfig) -> String {
         node_colors_json = node_colors_json,
         width = config.width,
         height = config.height,
+        bg_color = bg_color,
+        text_color = text_color,
+        panel_bg = panel_bg,
+        panel_border = panel_border,
+        panel_shadow = panel_shadow,
+        tooltip_bg = tooltip_bg,
+        tooltip_text = tooltip_text,
+        details_panel_display = details_panel_display,
+        export_controls_display = export_controls_display,
         show_labels = if config.show_labels { "true" } else { "false" },
         show_edge_labels = if config.show_edge_labels { "true" } else { "false" },
         animate = if config.animate { "true" } else { "false" },
         enable_pan_zoom = if config.enable_pan_zoom { "true" } else { "false" },
+        show_cost_badges = if config.show_cost_badges { "true" } else { "false" },
+        show_timing_badges = if config.show_timing_badges { "true" } else { "false" },
+        expand_repl_history = if config.expand_repl_history {
+            "true"
+        } else {
+            "false"
+        },
+        fit_to_view_on_load = if config.fit_to_view_on_load {
+            "true"
+        } else {
+            "false"
+        },
+        show_details_panel = if config.show_details_panel { "true" } else { "false" },
+        show_export_controls = if config.show_export_controls { "true" } else { "false" },
         custom_css = custom_css,
     )
 }
@@ -1043,6 +1454,9 @@ mod tests {
         assert!(html.contains("d3.v7.min.js"));
         assert!(html.contains("Reasoning Trace Visualization"));
         assert!(html.contains("const graphData"));
+        assert!(html.contains("Fit to View"));
+        assert!(html.contains("Export PNG"));
+        assert!(html.contains("details-panel"));
     }
 
     #[test]
@@ -1051,10 +1465,14 @@ mod tests {
         assert_eq!(config.width, 800);
         assert!(!config.enable_pan_zoom);
         assert!(!config.show_edge_labels);
+        assert!(!config.show_details_panel);
+        assert!(!config.show_export_controls);
 
         let config = HtmlConfig::presentation();
         assert_eq!(config.width, 1600);
         assert!(config.enable_pan_zoom);
+        assert!(config.show_details_panel);
+        assert!(config.show_export_controls);
     }
 
     #[test]
@@ -1076,11 +1494,21 @@ mod tests {
             .with_width(1000)
             .with_height(700)
             .with_title("My Trace")
+            .with_theme(HtmlTheme::HighContrast)
+            .with_details_panel(false)
+            .with_export_controls(false)
+            .with_fit_to_view(false)
+            .with_expand_repl_history(true)
             .with_css(".custom { color: red; }");
 
         assert_eq!(config.width, 1000);
         assert_eq!(config.height, 700);
         assert_eq!(config.title, "My Trace");
+        assert_eq!(config.theme, HtmlTheme::HighContrast);
+        assert!(!config.show_details_panel);
+        assert!(!config.show_export_controls);
+        assert!(!config.fit_to_view_on_load);
+        assert!(config.expand_repl_history);
         assert!(config.custom_css.is_some());
     }
 }
