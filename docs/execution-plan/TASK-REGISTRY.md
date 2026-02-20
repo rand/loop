@@ -30,7 +30,7 @@ Single source of truth for execution tasks and dependencies.
 | 9 | M7-T09 (`loop-bih.9`) | done | Delivered loop-owned io-rflx fixture corpus + calibration gate and captured RFLX/contract/perf evidence (`M7-T09-validation-summary.md`) |
 | 10 | M7-T10 (`loop-bih.10`) | done | Reconciled SPEC/governance metadata and refreshed consumer support claims (`M7-T10-validation-summary.md`) |
 | 11 | Ops-Weekly | in_progress | Continue steady-state compatibility cadence post-M7 completion |
-| 12 | Post-M7 deferred SPEC refinements (`loop-azq`) | todo | Decompose and execute deferred spec/runtime refinements carried forward from SPEC-20..26 |
+| 12 | Up-next critical SPEC refinements (`loop-azq`) | todo | Decompose and execute up-next critical spec/runtime refinements carried forward from SPEC-20..26 |
 
 ## M0 Tasks (Foundation and Contracts)
 

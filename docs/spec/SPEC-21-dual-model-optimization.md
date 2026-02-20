@@ -2,7 +2,7 @@
 
 > Cost-optimized model selection for RLM orchestration
 
-**Status**: Partially implemented (router and orchestrator-boundary dual-model routing are implemented; remaining dual-model strategy refinements are tracked in `loop-azq`)
+**Status**: Partially implemented (router and orchestrator-boundary dual-model routing are implemented; remaining dual-model strategy refinements are up-next critical scope tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-z6x
@@ -77,7 +77,7 @@ pub enum SwitchStrategy {
 **Acceptance Criteria**:
 - [ ] DualModelConfig serializable to/from JSON
 - [ ] SwitchStrategy covers common use cases
-- [ ] Custom strategy allows user flexibility (currently deferred)
+- [ ] Custom strategy allows user flexibility (up-next critical scope)
 
 ### SPEC-21.02: SmartRouter Integration
 

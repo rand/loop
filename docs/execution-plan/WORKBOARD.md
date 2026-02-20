@@ -17,7 +17,7 @@ Owner: Orchestrator thread
 | Orchestrator | M7 tranche orchestration + safe-mode enforcement | in_progress | M7 plan published; execute task cards sequentially with evidence-first closure |
 | Lane A | M7 core runtime closure (`M7-T01`..`M7-T08`) | complete | Runtime closure complete with evidence under `evidence/2026-02-20/milestone-M7/` |
 | Lane B | M7 docs/governance reconciliation (`M7-T10`) | complete | SPEC/governance reconciliation complete; consumer claims refreshed |
-| Lane C | Ops-Weekly cadence + post-M7 deferred backlog (`loop-azq`) | in_progress | Keep D-017 clean-clone policy active; execute cadence and decompose deferred refinements |
+| Lane C | Ops-Weekly cadence + post-M7 up-next critical backlog (`loop-azq`) | in_progress | Keep D-017 clean-clone policy active; execute cadence and decompose up-next critical refinements |
 
 ## Next Queue by Lane
 
@@ -28,7 +28,7 @@ Owner: Orchestrator thread
 ## Lane Activation Rules
 
 - Lane A and Lane B are complete for M7 and should remain read-only unless regressions are discovered.
-- Lane C is the primary active lane for heavy compatibility/cadence and deferred refinement intake.
+- Lane C is the primary active lane for heavy compatibility/cadence and up-next critical refinement intake.
 - Never run heavy commands concurrently across lanes.
 
 ## Handoff Intake Checklist (Orchestrator)

@@ -2,7 +2,7 @@
 
 > Interactive debugging visualization for reasoning traces
 
-**Status**: Partially implemented (core exports + TUI/MCP integration endpoints are implemented; deferred CLI/advanced HTML controls are tracked in `loop-azq`)
+**Status**: Partially implemented (core exports + TUI/MCP integration endpoints are implemented; remaining CLI/advanced HTML controls are up-next critical scope tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-wve
@@ -20,7 +20,7 @@ Add interactive graph visualization for ReasoningTrace to enable debugging of co
 | SPEC-23.01 Graph export formats | Implemented (NetworkX JSON, DOT, HTML, enhanced Mermaid) | `rlm-core/src/reasoning/visualize.rs` |
 | SPEC-23.02 NetworkX schema | Implemented (runtime node-link schema) | `NetworkXGraph` types and export tests in `rlm-core/src/reasoning/visualize.rs` |
 | SPEC-23.03 HTML visualization | Partially implemented | `ReasoningTrace::to_html` + `test_html_export` in `rlm-core/src/reasoning/visualize.rs` |
-| SPEC-23.04 Integration points | Partially implemented (TUI + MCP, CLI deferred) | `TUIAdapter::render_trace_panel` and `trace_visualize` in `rlm-core/src/adapters/` |
+| SPEC-23.04 Integration points | Partially implemented (TUI + MCP, CLI queued as up-next critical) | `TUIAdapter::render_trace_panel` and `trace_visualize` in `rlm-core/src/adapters/` |
 
 ## Requirements
 

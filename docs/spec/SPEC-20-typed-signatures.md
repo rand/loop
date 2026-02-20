@@ -2,7 +2,7 @@
 
 > DSPy-inspired typed signatures for rlm-core
 
-**Status**: Partially implemented (typed runtime protocol and validation parity implemented through M7-T03; remaining composition/runtime-governance refinements are tracked in `loop-azq`)
+**Status**: Partially implemented (typed runtime protocol and validation parity implemented through M7-T03; remaining composition/runtime-governance refinements are up-next critical scope tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Tasks**: loop-d75, loop-jqo, loop-9l6, loop-bzz

@@ -2,7 +2,7 @@
 
 > Prevent context rot via externalized context variables
 
-**Status**: Partially implemented (M7-T08 closes root prompt and helper-surface contract drift; deferred size-policy API refinements are tracked in `loop-azq`)
+**Status**: Partially implemented (M7-T08 closes root prompt and helper-surface contract drift; remaining size-policy API refinements are up-next critical scope tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-bw2
@@ -20,7 +20,7 @@ Enforce the context-as-variable pattern where the root LLM receives only the que
 | SPEC-25.01 Context externalization | Implemented | `ExternalizedContext::{from_session,from_session_with_config}` and variable typing in `rlm-core/src/context/externalize.rs` |
 | SPEC-25.02 Root prompt generation contract | Implemented | `ExternalizedContext::root_prompt_with_config` includes helper guidance + explicit `SUBMIT({...})` semantics; coverage in `test_root_prompt_generation` and `test_root_prompt_omits_full_context_content` |
 | SPEC-25.03 Variable access helpers | Implemented | Active helpers in `rlm-core/python/rlm_repl/helpers.py` (`peek`, `search`, `summarize`, `find_relevant`) with test coverage in `rlm-core/python/tests/test_repl.py` |
-| SPEC-25.04 Size tracking and chunking warnings | Partially implemented | `ContextVariable` size flags, warning thresholds, and `ContextSizeTracker` in `rlm-core/src/context/externalize.rs`; explicit `SizeConfig`/`auto_chunk` APIs remain deferred |
+| SPEC-25.04 Size tracking and chunking warnings | Partially implemented | `ContextVariable` size flags, warning thresholds, and `ContextSizeTracker` in `rlm-core/src/context/externalize.rs`; explicit `SizeConfig`/`auto_chunk` APIs are queued as up-next critical scope |
 
 ## Background
 

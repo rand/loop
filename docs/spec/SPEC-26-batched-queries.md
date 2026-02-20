@@ -2,7 +2,7 @@
 
 > Parallel LLM query execution in REPL
 
-**Status**: Partially implemented (end-to-end `llm_batch` REPL-host runtime path implemented; deferred provider-aware rate-limit/backoff policy is tracked in `loop-azq`)
+**Status**: Partially implemented (end-to-end `llm_batch` REPL-host runtime path implemented; remaining provider-aware rate-limit/backoff policy is up-next critical scope tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-1d2

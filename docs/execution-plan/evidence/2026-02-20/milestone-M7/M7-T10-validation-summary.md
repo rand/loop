@@ -11,7 +11,7 @@ Task: M7-T10 spec/governance reconciliation and promotion
 
 ## Key Results
 - Reconciled SPEC-20..SPEC-27 status metadata and implementation snapshots against current runtime state.
-- Linked all residual deferred spec items to tracked backlog issue `loop-azq`.
+- Linked all residual up-next critical spec items to tracked backlog issue `loop-azq`.
 - Updated compatibility and contract policy docs to reference latest M7 consumer evidence and active io-rflx fixture gate model.
 - Refreshed consumer-gate evidence for RCC, loop-agent seam, and io-rflx compile baseline.
 

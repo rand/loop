@@ -38,7 +38,7 @@ Last updated: 2026-02-20
 | F10 | No executable performance gate harness for REPL startup/batch throughput | Resolved by M5-T01 (`run_m5_perf_harness.sh` + VG-PERF artifacts) | M5 |
 | F11 | Efficacy scenario suite lacked explicit mixed batch and fallback-non-submit coverage | Resolved by M5-T02 scenario matrix + targeted tests (`45 passed`) | M5 |
 | F12 | No baseline-vs-candidate performance/efficacy rollup report | Resolved by M5-T03 comparative analysis report with regression check | M5 |
-| F13 | Residual implementation gaps remained across SPEC-20..27 after M0-M6 closure | M7 task cards (`M7-T01`..`M7-T10`) are complete; deferred post-M7 refinements are explicitly tracked in `loop-azq` with reconciled spec metadata | M7/post-M7 |
+| F13 | Residual implementation gaps remained across SPEC-20..27 after M0-M6 closure | M7 task cards (`M7-T01`..`M7-T10`) are complete; post-M7 up-next critical refinements are explicitly tracked in `loop-azq` with reconciled spec metadata | M7/post-M7 |
 
 ## Active Blockers
 
@@ -98,13 +98,13 @@ Last updated: 2026-02-20
 | R45 | Closed M7-T07 by implementing optimizer reasoning-capture summaries and persistence helpers (`OptimizedModule::save/load`), then validating optimizer/efficacy/perf guardrails | `evidence/2026-02-20/milestone-M7/M7-T07-validation-summary.md` |
 | R46 | Closed M7-T08 by enforcing SPEC-25 root prompt submit semantics, aligning helper-surface guidance with runtime helpers, and passing context/REPL/doc gates | `evidence/2026-02-20/milestone-M7/M7-T08-validation-summary.md` |
 | R47 | Closed M7-T09 by delivering `io_rflx_interop.v0` fixture/calibration artifacts, executable RFLX fixture gate coverage, and refreshed RFLX/contract/perf evidence | `evidence/2026-02-20/milestone-M7/M7-T09-validation-summary.md` |
-| R48 | Closed M7-T10 by reconciling SPEC-20..27 status/governance metadata, refreshing consumer claim evidence, and assigning deferred post-M7 gaps to `loop-azq` | `evidence/2026-02-20/milestone-M7/M7-T10-validation-summary.md` |
+| R48 | Closed M7-T10 by reconciling SPEC-20..27 status/governance metadata, refreshing consumer claim evidence, and assigning post-M7 up-next critical gaps to `loop-azq` | `evidence/2026-02-20/milestone-M7/M7-T10-validation-summary.md` |
 
 ## Top Priority Queue (Next 9 Tasks)
 
 | Priority | Task ID | Description |
 |---|---|---|
-| P0 | loop-azq | Decompose and execute deferred post-M7 spec refinements backlog |
+| P0 | loop-azq | Decompose and execute up-next critical post-M7 spec refinements backlog |
 
 ## Consumer Readiness Snapshot
 

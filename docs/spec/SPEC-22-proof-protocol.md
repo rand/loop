@@ -2,7 +2,7 @@
 
 > Numina-inspired focused proof strategy for Lean REPL
 
-**Status**: Partially implemented (session/protocol enforcement and proof-engine execution/persistence are implemented; remaining Lean diagnostic-feedback integration is tracked in `loop-azq`)
+**Status**: Partially implemented (session/protocol enforcement and proof-engine execution/persistence are implemented; remaining Lean diagnostic-feedback integration is up-next critical scope tracked in `loop-azq`)
 **Created**: 2026-01-20
 **Epic**: loop-zcx (DSPy-Inspired RLM Improvements)
 **Task**: loop-dzv
