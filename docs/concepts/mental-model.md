@@ -46,3 +46,6 @@ A healthy Loop workflow has:
 - Reproducible quality checks.
 
 Or, put differently: fewer mysteries and fewer surprises during push.
+
+Next read:
+- `principles.md` for decision criteria when tradeoffs appear.

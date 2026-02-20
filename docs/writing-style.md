@@ -30,11 +30,13 @@ Not good:
 2. Use fenced code blocks for commands.
 3. State expected outcomes, not just actions.
 4. Link to adjacent docs instead of duplicating entire sections.
+5. Do not use typographic em dash punctuation (`U+2014`) in operational docs.
 
 ## Maintenance Rules
 
 1. Update docs in the same change set as behavior changes.
 2. Remove stale TODO prose.
 3. Favor short sections with clear scanability.
+4. Run `make docs-check` before landing docs-heavy changes.
 
 Yes, this file is a style guide. No, it does not issue lint errors (yet).

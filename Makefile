@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 LOOP_MIN_AVAILABLE_MIB ?= 3072
 
-.PHONY: check lint typecheck test coverage rustdoc-check py-integration-gate ignored-repl-gate proptest-gate claude-adapter-gate review verify
+.PHONY: check lint typecheck test coverage rustdoc-check py-integration-gate ignored-repl-gate proptest-gate claude-adapter-gate docs-check review verify
 
 check: typecheck test
 
@@ -33,6 +33,9 @@ proptest-gate:
 claude-adapter-gate:
 	LOOP_MIN_AVAILABLE_MIB=$(LOOP_MIN_AVAILABLE_MIB) ./scripts/run_vg_claude_adapter_e2e_gate.sh
 
-review: typecheck rustdoc-check
+docs-check:
+	./scripts/check_docs_style.sh
 
-verify: check rustdoc-check py-integration-gate proptest-gate claude-adapter-gate
+review: typecheck rustdoc-check docs-check
+
+verify: check rustdoc-check py-integration-gate proptest-gate claude-adapter-gate docs-check

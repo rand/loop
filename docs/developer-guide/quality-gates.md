@@ -82,6 +82,16 @@ Purpose:
 - Enforce scenario-level quality assertions (context observation, signal-driven mode choice, execution/accounting outputs).
 - Guard against false green from test-filter drift by requiring at least two scenario tests to execute.
 
+### Layer 2.10: Documentation style gate
+
+```bash
+make docs-check
+```
+
+Purpose:
+- Enforce documentation punctuation/style constraints for operational docs.
+- Prevent typographic em dash punctuation from creeping into maintained guides.
+
 ### Layer 3: Governance review
 
 ```bash
@@ -128,8 +138,9 @@ No partial-pass narratives.
 5. Before push: `make py-integration-gate` when Python bindings or compatibility surface changed.
 6. Before push: `make proptest-gate`.
 7. Before push: `make claude-adapter-gate`.
-8. Before push (release-grade subprocess changes): `make ignored-repl-gate`.
-9. Before push: full `dp` enforcement chain.
+8. Before push: `make docs-check`.
+9. Before push (release-grade subprocess changes): `make ignored-repl-gate`.
+10. Before push: full `dp` enforcement chain.
 
 ## Evidence Logging
 

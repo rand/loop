@@ -5,9 +5,10 @@ This guide is for contributors changing code in Loop itself.
 ## Start Here
 
 1. [Setup](./setup.md)
-2. [Quality Gates](./quality-gates.md)
-3. [Contribution Workflow](./contribution-workflow.md)
-4. [API Docs Status](./api-docs-status.md)
+2. [Workflow Cookbook](./workflow-cookbook.md)
+3. [Quality Gates](./quality-gates.md)
+4. [Contribution Workflow](./contribution-workflow.md)
+5. [API Docs Status](./api-docs-status.md)
 
 ## Development Contract
 
@@ -22,3 +23,4 @@ This guide is for contributors changing code in Loop itself.
 - Runtime planning and multi-session execution rules: `docs/execution-plan/`
 - Feature contracts: `docs/spec/`
 - Architecture rationale: `docs/adr/`
+- Fast command lookup: `docs/reference/command-reference.md`

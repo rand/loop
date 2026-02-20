@@ -4,8 +4,9 @@ When something fails, this section helps you move from symptom to root cause wit
 
 ## Start Here
 
-1. [Common Issues](./common-issues.md)
-2. [Diagnostics Checklist](./diagnostics-checklist.md)
+1. [Incident Playbook](./incident-playbook.md)
+2. [Common Issues](./common-issues.md)
+3. [Diagnostics Checklist](./diagnostics-checklist.md)
 
 ## Incident Response Pattern
 
@@ -28,3 +29,5 @@ When something fails, this section helps you move from symptom to root cause wit
 ## Rule of Thumb
 
 If your incident report does not include command, exit code, and artifact path, you have a story, not a diagnosis.
+
+For quick command lookup during triage, use `../reference/command-reference.md`.

@@ -18,7 +18,8 @@ A disciplined path from idea to merged, reproducible change.
 
 1. Run targeted tests during development.
 2. Run `make check` before commit.
-3. Run governance gates before push.
+3. Run `make docs-check` for docs/style safety.
+4. Run governance gates before push.
 
 ## 4. Close Work Properly
 

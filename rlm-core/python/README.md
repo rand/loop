@@ -9,6 +9,9 @@ offering safe code execution with RLM-specific helper functions.
 
 For broader project documentation (user/dev/internals/troubleshooting), see:
 - `../../docs/README.md`
+- `../../docs/user-guide/learning-paths.md`
+- `../../docs/reference/command-reference.md`
+- `../../docs/troubleshooting/incident-playbook.md`
 
 ## Features
 

@@ -93,3 +93,6 @@ Use when:
 
 Read:
 - `/Users/rand/src/loop/docs/user-guide/claude-code-adapter.md`
+
+Command lookup companion:
+- `/Users/rand/src/loop/docs/reference/command-reference.md`

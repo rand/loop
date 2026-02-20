@@ -2,6 +2,8 @@
 
 This is a practical index for "where should I look first?".
 
+For step-by-step execution flow, read `runtime-walkthrough.md` first.
+
 ## Core Runtime (`/Users/rand/src/loop/rlm-core/src`)
 
 ### Execution and Orchestration

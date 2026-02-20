@@ -66,3 +66,5 @@ A healthy execution path produces:
 4. Scenario-level adapter efficacy evidence (`VG-CLAUDE-ADAPTER-E2E-001`), not just plumbing tests.
 
 If one of these is missing, the system may still run, but operating it safely becomes mostly archaeology.
+
+For a full request lifecycle trace, read `runtime-walkthrough.md`.

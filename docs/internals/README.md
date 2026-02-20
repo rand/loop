@@ -5,9 +5,10 @@ This section explains how Loop behaves internally, where major responsibilities 
 ## Start Here
 
 1. [Architecture](./architecture.md)
-2. [OODA and Execution](./ooda-and-execution.md)
-3. [Module Map](./module-map.md)
-4. [Python Orchestrator Swap Analysis](./python-orchestrator-swap-analysis.md)
+2. [Runtime Walkthrough](./runtime-walkthrough.md)
+3. [OODA and Execution](./ooda-and-execution.md)
+4. [Module Map](./module-map.md)
+5. [Python Orchestrator Swap Analysis](./python-orchestrator-swap-analysis.md)
 
 ## Audience
 

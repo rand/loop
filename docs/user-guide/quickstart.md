@@ -76,5 +76,7 @@ go test ./...
 
 ## Next Steps
 
+- For a guided progression by experience level: [Learning Paths](./learning-paths.md)
 - For practical task flows: [Workflow Recipes](./workflow-recipes.md)
 - For advanced operation: [Power User Playbook](./power-user-playbook.md)
+- For exact command lookup: [Command Reference](../reference/command-reference.md)

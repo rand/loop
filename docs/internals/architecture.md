@@ -65,3 +65,7 @@ Loop is a layered orchestration system:
 - Loop favors explicit evidence over implicit confidence.
 - Internal flexibility is allowed; release surfaces are contract-sensitive.
 - If a behavior cannot be validated, it is not done. It is merely enthusiastic.
+
+Related:
+- `runtime-walkthrough.md` for request lifecycle details.
+- `module-map.md` for file-level entry points.

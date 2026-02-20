@@ -3,6 +3,8 @@
 Use this template for reproducible incident reports.
 Unchecked boxes in this document are intentional; this is an operational form, not a backlog tracker.
 
+Pair this checklist with `incident-playbook.md` for response sequencing.
+
 ## 1. Command Context
 
 - Command executed:

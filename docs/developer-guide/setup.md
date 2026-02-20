@@ -54,10 +54,11 @@ From repository root:
 
 ```bash
 make check
+make docs-check
 ./scripts/dp review --json
 ```
 
-If both pass, you have a working developer environment.
+If all commands pass, you have a working developer environment.
 
 ## Environment Tips
 

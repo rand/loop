@@ -1,5 +1,7 @@
 # Common Issues
 
+For response sequencing and closure criteria, start with `incident-playbook.md` and use this file for pattern-specific fixes.
+
 ## 1. `make check` fails with type/test errors
 
 Symptoms:

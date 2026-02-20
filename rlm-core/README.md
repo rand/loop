@@ -44,14 +44,18 @@ A Rust library with Python and Go bindings that provides foundational RLM capabi
 ### Users and Operators
 - [Documentation Portal](../docs/README.md)
 - [User Guide](../docs/user-guide/README.md)
+- [Learning Paths](../docs/user-guide/learning-paths.md)
+- [Command Reference](../docs/reference/command-reference.md)
 - [Troubleshooting](../docs/troubleshooting/README.md)
 
 ### Contributors
 - [Developer Guide](../docs/developer-guide/README.md)
+- [Workflow Cookbook](../docs/developer-guide/workflow-cookbook.md)
 - [Quality Gates](../docs/developer-guide/quality-gates.md)
 - [Execution Plan](../docs/execution-plan/README.md)
 
 ### Internals and Design
+- [Documentation Architecture](../docs/DOCS-ARCHITECTURE.md)
 - [Internals](../docs/internals/README.md)
 - [Concepts](../docs/concepts/README.md)
 - [Specification Contracts](../docs/spec/)

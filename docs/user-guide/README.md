@@ -5,7 +5,7 @@ This guide is for people using Loop to get real work done, from first run to adv
 ## Skill-Level Entry Points
 
 ### Beginner
-Start with [Quickstart](./quickstart.md).
+Start with [Quickstart](./quickstart.md), then continue with [Learning Paths](./learning-paths.md).
 
 You will learn:
 - What to install
@@ -37,7 +37,10 @@ You will learn:
 3. Run Claude adapter scenarios with confidence in capability boundaries.
 4. Generate formalized spec artifacts from natural language requirements.
 5. Diagnose and recover from failing checks.
+6. Use command lookup without hunting across ten docs tabs.
 
 ## If You Only Read One Thing
 
 Read [Workflow Recipes](./workflow-recipes.md). It is the shortest path from "what should I do?" to "it shipped and nothing exploded".
+
+Then bookmark [Learning Paths](./learning-paths.md) and [Reference Commands](../reference/command-reference.md).
